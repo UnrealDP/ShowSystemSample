@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "ShowSystem",
+	"Description": "A comprehensive show management system that handles various effects at the keyframe level, allowing for editing and customization of different show-related keys.",
+	"Category": "Other",
+	"CreatedBy": "Dongpyo Lee",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "ShowSystem",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
