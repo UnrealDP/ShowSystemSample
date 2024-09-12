@@ -1,16 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "ActorPoolType.h"
 #include "ActorPoolManager.generated.h"
 
-// Ŭ���� ������ Enum���� ����
-enum class EActorType : uint8
-{
-    Max
-};
 /**
  * 
  */
@@ -20,22 +16,35 @@ class COREUTILS_API UActorPoolManager : public UWorldSubsystem
 	GENERATED_BODY()
 	
 public:
-    UActorPoolManager()
-    {
-        ActorPools.SetNum(static_cast<int32>(EActorType::Max));  // Ŭ���� ����ŭ �迭 �ʱ�ȭ
-    }
+    //void Initialize(FSubsystemCollectionBase& Collection);
 
-    // Ư�� Ÿ���� ��ü�� Ǯ���� �������� �޼���
-    template <typename T>
-    T* GetPooledObject(EActorType ActorType);
+	// 풀 설정을 초기화하는 메서드
+    void InitializePoolSettings(FString AssetPath);
 
-    // ��ü�� Ǯ�� ��ȯ�ϴ� �޼���
+    // 특정 타입의 객체를 풀에서 가져오는 메서드
     template <typename T>
-    void ReturnPooledObject(T* Object, EActorType ActorType);
+    T* GetPooledObject(EActorPoolType ActorType);
+
+    // 객체를 풀로 반환하는 메서드
+    template <typename T>
+    void ReturnPooledObject(T* Object, EActorPoolType ActorType);
 
 private:
-    TArray<TArray<AActor*>> ActorPools;  // ��ü Ǯ�� �����ϴ� �迭
+    inline void EnsurePoolsInitialized(EActorPoolType ActorType)
+    {
+        // ActorPools 배열이 초기화되었는지 확인
+        checkf(ActorPools.Num() > 0, TEXT("[UActorPoolManager] ActorPools 배열이 초기화되지 않았습니다. InitializePoolSettings 함수를 먼저 호출하세요."));
 
-    // Ǯ ũ�⸦ Ȯ���ϴ� �޼���
-    void ExpandPool(EActorType ActorType, int32 PoolSize);
+        // 지정한 ActorType에 해당하는 풀 배열이 유효한지 확인
+        checkf(ActorPools.IsValidIndex(static_cast<int32>(ActorType)), TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀 배열이 초기화되지 않았습니다."));
+
+        // 해당 ActorType의 풀 배열에 객체가 있는지 확인
+        checkf(ActorPools[static_cast<int32>(ActorType)].Num() > 0, TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀에 객체가 없습니다."));
+    }
+
+    // 풀 크기를 확장하는 메서드
+    void ExpandPool(EActorPoolType ActorType, int32 PoolSize);
+
+private:
+    TArray<TArray<AActor*>> ActorPools;  // 객체 풀을 저장하는 배열
 };
