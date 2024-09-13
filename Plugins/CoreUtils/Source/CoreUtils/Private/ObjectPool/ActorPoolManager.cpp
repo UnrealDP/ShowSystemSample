@@ -5,38 +5,38 @@
 #include "ObjectPool/PooledActor.h"
 #include "ObjectPool/ActorPoolCapacityDataAsset.h"
 #include "Engine/AssetManager.h"
-//#include "Interfaces/IPluginManager.h"
-//
-//void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
-//{
-//    Super::Initialize(Collection);
-//
-//    // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
-//    FString PluginConfigPath = IPluginManager::Get().FindPlugin(TEXT("CoreUtils"))->GetBaseDir();
-//    FString ConfigFilePath = PluginConfigPath / TEXT("Config/DefaultCoreUtils.ini");
-//    //FString ConfigFilePath = Path.Combine(PluginConfigPath, TEXT("Config/DefaultCoreUtils.ini"));
-//
-//    // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
-//    FString AssetPath;
-//    if (GConfig)
-//    {
-//        GConfig->GetString(
-//            TEXT("/Script/CoreUtils.ActorPoolSettings"),   // 섹션 이름
-//            TEXT("PoolCapacityDataPath"),                  // 키 이름
-//            AssetPath,                                     // 값을 저장할 변수
-//            *ConfigFilePath                                // 플러그인의 ini 파일 경로
-//        );
-//    }
-//
-//    // 경로가 유효하지 않은 경우 기본 경로 설정
-//    if (AssetPath.IsEmpty())
-//    {
-//        AssetPath = TEXT("/Plugin/CoreUtils/Data/ActorPoolCapacityData");
-//    }
-//
-//    // 풀 설정을 초기화
-//    InitializePoolSettings(AssetPath);
-//}
+#include "Interfaces/IPluginManager.h"
+#include "Misc/Paths.h"
+
+void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+
+    // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
+    FString PluginConfigPath = IPluginManager::Get().FindPlugin(TEXT("CoreUtils"))->GetBaseDir();
+    FString ConfigFilePath = FPaths::Combine(PluginConfigPath, TEXT("Config/DefaultCoreUtils.ini"));
+
+    // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+    FString AssetPath;
+    if (GConfig)
+    {
+        GConfig->GetString(
+            TEXT("ActorPoolSettings"),   // 섹션 이름
+            TEXT("ActorPoolCapacityDataPath"),                  // 키 이름
+            AssetPath,                                     // 값을 저장할 변수
+            *ConfigFilePath                                // 플러그인의 ini 파일 경로
+        );
+    }
+
+    // 경로가 유효하지 않은 경우 기본 경로 설정
+    if (AssetPath.IsEmpty())
+    {
+        AssetPath = TEXT("/CoreUtils/ObjectPool/ActorPoolCapacityData.ActorPoolCapacityData");
+    }
+
+    // 풀 설정을 초기화
+    InitializePoolSettings(AssetPath);
+}
 
 void UActorPoolManager::InitializePoolSettings(FString AssetPath)
 {

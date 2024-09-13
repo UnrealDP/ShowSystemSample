@@ -16,7 +16,7 @@ class COREUTILS_API UActorPoolManager : public UWorldSubsystem
 	GENERATED_BODY()
 	
 public:
-    //void Initialize(FSubsystemCollectionBase& Collection);
+    virtual void Initialize(FSubsystemCollectionBase& Collection);
 
 	// 풀 설정을 초기화하는 메서드
     void InitializePoolSettings(FString AssetPath);
