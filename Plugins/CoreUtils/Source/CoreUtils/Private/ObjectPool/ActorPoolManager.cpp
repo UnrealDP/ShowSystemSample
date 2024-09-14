@@ -26,7 +26,7 @@ void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
     if (GConfig)
     {
         GConfig->GetString(
-            TEXT("ActorPoolSettings"),   // 섹션 이름
+            TEXT("PoolSettings"),   // 섹션 이름
             TEXT("ActorPoolCapacityDataPath"),                  // 키 이름
             AssetPath,                                     // 값을 저장할 변수
             *ConfigFilePath                                // 플러그인의 ini 파일 경로
@@ -80,7 +80,7 @@ void UActorPoolManager::InitializePoolSettings(FString AssetPath)
         PoolSettings.SetNum(NumPools);
         ActorPools.SetNum(NumPools);
 
-        for(const FPoolTypeSettings& PoolTypeSetting : ActorPoolCapacityData->PoolSettings)
+        for(const FActorPoolTypeSettings& PoolTypeSetting : ActorPoolCapacityData->PoolSettings)
 		{
             int32 PoolIndex = static_cast<int32>(PoolTypeSetting.PoolType);
 
@@ -160,6 +160,10 @@ void UActorPoolManager::ReturnPooledObject(T* Object, EActorPoolType ActorType)
 
     int32 Index = static_cast<int32>(ActorType);
     Object->SetActorHiddenInGame(true);  // 객체 비활성화
+
+    // Object가 PoolSettings[Index].ActorClass 의 인스턴스인지 확인
+    checkf(Object->IsA(PoolSettings[Index].ActorClass),
+        TEXT("The pooled Object is not an instance of the expected class type."));
 
     // 객체가 IPooled 인터페이스를 구현했는지 확인
     checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),

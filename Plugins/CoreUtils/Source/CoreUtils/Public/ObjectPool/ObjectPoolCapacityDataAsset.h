@@ -4,32 +4,34 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "ActorPoolType.h"
-#include "ActorPoolCapacityDataAsset.generated.h"
+#include "ObjectPoolType.h"
+#include "ObjectPoolCapacityDataAsset.generated.h"
+
 
 USTRUCT(BlueprintType)
-struct FActorPoolTypeSettings
+struct FObjectPoolTypeSettings
 {
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PoolSettings")
-    EActorPoolType PoolType = EActorPoolType::Max;
+    EObjectPoolType PoolType = EObjectPoolType::Max;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PoolSettings")
-    TSubclassOf<AActor> ActorClass;    
+    TSubclassOf<UObject> ObjectClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PoolSettings", Meta = (ClampMin = "1", Tooltip = "Initial Capacity must be greater than or equal to Reserved Actor Count."))
     int32 InitialCapacity = 5;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PoolSettings", Meta = (ClampMin = "1", Tooltip = "Reserved Actor Count must be less than or equal to Initial Capacity."))
-    int32 ReservedActorCount = 5;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PoolSettings", Meta = (ClampMin = "1", Tooltip = "Reserved Object Count must be less than or equal to Initial Capacity."))
+    int32 ReservedObjectCount = 5;
 };
+
 
 /**
  * 
  */
 UCLASS()
-class COREUTILS_API UActorPoolCapacityDataAsset : public UDataAsset
+class COREUTILS_API UObjectPoolCapacityDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 
@@ -40,6 +42,6 @@ private:
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PoolSettings")
-    TArray<FActorPoolTypeSettings> PoolSettings;
-	
+    TArray<FObjectPoolTypeSettings> PoolSettings;
+
 };

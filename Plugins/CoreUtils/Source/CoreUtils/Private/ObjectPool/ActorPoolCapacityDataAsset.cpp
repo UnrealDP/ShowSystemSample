@@ -9,10 +9,20 @@ void UActorPoolCapacityDataAsset::PostEditChangeProperty(FPropertyChangedEvent& 
 {
     Super::PostEditChangeProperty(PropertyChangedEvent);
 
-    for (FPoolTypeSettings& Settings : PoolSettings)
+    for (FActorPoolTypeSettings& Settings : PoolSettings)
     {
         if (Settings.ActorClass)
         {
+            // 객체가 AActor 를 상속받았는지 확인
+            if (!Settings.ActorClass->IsChildOf(AActor::StaticClass()))
+            {
+                // ActorClass가 AActor 상속이 아니면 경고 팝업 표시
+                FText WarningMessage = FText::FromString(TEXT("ActorClass must inherit from AActor. Please check the class type."));
+                FMessageDialog::Open(EAppMsgType::Ok, WarningMessage);
+
+                Settings.ActorClass = nullptr;
+            }            
+
             // 객체가 IPooled 인터페이스를 구현했는지 확인
             if (!Settings.ActorClass->ImplementsInterface(UPooled::StaticClass()))
 			{

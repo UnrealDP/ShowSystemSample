@@ -55,7 +55,7 @@ private:
 
 private:
     bool bIsInitialized = false;
-    TArray<FPoolTypeSettings> PoolSettings;  // 풀 설정을 저장하는 배열
+    TArray<FActorPoolTypeSettings> PoolSettings;  // 풀 설정을 저장하는 배열
 
     TArray<TArray<AActor*>> ActorPools;  // 객체 풀을 저장하는 배열    
 };
