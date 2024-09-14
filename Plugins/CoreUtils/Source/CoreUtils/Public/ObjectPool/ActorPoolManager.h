@@ -1,10 +1,11 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "ActorPoolType.h"
+#include "ObjectPool/ActorPoolCapacityDataAsset.h"
 #include "ActorPoolManager.generated.h"
 
 /**
@@ -17,13 +18,18 @@ class COREUTILS_API UActorPoolManager : public UWorldSubsystem
 	
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection);
+    virtual void Deinitialize() override;
 
 	// 풀 설정을 초기화하는 메서드
     void InitializePoolSettings(FString AssetPath);
 
     // 특정 타입의 객체를 풀에서 가져오는 메서드
     template <typename T>
-    T* GetPooledObject(EActorPoolType ActorType);
+    T* GetPooledObject(EActorPoolType ActorType, const FActorSpawnParameters& SpawnParameters = nullptr);
+    template <typename T>
+    T* GetPooledObject(EActorPoolType ActorType, FVector const& Location, FRotator const& Rotation, const FActorSpawnParameters& SpawnParameters = nullptr);    
+    template <typename T>
+    T* GetPooledObject(EActorPoolType ActorType, FTransform const& Transform, const FActorSpawnParameters& SpawnParameters = nullptr);
 
     // 객체를 풀로 반환하는 메서드
     template <typename T>
@@ -43,8 +49,13 @@ private:
     }
 
     // 풀 크기를 확장하는 메서드
-    void ExpandPool(EActorPoolType ActorType, int32 PoolSize);
+    void ExpandPool(EActorPoolType ActorType, FTransform const& Transform, const FActorSpawnParameters& SpawnParameters);
+
+    void UpdateSpawnParameters(AActor* Actor, const FActorSpawnParameters& SpawnParameters);
 
 private:
-    TArray<TArray<AActor*>> ActorPools;  // 객체 풀을 저장하는 배열
+    bool bIsInitialized = false;
+    TArray<FPoolTypeSettings> PoolSettings;  // 풀 설정을 저장하는 배열
+
+    TArray<TArray<AActor*>> ActorPools;  // 객체 풀을 저장하는 배열    
 };

@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "PooledActor.generated.h"
+#include "Pooled.generated.h"
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
-class UPooledActor : public UInterface
+class UPooled : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -16,15 +16,15 @@ class UPooledActor : public UInterface
 /**
  * 
  */
-class COREUTILS_API IPooledActor
+class COREUTILS_API IPooled
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	// °´Ã¼°¡ Ç®¿¡¼­ ²¨³»Á³À» ¶§ È£ÃâµÊ
+	// ê°ì²´ê°€ í’€ì—ì„œ êº¼ë‚´ì¡Œì„ ë•Œ í˜¸ì¶œë¨
 	virtual void OnPooled() = 0;
 
-	// °´Ã¼°¡ Ç®·Î ¹İÈ¯µÉ ¶§ È£ÃâµÊ
+	// ê°ì²´ê°€ í’€ë¡œ ë°˜í™˜ë  ë•Œ í˜¸ì¶œë¨
 	virtual void OnReturnedToPool() = 0;
 };
