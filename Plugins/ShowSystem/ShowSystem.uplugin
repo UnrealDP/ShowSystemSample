@@ -17,8 +17,13 @@
 	"Modules": [
 		{
 			"Name": "ShowSystem",
-			"Type": "Editor",
+			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"name": "ShowSystemEditor",
+			"type": "Editor",
+			"loadingPhase": "PostEngineInit"
 		}
 	]
 }

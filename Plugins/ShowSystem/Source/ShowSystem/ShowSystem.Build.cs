@@ -44,7 +44,8 @@ public class ShowSystem : ModuleRules
 				"UnrealEd",
 				"LevelEditor",
 				"InteractiveToolsFramework",
-				"EditorInteractiveToolsFramework"
+				"EditorInteractiveToolsFramework",
+                "AssetTools"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
