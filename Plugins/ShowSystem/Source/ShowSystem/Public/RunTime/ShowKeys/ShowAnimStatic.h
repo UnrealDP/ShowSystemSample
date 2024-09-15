@@ -6,6 +6,20 @@
 #include "RunTime/ShowBase.h"
 #include "ShowAnimStatic.generated.h"
 
+USTRUCT(BlueprintType)
+struct FShowAnimStaticKey : public FShowKey
+{
+    GENERATED_BODY()
+
+    FShowAnimStaticKey()
+    {
+        KeyType = EShowKeyType::ShowKey_Anim;
+    }
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
+    UAnimSequence* AnimSequence;
+};
+
 /**
  * 
  */

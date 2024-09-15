@@ -6,34 +6,34 @@
 
 void UShowSequencer::InitShowKeys()
 {
-    for (const FShowKey Key : ShowKeys)
-    {
-        // FShowKey Å¸ÀÔ¿¡ µû¶ó UShowKey ÀÎ½ºÅÏ½º »ý¼º
-        // RuntimeShowKeys¿¡ Ãß°¡
-    }
+    //for (const FShowKey Key : ShowKeys)
+    //{
+    //    // FShowKey íƒ€ìž…ì— ë”°ë¼ UShowKey ì¸ìŠ¤í„´ìŠ¤ ìƒì„±
+    //    // RuntimeShowKeysì— ì¶”ê°€
+    //}
 }
 
 void UShowSequencer::Play()
 {
-    // RuntimeShowKeys ·ÎÁ÷À» »ç¿ëÇÏ¿© ½ÃÄö½º¸¦ Àç»ý
+    // RuntimeShowKeys ë¡œì§ì„ ì‚¬ìš©í•˜ì—¬ ì‹œí€€ìŠ¤ë¥¼ ìž¬ìƒ
 }
 
 void UShowSequencer::Stop()
 {
-    // ½ÃÄö½º ÁßÁö
+    // ì‹œí€€ìŠ¤ ì¤‘ì§€
 }
 
 void UShowSequencer::Pause()
 {
-    // ½ÃÄö½º ÀÏ½Ã ÁßÁö
+    // ì‹œí€€ìŠ¤ ì¼ì‹œ ì¤‘ì§€
 }
 
 void UShowSequencer::UnPause()
 {
-    // ½ÃÄö½º ´Ù½Ã Àç»ý
+    // ì‹œí€€ìŠ¤ ë‹¤ì‹œ ìž¬ìƒ
 }
 
 void UShowSequencer::ChangeSpeed(float Speed)
 {
-    // ¸ðµç Å°¿¡ ´ëÇØ ¼Óµµ º¯°æ
+    // ëª¨ë“  í‚¤ì— ëŒ€í•´ ì†ë„ ë³€ê²½
 }

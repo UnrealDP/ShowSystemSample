@@ -6,16 +6,27 @@ public class ShowSystemEditor : ModuleRules
 	{
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "UnrealEd"});
+		PublicDependencyModuleNames.AddRange(
+			new string[] { 
+				"Core", 
+				"CoreUObject", 
+				"Engine", 
+				"UnrealEd",
+                "StructUtils",
+            }
+			);
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] { 
 				"ShowSystem",
                 "AssetTools",
-			}
+                "PropertyEditor",
+                "Slate",
+                "SlateCore",
+                "InputCore",
+                "SlateEditorUtils",
+                "EditorStyle",
+            }
 			);
-
-        PublicIncludePaths.AddRange(new string[] {"ShowSystemEditor/Public"});
-		PrivateIncludePaths.AddRange(new string[] {"ShowSystemEditor/Private"});
 	}
 }

@@ -6,6 +6,13 @@
 #include "UObject/NoExportTypes.h"
 #include "ShowBase.generated.h"
 
+UENUM(BlueprintType)
+enum class EShowKeyType : uint8
+{
+    ShowKey_Anim UMETA(DisplayName = "Animation Key"),
+    ShowKey_Particle UMETA(DisplayName = "Particle Key")
+};
+
 
 USTRUCT(Atomic, BlueprintType)
 struct FShowKey
@@ -13,6 +20,9 @@ struct FShowKey
     GENERATED_USTRUCT_BODY()
 
 public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
+    EShowKeyType KeyType;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
     float StartTime = 0.0f;
 

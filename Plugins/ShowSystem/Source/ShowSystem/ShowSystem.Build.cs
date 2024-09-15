@@ -26,6 +26,7 @@ public class ShowSystem : ModuleRules
 			new string[]
 			{
 				"Core",
+                "StructUtils"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -45,7 +46,7 @@ public class ShowSystem : ModuleRules
 				"LevelEditor",
 				"InteractiveToolsFramework",
 				"EditorInteractiveToolsFramework",
-                "AssetTools"
+                "AssetTools",                
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

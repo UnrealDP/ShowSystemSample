@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "RunTime/ShowBase.h"
+#include "InstancedStruct.h"
 #include "ShowSequencer.generated.h"
 
 /**
@@ -18,9 +19,6 @@ class SHOWSYSTEM_API UShowSequencer : public UObject
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
     TArray<FShowKey> ShowKeys;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-    TArray<TObjectPtr<UShowBase>> RuntimeShowKeys;
 
     UFUNCTION(BlueprintCallable, Category = "Show")
     void InitShowKeys();
@@ -39,4 +37,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Show")
     void ChangeSpeed(float Speed);
+
+private:
+    TArray<TObjectPtr<UShowBase>> RuntimeShowKeys;
 };

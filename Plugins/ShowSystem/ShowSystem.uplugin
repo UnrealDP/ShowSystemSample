@@ -25,5 +25,15 @@
 			"type": "Editor",
 			"loadingPhase": "PostEngineInit"
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "StructUtils",
+			"Enabled": true
+		},
+		{
+			"Name": "SlateEditorUtils",
+			"Enabled": true
+		},		
 	]
 }
