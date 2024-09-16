@@ -18,7 +18,7 @@ class SHOWSYSTEM_API UShowSequencer : public UObject
 	
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-    TArray<FShowKey> ShowKeys;
+    TArray<FInstancedStruct> ShowKeys;
 
     UFUNCTION(BlueprintCallable, Category = "Show")
     void InitShowKeys();

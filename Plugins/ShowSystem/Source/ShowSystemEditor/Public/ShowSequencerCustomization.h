@@ -17,8 +17,9 @@ public:
     virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
 
 private:
+
     //void OnStructSelected_New(TSharedPtr<IPropertyHandle> ArrayElement, UScriptStruct* NewSelection);
-    void OnStructSelected(UScriptStruct* NewSelection, ESelectInfo::Type SelectInfo);
+    void OnStructSelected(UScriptStruct* NewSelection);
     FReply OnAddButtonClicked();
     FReply OnEmptyButtonClicked();
 

@@ -10,6 +10,7 @@
 #include "SStructComboBoxWidget.h"
 #include "EditorStyleSet.h"
 #include "IDetailGroup.h"
+#include "RunTime/ShowKeys/ShowAnimStatic.h"
 
 TSharedRef<IDetailCustomization> FShowSequencerCustomization::MakeInstance()
 {
@@ -74,7 +75,6 @@ TSharedRef<IDetailCustomization> FShowSequencerCustomization::MakeInstance()
 //    }
 //}
 
-
 void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
     CachedDetailBuilder = &DetailBuilder;
@@ -83,11 +83,11 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
     IDetailCategoryBuilder& ShowCategory = DetailBuilder.EditCategory("Show");
 
     // ShowKeys 배열 UI에 대한 핸들 생성
-    TSharedRef<IPropertyHandle> ShowKeysHandle = DetailBuilder.GetProperty("ShowKeys", UShowSequencer::StaticClass());
-    DetailBuilder.HideProperty(ShowKeysHandle);  // 기본 UI 숨김 처리
+    TSharedRef<IPropertyHandle> ShowKeysHandleRef = DetailBuilder.GetProperty("ShowKeys", UShowSequencer::StaticClass());
+    DetailBuilder.HideProperty(ShowKeysHandleRef);  // 기본 UI 숨김 처리
 
     // ShowKeys 배열 핸들로 변환
-    ShowKeysArrayHandle = ShowKeysHandle->AsArray();
+    ShowKeysArrayHandle = ShowKeysHandleRef->AsArray();
     if (!ShowKeysArrayHandle.IsValid())
     {
         // 배열로 변환되지 않았다면, 배열이 아님
@@ -195,7 +195,7 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
 }
 
 
-void FShowSequencerCustomization::OnStructSelected(UScriptStruct* NewSelection, ESelectInfo::Type SelectInfo)
+void FShowSequencerCustomization::OnStructSelected(UScriptStruct* NewSelection)
 {
     if (NewSelection)
     {
@@ -214,7 +214,7 @@ FReply FShowSequencerCustomization::OnAddButtonClicked()
 
         // 마지막 추가된 항목에 선택한 구조체 설정
         uint32 ArraySize = 0;
-        ShowKeysArrayHandle->GetNumElements(ArraySize);
+        ShowKeysArrayHandle->GetNumElements(ArraySize); 
         TSharedRef<IPropertyHandle> LastElement = ShowKeysArrayHandle->GetElement(ArraySize - 1);
 
         // 구조체 인스턴스 생성
@@ -223,13 +223,12 @@ FReply FShowSequencerCustomization::OnAddButtonClicked()
 
         if (StructData)
         {
-            // SelectedStruct에 맞는 구조체 인스턴스를 생성 후 데이터 복사
-            SelectedStruct->InitializeStruct(StructData);
-
-            // Force a refresh of the details panel to immediately show the updated array
-            if (CachedDetailBuilder)
+            // FInstancedStruct의 참조를 가져옴
+            FInstancedStruct* InstancedStructPtr = static_cast<FInstancedStruct*>(StructData);
+            if (InstancedStructPtr)
             {
-                CachedDetailBuilder->ForceRefreshDetails();
+                // FShowAnimKey로 초기화
+                InstancedStructPtr->InitializeAs(SelectedStruct);
             }
 
             UE_LOG(LogTemp, Log, TEXT("Struct: %s가 배열에 추가됨"), *SelectedStruct->GetName());
