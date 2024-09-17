@@ -20,9 +20,9 @@ void FShowSystemEditor::StartupModule()
 	EAssetTypeCategories::Type ShowSystemAssetCategory = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("ShowSystem")), FText::FromString("Show System"));
 
 	// ShowSequencer 액션 등록
-	AssetTools.RegisterAssetTypeActions(MakeShareable(new FAssetTypeActions_ShowSequencer(ShowSystemAssetCategory)));
-	// Asset Tools 모듈 로드 -----------------------------------------------------------------------------------------------------------------------------
-
+	TSharedRef<IAssetTypeActions> ShowSequencerAction = MakeShareable(new FAssetTypeActions_ShowSequencer(ShowSystemAssetCategory));
+	AssetTools.RegisterAssetTypeActions(ShowSequencerAction);
+	RegisteredAssetTypeActions.Add(ShowSequencerAction);	
 
 
 	// PropertyEditor 모듈을 로드하여 커스터마이저를 등록
@@ -38,6 +38,19 @@ void FShowSystemEditor::StartupModule()
 
 void FShowSystemEditor::ShutdownModule()
 {
+	// 모듈이 종료될 때 등록된 애셋 액션을 해제
+	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		for (const TSharedPtr<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
+		{
+			if (Action.IsValid())
+			{
+				AssetTools.UnregisterAssetTypeActions(Action.ToSharedRef());
+			}
+		}
+	}
+
 	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");

@@ -26,6 +26,7 @@ public class ShowSystemEditor : ModuleRules
                 "InputCore",
                 "SlateEditorUtils",
                 "EditorStyle",
+                "ToolMenus",
             }
 			);
 	}

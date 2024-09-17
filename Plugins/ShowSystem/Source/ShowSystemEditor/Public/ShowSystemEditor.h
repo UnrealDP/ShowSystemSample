@@ -13,4 +13,7 @@ class FShowSystemEditor : public IModuleInterface
 
 	/* Called when the module is unloaded */
 	virtual void ShutdownModule() override;
+
+	/** 등록된 AssetTypeActions를 저장 */
+	TArray<TSharedPtr<class IAssetTypeActions>> RegisteredAssetTypeActions;
 };
