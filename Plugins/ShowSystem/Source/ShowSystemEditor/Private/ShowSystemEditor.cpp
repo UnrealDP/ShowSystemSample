@@ -3,6 +3,8 @@
 #include "AssetToolsModule.h"
 #include "PropertyEditorModule.h"
 #include "ShowSequencerCustomization.h"
+#include "ShowMaker/SShowMakerWidget.h"
+#include "Editor.h"
 
 
 DEFINE_LOG_CATEGORY(ShowSystemEditor);
@@ -25,6 +27,9 @@ void FShowSystemEditor::StartupModule()
 	RegisteredAssetTypeActions.Add(ShowSequencerAction);	
 
 
+
+
+
 	// PropertyEditor 모듈을 로드하여 커스터마이저를 등록
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	
@@ -32,8 +37,56 @@ void FShowSystemEditor::StartupModule()
 	PropertyModule.RegisterCustomClassLayout("ShowSequencer",
 		FOnGetDetailCustomizationInstance::CreateStatic(&FShowSequencerCustomization::MakeInstance));
 
-
 	PropertyModule.NotifyCustomizationModuleChanged();
+
+
+
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner("ShowMakerTab", FOnSpawnTab::CreateRaw(this, &FShowSystemEditor::OnSpawnShowMakerTab))
+		.SetDisplayName(FText::FromString("Show Maker"))
+		.SetMenuType(ETabSpawnerMenuType::Enabled);
+
+	//FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
+
+
+
+	AddMenuExtension();
+}
+
+TSharedRef<SDockTab> FShowSystemEditor::OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs)
+{
+	return SNew(SDockTab)
+		.TabRole(ETabRole::NomadTab)
+		[
+			SNew(SShowMakerWidget)
+		];
+}
+
+TSharedPtr<SDockTab> FShowSystemEditor::OpenShowMakerTab()
+{
+	return FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
+}
+
+void FShowSystemEditor::AddMenuExtension()
+{
+	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("MainFrame.MainMenu.Window");
+
+	// "WindowLayout" 섹션 추가
+	FToolMenuSection& Section = Menu->FindOrAddSection("WindowLayout");
+
+	// "ShowSystem" 이름이 붙은 섹션을 추가 (구분선 역할)
+	FToolMenuSection& ShowSystemSection = Menu->AddSection("ShowSystem", FText::FromString("ShowSystem"));
+
+	// "ShowSystem" 섹션 아래에 "ShowMaker" 메뉴 추가
+	ShowSystemSection.AddMenuEntry(
+		"ShowMaker",
+		FText::FromString("ShowMaker"),
+		FText::FromString("Open ShowMaker Window"),
+		FSlateIcon(),
+		FUIAction(FExecuteAction::CreateLambda([this]() {
+			// ShowMaker 창 여는 로직
+			OpenShowMakerWindow(nullptr);
+			}))
+	);
 }
 
 void FShowSystemEditor::ShutdownModule()
@@ -58,6 +111,21 @@ void FShowSystemEditor::ShutdownModule()
 	}
 
 	UE_LOG(ShowSystemEditor, Warning, TEXT("ShowSystemEditor module has been unloaded"));
+}
+
+void FShowSystemEditor::OpenShowMakerWindow(UShowSequencer* InShowSequencer)
+{
+	TSharedRef<SWindow> ShowMakerWindow = SNew(SWindow)
+		.Title(FText::FromString("ShowMaker"))
+		.ClientSize(FVector2D(600, 400));
+
+	// UShowSequencer를 넘겨받아 위젯을 초기화
+	ShowMakerWindow->SetContent(
+		SNew(SShowMakerWidget)
+		.ShowSequencer(InShowSequencer) // 여기서 UShowSequencer를 넘겨줌
+	);
+
+	FSlateApplication::Get().AddWindow(ShowMakerWindow);
 }
 
 #undef LOCTEXT_NAMESPACE

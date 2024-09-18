@@ -7,7 +7,6 @@
 class FShowSequencerEditorToolkit : public FAssetEditorToolkit
 {
 public:
-    FShowSequencerEditorToolkit() {}
 
     // FAssetEditorToolkit 인터페이스 구현
     virtual FName GetToolkitFName() const override { return FName("ShowSequencerEditor"); }
@@ -18,7 +17,7 @@ public:
     virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
     virtual void UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
 
-    void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, const TArray<UObject*>& ObjectsToEdit);
+    void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, class UShowSequencer* ShowSequencer);
 
     // 기본 Details 탭 생성
     TSharedRef<SDockTab> SpawnDetailsTab(const FSpawnTabArgs& Args);
@@ -28,5 +27,7 @@ public:
 
 protected:
     void GenerateExtendMenuBar();  // 메뉴바 생성 함수 추가
+
+    class UShowSequencer* ShowSequencer;
 };
 

@@ -3,6 +3,7 @@
 
 #include "AssetTypeActions_ShowSequencer.h"
 #include "ShowSequencerEditorToolkit.h"
+#include "ShowSystemEditor.h"
 
 FText FAssetTypeActions_ShowSequencer::GetName() const
 {
@@ -27,9 +28,20 @@ uint32 FAssetTypeActions_ShowSequencer::GetCategories()
 // 애셋 더블클릭 시 커스텀 에디터 열기
 void FAssetTypeActions_ShowSequencer::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<IToolkitHost> EditWithinLevelEditor)
 {
-    // ShowSequencer 에디터 툴킷 생성
-    TSharedRef<FShowSequencerEditorToolkit> EditorToolkit = MakeShareable(new FShowSequencerEditorToolkit());
+    if (InObjects.Num() == 1)  // 단일 객체만 처리
+    {
+        if (UShowSequencer* ShowSequencer = Cast<UShowSequencer>(InObjects[0]))
+        {
+            TSharedRef<FShowSequencerEditorToolkit> EditorToolkit(new FShowSequencerEditorToolkit());
+            EditorToolkit->InitEditor(EToolkitMode::Standalone, EditWithinLevelEditor, ShowSequencer);
 
-    // 에디터 초기화
-    EditorToolkit->InitEditor(EToolkitMode::Standalone, EditWithinLevelEditor, InObjects);
+            FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
+            TSharedPtr<SDockTab> ShowMakerTab = ShowSystemEditorModule.OpenShowMakerTab();
+        }
+    }
+    else
+    {
+        // 팝업을 통해 사용자에게 다중 선택에 대한 경고 메시지를 표시
+        FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("Only one object can be edited at a time. Please select a single object."));
+    }
 }
