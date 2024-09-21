@@ -27,11 +27,11 @@ public class ShowSystemEditor : ModuleRules
                 "SlateEditorUtils",
                 "EditorStyle",
                 "ToolMenus",
-				"KismetWidgets",
-                "EditorWidgets",                
-                "AnimGraph",
                 "AdvancedPreviewScene",
-                //"Persona",
+
+                "KismetWidgets",
+                "EditorWidgets",                
+                "AnimGraph",                
             }
 			);
 	}

@@ -2,41 +2,15 @@
 
 
 #include "ShowMaker/SShowMakerWidget.h"
-#include "SlateOptMacros.h"
-#include "PersonaModule.h"
-#include "IPersonaToolkit.h"
-#include "RunTime/ShowSequencer.h"
 #include "ShowMaker/SShowSequencerScrubPanel.h"
-#include "Factories/SkeletonFactory.h"
+#include "ActorPreviewViewport.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
-#include "AdvancedPreviewScene.h"
-#include "Widgets/SViewport.h"
-#include "ActorPreviewViewportClient.h"
-#include "Slate/SceneViewport.h"
-#include "SEditorViewport.h"
-#include "ActorPreviewViewport.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
 {
     EditShowSequencer = InArgs._EditShowSequencer;
-
-    /*FPersonaToolkitArgs PersonaToolkitArgs;
-    PersonaToolkitArgs.OnPreviewSceneSettingsCustomized = FOnPreviewSceneSettingsCustomized::FDelegate::CreateSP(this, &SShowMakerWidget::HandleOnPreviewSceneSettingsCustomized);
-    PersonaToolkitArgs.OnPreviewSceneCreated = FOnPreviewSceneCreated::FDelegate::CreateSP(this, &SShowMakerWidget::HandlePreviewSceneCreated);
-    PersonaToolkitArgs.bPreviewMeshCanUseDifferentSkeleton = true;
-
-    FPersonaModule& PersonaModule = FModuleManager::GetModuleChecked<FPersonaModule>("Persona");
-    PersonaToolkit = PersonaModule.CreatePersonaToolkit(LoadedSkeletalMesh, PersonaToolkitArgs);*/
-    //PersonaToolkit = PersonaModule.CreatePersonaToolkit(EditShowSequencer, PersonaToolkitArgs);
-
-    //PreviewScenePtr = GetPersonaToolkit()->GetPreviewScene();
-    //if (TSharedPtr<IPersonaPreviewScene> PreviewScene = PreviewScenePtr.Pin())
-    //{
-    //    PreviewScene->SetDefaultAnimationMode(EPreviewSceneDefaultAnimationMode::Animation);
-    //}
-    //GetPersonaToolkit()->GetPreviewScene()->SetActor
 
     FMenuBarBuilder MenuBarBuilder(nullptr);
 
@@ -69,7 +43,7 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
                 .Padding(2.0f)
                 .FillHeight(1.0f)
                 [
-                    SpawnWidget_Preview()
+                    ConstructPreviewScenePanel()
                 ]
         ];
 
@@ -82,53 +56,10 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
         // 기본값으로 초기화
     }
 
-    //ChildSlot
-    //    [
-    //        SNew(SVerticalBox)
-    //            + SVerticalBox::Slot()
-    //            .AutoHeight()
-    //            [
-    //                // 메뉴 바 추가
-    //                FMenuBarBuilder::AddPullDownMenu(
-    //                        FText::FromString("File"),
-    //                        FText::FromString("Open file menu"),
-    //                        FNewMenuDelegate::CreateSP(this, &SShowMakerWidget::MakeFileMenu)
-    //                    )
-    //            ]
-
-    //            + SVerticalBox::Slot()
-    //            .AutoHeight()
-    //            [
-    //                // 툴바 추가
-    //                FToolBarBuilder::MakeToolBar()
-    //                    .AddToolBarButton(
-    //                        FUIAction(FExecuteAction::CreateSP(this, &SShowMakerWidget::OnButtonClick)),
-    //                        NAME_None,
-    //                        FText::FromString("Save"),
-    //                        FText::FromString("Save the current show"),
-    //                        FSlateIcon(FCoreStyle::Get().GetStyleSetName(), "Icons.Save")
-    //                    )
-    //            ]
-
-    //            + SVerticalBox::Slot()
-    //            [
-    //                // 실제 위젯 콘텐츠
-    //                SNew(STextBlock)
-    //                    .Text(FText::FromString("Show Maker Content Goes Here"))
-    //            ]
-    //    ];
-
-
     /*LoadedWorld = CheckLoadWorld();
     if (LoadedWorld)
     {
         PreviewScene->SetPreviewWorld(LoadedWorld);
-    }
-
-    LoadedSkeletalMesh = CheckLoadSkeletalMesh();
-    if (LoadedSkeletalMesh)
-    {
-        PreviewScene->SetPreviewSkeletalMesh(LoadedSkeletalMesh);
     }*/
 
     LoadedSkeletalMesh = CheckLoadSkeletalMesh();
@@ -137,9 +68,6 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
         PreviewViewport->SetPreviewAsset(LoadedSkeletalMesh);
         PreviewViewport->RefreshViewport();
     }
-
-    // 초기 액터 또는 메쉬를 프리뷰 씬에 추가
-    //PreviewScene->SetPreviewActor(Actor);
 }
 
 UWorld* SShowMakerWidget::CheckLoadWorld()
@@ -214,7 +142,6 @@ FReply SShowMakerWidget::OnMenuButtonClicked()
     // 메뉴를 열 때 호출되며, 버튼 클릭 시 메뉴를 보여줌
     return FReply::Handled();
 }
-
 
 TSharedRef<SWidget> SShowMakerWidget::CreateMenuBar()
 {
@@ -340,41 +267,7 @@ void SShowMakerWidget::OnWorldSelected(const FAssetData& SelectedAsset)
     }
 }
 
-void SShowMakerWidget::HandleOnPreviewSceneSettingsCustomized(IDetailLayoutBuilder& DetailBuilder)
-{
-    //DetailBuilder.HideCategory("Mesh");
-    //DetailBuilder.HideCategory("Physics");
-    // in mesh editor, we hide preview mesh section and additional mesh section
-    // sometimes additional meshes are interfering with preview mesh, it is not a great experience
-    //DetailBuilder.HideCategory("Additional Meshes");
-}
-
-
-void SShowMakerWidget::HandlePreviewSceneCreated(const TSharedRef<IPersonaPreviewScene>& InPreviewScene)
-{
-    /*AAnimationEditorPreviewActor* Actor = InPreviewScene->GetWorld()->SpawnActor<AAnimationEditorPreviewActor>(AAnimationEditorPreviewActor::StaticClass(), FTransform::Identity);
-    Actor->SetFlags(RF_Transient);
-    InPreviewScene->SetActor(Actor);
-
-    UDebugSkelMeshComponent SkeletalMeshComponent = NewObject<UDebugSkelMeshComponent>(Actor);
-    if (GEditor->PreviewPlatform.GetEffectivePreviewFeatureLevel() <= ERHIFeatureLevel::ES3_1)
-    {
-        SkeletalMeshComponent->SetMobility(EComponentMobility::Static);
-    }
-    SkeletalMeshComponent->bSelectable = false;
-    SkeletalMeshComponent->MarkRenderStateDirty();
-
-    SkeletalMeshComponent->SetMeshDeformer(DeformerObject);
-
-    InPreviewScene->AddComponent(SkeletalMeshComponent, FTransform::Identity);
-    InPreviewScene->SetPreviewMeshComponent(SkeletalMeshComponent);
-
-    InPreviewScene->SetAllowMeshHitProxies(false);
-    InPreviewScene->SetAdditionalMeshesSelectable(false);*/
-}
-
-
-TSharedRef<SDockTab> SShowMakerWidget::SpawnTab_Preview()
+TSharedRef<SDockTab> SShowMakerWidget::ConstructPreviewScenePanel()
 {
     PreviewViewport = SNew(SActorPreviewViewport);
 
@@ -394,20 +287,6 @@ TSharedRef<SDockTab> SShowMakerWidget::SpawnTab_Preview()
     return SpawnedTab;
 }
 
-
-TSharedRef<SWidget> SShowMakerWidget::SpawnWidget_Preview()
-{
-    PreviewViewport = SNew(SActorPreviewViewport);
-
-    // 일반 위젯을 리턴하여 다른 Slate 구조 내에서 사용 가능하게 설정
-    return SNew(SOverlay)
-        + SOverlay::Slot()
-        [
-            PreviewViewport.ToSharedRef()
-        ];
-}
-
-
 void SShowMakerWidget::RefreshPreviewViewport()
 {
     if (PreviewViewport.IsValid())
@@ -415,7 +294,6 @@ void SShowMakerWidget::RefreshPreviewViewport()
         PreviewViewport->RefreshViewport();
     }
 }
-
 
 bool SShowMakerWidget::SetPreviewAsset(UObject* InAsset)
 {
@@ -431,61 +309,6 @@ void SShowMakerWidget::UpdatePreviewViewportsVisibility()
     /*PreviewViewport->SetVisibility(EVisibility::Collapsed);
     PreviewViewport->SetVisibility(EVisibility::Visible);*/
 }
-
-TSharedRef<SWidget> SShowMakerWidget::ConstructPreviewScenePanel(bool bDisplayAnimScrubBarEditing)
-{
-    return SNew(STextBlock)
-        .Text(FText::FromString("ShowMaker Editor"));
-
-    if (PreviewViewport.IsValid())
-    {
-        /*return SAssignNew(ShowSequencerScrubPanel, SShowSequencerScrubPanel, PreviewScenePtr.Pin().ToSharedRef())
-            .EditShowSequencer(EditShowSequencer)
-            .ViewInputMin(this, &SShowMakerWidget::GetViewMinInput)
-            .ViewInputMax(this, &SShowMakerWidget::GetViewMaxInput)
-            .bDisplayAnimScrubBarEditing(bDisplayAnimScrubBarEditing)
-            .OnSetInputViewRange(this, &SShowMakerWidget::SetInputViewRange)
-            .bAllowZoom(true);*/
-    }
-
-    //// FActorPreviewScene 생성
-    //FAdvancedPreviewScene::ConstructionValues CVS = FAdvancedPreviewScene::ConstructionValues();
-    //PreviewScene = MakeShareable(new FActorPreviewScene(CVS));
-
-    //// Viewport Client 생성 (카메라 및 입력 처리 담당)
-    //TSharedPtr<class FActorPreviewViewportClient> ViewportClient = MakeShareable(new FActorPreviewViewportClient(PreviewScene.Get(), nullptr));
-
-    //// SceneViewport 생성
-    //TSharedPtr<FSceneViewport> SceneViewport = MakeShareable(new FSceneViewport(ViewportClient.Get(), nullptr));
-
-    //// SViewport 위젯 생성 (뷰포트와 Slate UI 연결)
-    //ViewportWidget = SNew(SViewport)
-    //    .EnableGammaCorrection(false)
-    //    .ShowEffectWhenDisabled(false);
-
-    //// Viewport와 SceneViewport를 연결
-    //ViewportWidget->SetViewportInterface(SceneViewport.ToSharedRef());
-
-    //// 뷰포트 위젯을 반환
-    //return SNew(SBox)
-    //    .WidthOverride(800)  // 뷰포트 크기 설정
-    //    .HeightOverride(600)
-    //    [
-    //        ViewportWidget.ToSharedRef()
-    //    ];
-
-    
-
-    //return SNullWidget::NullWidget;
-}
-
-
-void SShowMakerWidget::SetInputViewRange(float InViewMinInput, float InViewMaxInput)
-{
-    ViewMaxInput = FMath::Min<float>(InViewMaxInput, 0.f);
-    ViewMinInput = FMath::Max<float>(InViewMinInput, 0.f);
-}
-
 
 void SShowMakerWidget::MakeFileMenu(FMenuBuilder& MenuBuilder)
 {
