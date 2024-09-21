@@ -38,5 +38,5 @@ public:
 	 * @param ConfigFilePath 플러그인 폴더 내의 설정 파일 경로 (예: "Config/MyConfig.ini")
 	 * @return 플러그인 폴더를 기준으로 한 설정 파일의 전체 경로를 반환 (예: "C:/Unreal Project/Plugins/MyPlugin/Config/MyConfig.ini")
 	 */
-	static FString PluginConfig(const FString& Plugin, const FString& ConfigFilePath);
+	static FString PluginConfigPath(const FString& Plugin, const FString& ConfigFilePath);
 };

@@ -28,6 +28,7 @@ public class ShowSystemEditor : ModuleRules
                 "EditorStyle",
                 "ToolMenus",
                 "AdvancedPreviewScene",
+                "CoreUtils",
 
                 "KismetWidgets",
                 "EditorWidgets",                

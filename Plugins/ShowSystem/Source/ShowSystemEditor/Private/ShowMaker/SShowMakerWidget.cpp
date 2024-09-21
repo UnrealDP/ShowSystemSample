@@ -6,6 +6,7 @@
 #include "ActorPreviewViewport.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
+#include "Misc/PathsUtil.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
@@ -56,12 +57,6 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
         // 기본값으로 초기화
     }
 
-    /*LoadedWorld = CheckLoadWorld();
-    if (LoadedWorld)
-    {
-        PreviewScene->SetPreviewWorld(LoadedWorld);
-    }*/
-
     LoadedSkeletalMesh = CheckLoadSkeletalMesh();
     if (LoadedSkeletalMesh)
     {
@@ -70,41 +65,31 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     }
 }
 
-UWorld* SShowMakerWidget::CheckLoadWorld()
-{
-    FString SelectedWorldPath;
-    // 이전에 로드했던 스켈레털 메쉬 있는지 확인
-    GConfig->GetString(TEXT("/Script/ShowSystemEditor.SShowMakerWidget"), TEXT("LastSelectedWorld"), SelectedWorldPath, GEditorPerProjectIni);
-
-    UWorld* World = nullptr;
-    if (SelectedWorldPath.IsEmpty())
-    {
-        // 디폴트 어셋 로드
-        //World = LoadObject<UWorld>(nullptr, TEXT("/Engine/EngineMeshes/SkeletalCube.SkeletalCube"));
-        //SelectedWorldPath = World->GetPathName();
-        //GConfig->SetString(TEXT("/Script/ShowSystemEditor.SShowMakerWidget"), TEXT("LastSelectedWorld"), *SelectedWorldPath, GEditorPerProjectIni);
-    }
-    else
-    {
-        World = LoadObject<UWorld>(nullptr, *SelectedWorldPath);
-    }
-
-    return World;
-}
-
 USkeletalMesh* SShowMakerWidget::CheckLoadSkeletalMesh()
 {
     FString SelectedMeshPath;
     // 이전에 로드했던 스켈레털 메쉬 있는지 확인
-    GConfig->GetString(TEXT("/Script/ShowSystemEditor.SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), SelectedMeshPath, GEditorPerProjectIni);
+    // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
+    FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+    // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+    if (GConfig)
+    {
+        GConfig->GetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), SelectedMeshPath, *ConfigFilePath);
+    }
 
     USkeletalMesh* SkeletalMesh = nullptr;
     if (SelectedMeshPath.IsEmpty())
     {
         // 디폴트 어셋 로드
         SkeletalMesh = LoadObject<USkeletalMesh>(nullptr, TEXT("/Engine/EngineMeshes/SkeletalCube.SkeletalCube"));
+
         SelectedMeshPath = SkeletalMesh->GetPathName();
-        GConfig->SetString(TEXT("/Script/ShowSystemEditor.SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), *SelectedMeshPath, GEditorPerProjectIni);
+        // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+        if (GConfig)
+        {
+            GConfig->SetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), *SelectedMeshPath, *ConfigFilePath);
+            GConfig->Flush(false, *ConfigFilePath);
+        }
     }
 	else
 	{
@@ -124,14 +109,6 @@ TSharedRef<SWidget> SShowMakerWidget::GenerateMenuContent()
         FText::FromString("Select the Default Skeletal Mesh"),
         FSlateIcon(),
         FUIAction(FExecuteAction::CreateRaw(this, &SShowMakerWidget::OpenSkeletalMeshPicker))
-    );
-
-    // 두 번째 메쉬 선택 항목
-    MenuBuilder.AddMenuEntry(
-        FText::FromString("Alternate Skeletal Mesh"),
-        FText::FromString("Select an Alternate Skeletal Mesh"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateRaw(this, &SShowMakerWidget::OpenWorldPicker))
     );
 
     return MenuBuilder.MakeWidget();
@@ -165,14 +142,6 @@ void SShowMakerWidget::GenerateMenu(FMenuBuilder& MenuBuilder)
         FText::FromString("Select the Default Skeletal Mesh"),
         FSlateIcon(),
         FUIAction(FExecuteAction::CreateRaw(this, &SShowMakerWidget::OpenSkeletalMeshPicker))
-    );
-
-    // 두 번째 메쉬 선택 항목
-    MenuBuilder.AddMenuEntry(
-        FText::FromString("Select World"),
-        FText::FromString("Select the World"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateRaw(this, &SShowMakerWidget::OpenWorldPicker))
     );
 }
 
@@ -216,7 +185,15 @@ void SShowMakerWidget::OnSkeletalMeshSelected(const FAssetData& SelectedAsset)
 
         LoadedSkeletalMesh = SelectedSkeletalMesh;
         PreviewViewport->SetPreviewAsset(LoadedSkeletalMesh);
-        GConfig->SetString(TEXT("/Script/ShowSystemEditor.SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), *SelectedSkeletalMesh->GetPathName(), GEditorPerProjectIni);
+
+        FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+        // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+        if (GConfig)
+        {
+            FString SelectedSkeletalMeshPath = SelectedSkeletalMesh->GetPathName();
+            GConfig->SetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), *SelectedSkeletalMeshPath, *ConfigFilePath);
+            GConfig->Flush(false, *ConfigFilePath);
+        }
     }
 
     if (SkeletalMeshPickerWindow.IsValid())
@@ -227,64 +204,15 @@ void SShowMakerWidget::OnSkeletalMeshSelected(const FAssetData& SelectedAsset)
     }
 }
 
-void SShowMakerWidget::OpenWorldPicker()
-{
-    // 새로운 윈도우 생성
-    WorldPickerWindow = SNew(SWindow)
-        .Title(FText::FromString("Select World"))
-        .ClientSize(FVector2D(600, 400));
-
-    // Content Browser 모듈 가져오기
-    FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-
-    // 애셋 선택기 생성 설정
-    FAssetPickerConfig AssetPickerConfig;
-    AssetPickerConfig.Filter.ClassNames.Add(UWorld::StaticClass()->GetFName());
-    AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &SShowMakerWidget::OnWorldSelected);
-
-    // 애셋 선택기를 새로운 윈도우에 설정
-    WorldPickerWindow->SetContent(
-        ContentBrowserModule.Get().CreateAssetPicker(AssetPickerConfig)
-    );
-
-    // 윈도우를 띄움
-    FSlateApplication::Get().AddWindow(WorldPickerWindow.ToSharedRef());
-}
-
-void SShowMakerWidget::OnWorldSelected(const FAssetData& SelectedAsset)
-{
-    if (UWorld* SelectedWorld = Cast<UWorld>(SelectedAsset.GetAsset()))
-    {
-        //PreviewViewport->SetPreviewWorld(SelectedWorld);
-        GConfig->SetString(TEXT("/Script/ShowSystemEditor.SShowMakerWidget"), TEXT("LastSelectedWorld"), *SelectedWorld->GetPathName(), GEditorPerProjectIni);
-    }
-
-    if (WorldPickerWindow.IsValid())
-    {
-        // 윈도우를 닫음
-        FSlateApplication::Get().RequestDestroyWindow(WorldPickerWindow.ToSharedRef());
-        WorldPickerWindow.Reset();
-    }
-}
-
-TSharedRef<SDockTab> SShowMakerWidget::ConstructPreviewScenePanel()
+TSharedRef<SWidget> SShowMakerWidget::ConstructPreviewScenePanel()
 {
     PreviewViewport = SNew(SActorPreviewViewport);
 
-    TSharedRef<SDockTab> SpawnedTab =
-        SNew(SDockTab)
-        .Label(FText::FromString("Viewport"))
+    return SNew(SOverlay)
+        + SOverlay::Slot()
         [
-            SNew(SOverlay)
-                + SOverlay::Slot()
-                [
-                    PreviewViewport.ToSharedRef()
-                ]
+            PreviewViewport.ToSharedRef()
         ];
-
-    PreviewViewport->OnAddedToTab(SpawnedTab);
-
-    return SpawnedTab;
 }
 
 void SShowMakerWidget::RefreshPreviewViewport()

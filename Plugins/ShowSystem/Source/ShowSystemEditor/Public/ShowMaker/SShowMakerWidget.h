@@ -20,7 +20,7 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
-	TSharedRef<SDockTab> ConstructPreviewScenePanel();
+	TSharedRef<SWidget> ConstructPreviewScenePanel();
 	TSharedRef<SWidget> CreateMenuBar();
 	TSharedRef<SWidget> GenerateMenuContent();
 	FReply OnMenuButtonClicked();
@@ -28,7 +28,6 @@ private:
 	void MakeFileMenu(FMenuBuilder& MenuBuilder);
 	void OnOpenFile();
 
-	UWorld* CheckLoadWorld();
 	USkeletalMesh* CheckLoadSkeletalMesh();
 
 	void RefreshPreviewViewport();
@@ -37,9 +36,6 @@ private:
 
 	void OpenSkeletalMeshPicker();
 	void OnSkeletalMeshSelected(const FAssetData& SelectedAsset);
-
-	void OpenWorldPicker();
-	void OnWorldSelected(const FAssetData& SelectedAsset);
 
 
 	/** Preview Viewport widget */

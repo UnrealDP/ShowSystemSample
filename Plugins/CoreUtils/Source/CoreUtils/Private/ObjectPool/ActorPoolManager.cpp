@@ -19,7 +19,7 @@ void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
     }
 
     // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
-    FString ConfigFilePath = PathsUtil::PluginConfig(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
+    FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
 
     // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
     FString AssetPath;
