@@ -15,11 +15,12 @@ class FShowSystemEditor : public IModuleInterface
 	virtual void ShutdownModule() override;
 
 	TSharedRef<SDockTab> OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs);
-	TSharedPtr<SDockTab> OpenShowMakerTab();
+	TSharedPtr<SDockTab> OpenShowMakerTab(class UShowSequencer* ShowSequencer);
 	void AddMenuExtension();
-
-	static void OpenShowMakerWindow(class UShowSequencer* InShowSequencer);
 
 	/** 등록된 AssetTypeActions를 저장 */
 	TArray<TSharedPtr<class IAssetTypeActions>> RegisteredAssetTypeActions;
+
+private:
+	class UShowSequencer* TempShowSequencer;
 };

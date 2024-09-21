@@ -9,7 +9,7 @@ FText FAssetTypeActions_ShowSequencer::GetName() const
 {
 	return NSLOCTEXT("AssetTypeActions", "AssetTypeActions_ShowSequencer", "Show Sequencer");
 }
-
+ 
 FColor FAssetTypeActions_ShowSequencer::GetTypeColor() const
 {
 	return FColor::Red;  // Customize asset color in the editor
@@ -36,7 +36,7 @@ void FAssetTypeActions_ShowSequencer::OpenAssetEditor(const TArray<UObject*>& In
             EditorToolkit->InitEditor(EToolkitMode::Standalone, EditWithinLevelEditor, ShowSequencer);
 
             FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
-            TSharedPtr<SDockTab> ShowMakerTab = ShowSystemEditorModule.OpenShowMakerTab();
+            ShowSystemEditorModule.OpenShowMakerTab(ShowSequencer);
         }
     }
     else

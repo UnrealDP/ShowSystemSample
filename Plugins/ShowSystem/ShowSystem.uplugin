@@ -23,7 +23,7 @@
 		{
 			"name": "ShowSystemEditor",
 			"type": "Editor",
-			"loadingPhase": "PostEngineInit"
+			"LoadingPhase": "PostEngineInit"
 		}
 	],
 	"Plugins": [
@@ -34,6 +34,6 @@
 		{
 			"Name": "SlateEditorUtils",
 			"Enabled": true
-		},		
+		}		
 	]
 }

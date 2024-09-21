@@ -57,7 +57,7 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
         .TabRole(ETabRole::PanelTab)
         [
             SNew(SShowMakerWidget)  // 여기서 SShowMakerWidget을 연결하여 표시
-                .ShowSequencer(ShowSequencer)  // ShowSequencer 전달 (필요 시)
+                .EditShowSequencer(ShowSequencer)  // ShowSequencer 전달 (필요 시)
         ];
 }
 

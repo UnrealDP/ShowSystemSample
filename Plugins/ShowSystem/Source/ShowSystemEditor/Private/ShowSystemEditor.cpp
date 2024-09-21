@@ -5,7 +5,7 @@
 #include "ShowSequencerCustomization.h"
 #include "ShowMaker/SShowMakerWidget.h"
 #include "Editor.h"
-
+#include "PersonaModule.h"
 
 DEFINE_LOG_CATEGORY(ShowSystemEditor);
 
@@ -49,20 +49,33 @@ void FShowSystemEditor::StartupModule()
 
 
 
+
+
+	if (FModuleManager::Get().IsModuleLoaded("Persona"))
+	{
+		FModuleManager::LoadModuleChecked<FPersonaModule>("Persona");
+	}
+
+
 	AddMenuExtension();
 }
 
 TSharedRef<SDockTab> FShowSystemEditor::OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs)
 {
+	// 탭 매니저를 가져옴
+	TSharedPtr<SWindow> OwnerWindow = SpawnTabArgs.GetOwnerWindow();
+
 	return SNew(SDockTab)
 		.TabRole(ETabRole::NomadTab)
 		[
 			SNew(SShowMakerWidget)
+				.EditShowSequencer(TempShowSequencer)
 		];
 }
 
-TSharedPtr<SDockTab> FShowSystemEditor::OpenShowMakerTab()
+TSharedPtr<SDockTab> FShowSystemEditor::OpenShowMakerTab(UShowSequencer* ShowSequencer)
 {
+	TempShowSequencer = ShowSequencer;
 	return FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
 }
 
@@ -84,7 +97,7 @@ void FShowSystemEditor::AddMenuExtension()
 		FSlateIcon(),
 		FUIAction(FExecuteAction::CreateLambda([this]() {
 			// ShowMaker 창 여는 로직
-			OpenShowMakerWindow(nullptr);
+			OpenShowMakerTab(nullptr);
 			}))
 	);
 }
@@ -111,21 +124,6 @@ void FShowSystemEditor::ShutdownModule()
 	}
 
 	UE_LOG(ShowSystemEditor, Warning, TEXT("ShowSystemEditor module has been unloaded"));
-}
-
-void FShowSystemEditor::OpenShowMakerWindow(UShowSequencer* InShowSequencer)
-{
-	TSharedRef<SWindow> ShowMakerWindow = SNew(SWindow)
-		.Title(FText::FromString("ShowMaker"))
-		.ClientSize(FVector2D(600, 400));
-
-	// UShowSequencer를 넘겨받아 위젯을 초기화
-	ShowMakerWindow->SetContent(
-		SNew(SShowMakerWidget)
-		.ShowSequencer(InShowSequencer) // 여기서 UShowSequencer를 넘겨줌
-	);
-
-	FSlateApplication::Get().AddWindow(ShowMakerWindow);
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -6,6 +6,7 @@
 #include "Engine/AssetManager.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
+#include "Misc/PathsUtil.h"
 
 void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -18,8 +19,7 @@ void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
     }
 
     // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
-    FString PluginConfigPath = IPluginManager::Get().FindPlugin(TEXT("CoreUtils"))->GetBaseDir();
-    FString ConfigFilePath = FPaths::Combine(PluginConfigPath, TEXT("Config/DefaultCoreUtils.ini"));
+    FString ConfigFilePath = PathsUtil::PluginConfig(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
 
     // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
     FString AssetPath;

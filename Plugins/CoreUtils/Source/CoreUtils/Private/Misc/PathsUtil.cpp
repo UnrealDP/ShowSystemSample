@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Misc/PathsUtil.h"
@@ -119,4 +119,17 @@ FString PathsUtil::GetFilePathFromGameAssetPath(const FString& AssetPath)
     }
 
     return FString();
+}
+
+/// <summary>
+/// 플러그인 폴더 경로에서 설정 파일 경로를 가져오는 함수
+/// </summary>
+/// <param name="Plugin">설정을 가져올 플러그인의 이름 (예: "MyPlugin").</param>
+/// <param name="ConfigFilePath">플러그인 폴더 내의 설정 파일 경로 (예: "Config/MyConfig.ini").</param>
+/// <returns>플러그인 폴더를 기준으로 한 설정 파일의 전체 경로를 반환 (예: "C:/Unreal Project/Plugins/MyPlugin/Config/MyConfig.ini").</returns>
+FString PathsUtil::PluginConfig(const FString& Plugin, const FString& ConfigFilePath)
+{
+    // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
+    FString PluginConfigPath = IPluginManager::Get().FindPlugin(*Plugin)->GetBaseDir();
+    return FPaths::Combine(PluginConfigPath, *ConfigFilePath);
 }

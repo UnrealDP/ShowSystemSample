@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -31,4 +31,12 @@ public:
 	 * @return 파일 경로 (예: "C:/Unreal Project/MyProject/Content/MyFolder/MyAsset").
 	 */
 	static FString GetFilePathFromGameAssetPath(const FString& AssetPath);
+
+	/**
+	 * 플러그인 폴더 경로에서 설정 파일 경로를 가져오는 함수
+	 * @param Plugin 설정을 가져올 플러그인의 이름 (예: "MyPlugin")
+	 * @param ConfigFilePath 플러그인 폴더 내의 설정 파일 경로 (예: "Config/MyConfig.ini")
+	 * @return 플러그인 폴더를 기준으로 한 설정 파일의 전체 경로를 반환 (예: "C:/Unreal Project/Plugins/MyPlugin/Config/MyConfig.ini")
+	 */
+	static FString PluginConfig(const FString& Plugin, const FString& ConfigFilePath);
 };

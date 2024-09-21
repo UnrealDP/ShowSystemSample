@@ -12,7 +12,7 @@ public class ShowSystemEditor : ModuleRules
 				"CoreUObject", 
 				"Engine", 
 				"UnrealEd",
-                "StructUtils",
+                "StructUtils",                
             }
 			);
 
@@ -27,6 +27,11 @@ public class ShowSystemEditor : ModuleRules
                 "SlateEditorUtils",
                 "EditorStyle",
                 "ToolMenus",
+				"KismetWidgets",
+                "EditorWidgets",                
+                "AnimGraph",
+                "AdvancedPreviewScene",
+                //"Persona",
             }
 			);
 	}
