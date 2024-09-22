@@ -2,38 +2,87 @@
 
 
 #include "RunTime/ShowSequencer.h"
-//#include "RunTime/ShowKey.h"
+#include "RunTime/ShowBase.h"
+#include "ObjectPool/ObjectPoolManager.h"
 
-void UShowSequencer::InitShowKeys()
+UShowSequencer::UShowSequencer()
 {
-    //for (const FShowKey Key : ShowKeys)
-    //{
-    //    // FShowKey 타입에 따라 UShowKey 인스턴스 생성
-    //    // RuntimeShowKeys에 추가
-    //}
+    for (const FInstancedStruct Key : ShowKeys)
+    {
+        // FShowKey 타입에 따라 UShowKey 인스턴스 생성
+        // RuntimeShowKeys에 추가
+    }
+}
+
+UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
+{
+    EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey.KeyType);
+    UObjectPoolManager* PoolManager = GetWorld()->GetSubsystem<UObjectPoolManager>();
+    UShowBase* ShowBase = PoolManager->GetPooledObject<UShowBase>(PoolType);
+    ShowBase->InitShowKey(InShowKey);
+    return ShowBase;
 }
 
 void UShowSequencer::Play()
 {
-    // RuntimeShowKeys 로직을 사용하여 시퀀스를 재생
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
+    PassedTime = 0.0f;
 }
 
 void UShowSequencer::Stop()
 {
-    // 시퀀스 중지
+    ShowSequencerState = EShowSequencerState::ShowSequencer_End;
 }
 
 void UShowSequencer::Pause()
 {
-    // 시퀀스 일시 중지
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Pause;
 }
 
 void UShowSequencer::UnPause()
 {
-    // 시퀀스 다시 재생
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
 }
 
 void UShowSequencer::ChangeSpeed(float Speed)
 {
     // 모든 키에 대해 속도 변경
+}
+
+void UShowSequencer::Tick(float DeltaTime)
+{
+    if (ShowSequencerState == EShowSequencerState::ShowSequencer_Playing)
+    {
+        PassedTime += DeltaTime;
+
+        int endCount = 0;
+        for (TObjectPtr<UShowBase> showBase : RuntimeShowKeys)
+        {
+            if (!showBase)
+            {
+                continue;
+            }
+
+            if (showBase->IsWait())
+            {
+                if (showBase->IsPassed(PassedTime))
+                {
+                    showBase->Play();
+                }
+            }
+			else if (showBase->IsPlaying())
+			{
+				showBase->Tick(DeltaTime);
+			}
+			else if (showBase->IsEnd())
+			{
+				endCount++;
+			}
+        }
+        
+        if (endCount == RuntimeShowKeys.Num())
+		{
+			ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+		}
+    }
 }

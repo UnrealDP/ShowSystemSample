@@ -6,6 +6,7 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "ObjectPoolType.h"
 #include "ObjectPool/ObjectPoolCapacityDataAsset.h"
+#include "ObjectPool/Pooled.h"
 #include "ObjectPoolManager.generated.h"
 
 /**
@@ -25,11 +26,61 @@ public:
 
     // 특정 타입의 객체를 풀에서 가져오는 메서드
     template <typename T>
-    T* GetPooledObject(EObjectPoolType ObjectType);
+    T* GetPooledObject(EObjectPoolType ObjectType)
+    {
+        EnsurePoolsInitialized(ObjectType);
+
+        int32 Index = static_cast<int32>(ObjectType);
+
+        // Object 클래스는 ObjectType에 맞게 정의된 클래스 타입이거나 상속 관계여야 함
+        checkf(T::StaticClass()->IsChildOf(PoolSettings[Index].ObjectClass),
+            TEXT("UObjectPoolManager::ExpandPool / T not match ObjectClass."));
+
+        UObject* PooledObject;
+        if (ObjectPools[Index].Num() == 0)
+        {
+            ExpandPool<T>(ObjectType);  // 필요시 풀 확장
+        }
+
+        PooledObject = ObjectPools[Index].Pop();
+
+        // 객체가 IPooled 인터페이스를 구현했는지 확인
+        checkf(PooledObject->GetClass()->ImplementsInterface(UPooled::StaticClass()),
+            TEXT("The pooled Object does not implement the IPooled interface."));
+
+        IPooled* PooledInterface = Cast<IPooled>(PooledObject);
+        if (PooledInterface)
+        {
+            PooledInterface->OnPooled();
+        }
+
+        return Cast<T>(PooledObject);
+    }
 
     // 객체를 풀로 반환하는 메서드
     template <typename T>
-    void ReturnPooledObject(T* Object, EObjectPoolType ObjectType);
+    void ReturnPooledObject(T* Object, EObjectPoolType ObjectType)
+    {
+        EnsurePoolsInitialized(ObjectType);
+
+        int32 Index = static_cast<int32>(ObjectType);
+
+        // Object가 PoolSettings[Index].ObjectClass 의 인스턴스인지 확인
+        checkf(Object->IsA(PoolSettings[Index].ObjectClass),
+            TEXT("The pooled Object is not an instance of the expected class type."));
+
+        // 객체가 IPooled 인터페이스를 구현했는지 확인
+        checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
+            TEXT("The pooled Object does not implement the IPooled interface."));
+
+        IPooled* PooledInterface = Cast<IPooled>(Object);
+        if (PooledInterface)
+        {
+            PooledInterface->OnReturnedToPool();
+        }
+
+        ObjectPools[Index].Add(Object);  // 풀에 객체를 다시 추가
+    }
 
 private:
     inline void EnsurePoolsInitialized(EObjectPoolType ObjectType)
@@ -45,7 +96,26 @@ private:
     }
 
     // 풀 크기를 확장하는 메서드
-    void ExpandPool(EObjectPoolType ObjectType);
+    template <typename T>
+    void ExpandPool(EObjectPoolType ObjectType)
+    {
+        int32 Index = static_cast<int32>(ObjectType);
+
+        // Object 클래스는 ObjectType에 맞게 정의된 클래스 타입이거나 상속 관계여야 함
+        checkf(T::StaticClass()->IsChildOf(PoolSettings[Index].ObjectClass),
+            TEXT("UObjectPoolManager::ExpandPool / T not match ObjectClass."));
+
+        int32 ReservedObjectCount = PoolSettings[Index].ReservedObjectCount;
+
+        for (int32 i = 0; i < ReservedObjectCount; i++)
+        {
+            T* Object = NewObject<T>(PoolSettings[Index].ObjectClass);  // UObject를 직접 생성
+            if (Object)
+            {
+                ObjectPools[Index].Add(Object);
+            }
+        }
+    }
 
 private:
     bool bIsInitialized = false;

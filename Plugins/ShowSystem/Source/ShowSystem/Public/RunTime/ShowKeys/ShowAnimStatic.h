@@ -17,7 +17,7 @@ struct FShowAnimStaticKey : public FShowKey
     }
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-    UAnimSequence* AnimSequence;
+    TSubclassOf<UAnimSequence> AnimSequenceClass;
 };
 
 /**
@@ -28,7 +28,19 @@ class SHOWSYSTEM_API UShowAnimStatic : public UShowBase
 {
 	GENERATED_BODY()
 	
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-	TSubclassOf<UAnimSequence> AnimSequenceClass;
+protected:
+    virtual void Initialize() override {};
+    virtual void Dispose() override {};
+    virtual void Play() override {};
+    virtual void Stop() override {};
+    virtual void Pause() override {};
+    virtual void UnPause() override {};
+
+private:
+    virtual void Tick(float DeltaTime, float BasePassedTime) override
+    {
+    }
+
+private:
+    TObjectPtr<UAnimSequence> AnimSequence;
 };

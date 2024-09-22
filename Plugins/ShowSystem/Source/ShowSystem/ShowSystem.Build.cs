@@ -46,7 +46,8 @@ public class ShowSystem : ModuleRules
 				"LevelEditor",
 				"InteractiveToolsFramework",
 				"EditorInteractiveToolsFramework",
-                "AssetTools",                
+                "AssetTools",
+                "CoreUtils",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

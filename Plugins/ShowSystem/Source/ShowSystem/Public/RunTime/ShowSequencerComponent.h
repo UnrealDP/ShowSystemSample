@@ -41,6 +41,6 @@ public:
     void ChangeSpeedShow(UShowSequencer* ShowSequencer, float Speed);
 
 private:
-    bool bIsPlaying;
-    TArray<UShowSequencer*> Sequencers; // È°¼ºÈ­µÈ ¿¬Ãâ ½ÃÄö½º Æ®·¡Å·
+    bool bIsPlaying = true;
+    TSparseArray<TObjectPtr<UShowSequencer>> ShowSequencers; // ì—°ì¶œ ì‹œí€€ìŠ¤ íŠ¸ëž˜í‚¹
 };

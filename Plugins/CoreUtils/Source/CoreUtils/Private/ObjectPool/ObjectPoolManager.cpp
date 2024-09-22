@@ -2,7 +2,6 @@
 
 
 #include "ObjectPool/ObjectPoolManager.h"
-#include "ObjectPool/Pooled.h"
 #include "Engine/AssetManager.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
@@ -48,7 +47,7 @@ void UObjectPoolManager::Initialize(FSubsystemCollectionBase& Collection)
 
 void UObjectPoolManager::Deinitialize()
 {
-    // ObjectPools에 있는 모든 액터 제거
+    // ObjectPools에 있는 모든 오브젝트 제거
     for (TArray<UObject*>& Pool : ObjectPools)
     {
         for (UObject* Object : Pool)
@@ -97,64 +96,5 @@ void UObjectPoolManager::InitializePoolSettings(FString AssetPath)
     else
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to load the pool settings data asset."));
-    }
-}
-
-template <typename T>
-T* UObjectPoolManager::GetPooledObject(EObjectPoolType ObjectType)
-{
-    EnsurePoolsInitialized(ObjectType);
-
-    UObject* PooledObject;
-    int32 Index = static_cast<int32>(ObjectType);
-    if (ObjectPools[Index].Num() == 0)
-    {
-        ExpandPool(ObjectType);  // 필요시 풀 확장
-    }
-
-    PooledObject = ObjectPools[Index].Pop();
-
-    // 객체가 IPooled 인터페이스를 구현했는지 확인
-    checkf(PooledObject->GetClass()->ImplementsInterface(UPooled::StaticClass()),
-        TEXT("The pooled Object does not implement the IPooled interface."));
-
-    IPooled::Execute_OnPooled(PooledObject);
-
-    return Cast<T>(PooledObject);
-}
-
-template <typename T>
-void UObjectPoolManager::ReturnPooledObject(T* Object, EObjectPoolType ObjectType)
-{
-    EnsurePoolsInitialized(ObjectType);
-
-    int32 Index = static_cast<int32>(ObjectType);
-
-    // Object가 PoolSettings[Index].ObjectClass 의 인스턴스인지 확인
-    checkf(Object->IsA(PoolSettings[Index].ObjectClass),
-        TEXT("The pooled Object is not an instance of the expected class type."));
-
-    // 객체가 IPooled 인터페이스를 구현했는지 확인
-    checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
-        TEXT("The pooled Object does not implement the IPooled interface."));
-
-    IPooled::Execute_OnReturnedToPool(Object);
-
-    ObjectPools[Index].Add(Object);  // 풀에 객체를 다시 추가
-}
-
-void UObjectPoolManager::ExpandPool(EObjectPoolType ObjectType)
-{
-    int32 Index = static_cast<int32>(ObjectType);
-    int32 ReservedObjectCount = PoolSettings[Index].ReservedObjectCount;
-
-    for (int32 i = 0; i < ReservedObjectCount; i++)
-    {
-        // Object 클래스는 ObjectType에 맞게 정의된 클래스 타입이어야 함
-        UObject* Object = NewObject<UObject>(PoolSettings[Index].ObjectClass);  // UObject를 직접 생성
-        if (Object)
-        {
-            ObjectPools[Index].Add(Object);
-        }
     }
 }

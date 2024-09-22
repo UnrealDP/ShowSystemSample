@@ -2,7 +2,6 @@
 
 
 #include "ObjectPool/ActorPoolManager.h"
-#include "ObjectPool/Pooled.h"
 #include "Engine/AssetManager.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
@@ -97,95 +96,6 @@ void UActorPoolManager::InitializePoolSettings(FString AssetPath)
     else
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to load the pool settings data asset."));
-    }
-}
-
-template <typename T>
-T* UActorPoolManager::GetPooledObject(EActorPoolType ActorType, const FActorSpawnParameters& SpawnParameters)
-{
-    GetPooledObject(ActorType, NULL, SpawnParameters);
-}
-
-template <typename T>
-T* UActorPoolManager::GetPooledObject(EActorPoolType ActorType, FVector const& Location, FRotator const& Rotation, const FActorSpawnParameters& SpawnParameters)
-{
-    FTransform Transform;
-    if (Location)
-    {
-        Transform.SetLocation(*Location);
-    }
-    if (Rotation)
-    {
-        Transform.SetRotation(FQuat(*Rotation));
-    }
-
-    GetPooledObject(ActorType, Transform, SpawnParameters);
-}
-
-template <typename T>
-T* UActorPoolManager::GetPooledObject(EActorPoolType ActorType, FTransform const& Transform, const FActorSpawnParameters& SpawnParameters)
-{
-    EnsurePoolsInitialized(ActorType);
-
-    AActor* PooledActor;
-    int32 Index = static_cast<int32>(ActorType);
-    if (ActorPools[Index].Num() == 0)
-    {
-        ExpandPool(ActorType, Transform, SpawnParameters);  // 필요시 풀 확장
-        PooledActor = ActorPools[Index].Pop();
-    }
-    else
-    {
-        PooledActor = ActorPools[Index].Pop();
-        if (SpawnParameters)
-        {
-            UpdateSpawnParameters(PooledActor, SpawnParameters);
-        }
-    }
-    PooledActor->SetActorHiddenInGame(false);  // 객체 활성화
-
-    // 객체가 IPooled 인터페이스를 구현했는지 확인
-    checkf(PooledActor->GetClass()->ImplementsInterface(UPooled::StaticClass()),
-        TEXT("The pooled actor does not implement the IPooled interface."));
-
-    IPooled::Execute_OnPooled(PooledActor);
-
-    return Cast<T>(PooledActor);
-}
-
-template <typename T>
-void UActorPoolManager::ReturnPooledObject(T* Object, EActorPoolType ActorType)
-{
-    EnsurePoolsInitialized(ActorType);
-
-    int32 Index = static_cast<int32>(ActorType);
-    Object->SetActorHiddenInGame(true);  // 객체 비활성화
-
-    // Object가 PoolSettings[Index].ActorClass 의 인스턴스인지 확인
-    checkf(Object->IsA(PoolSettings[Index].ActorClass),
-        TEXT("The pooled Object is not an instance of the expected class type."));
-
-    // 객체가 IPooled 인터페이스를 구현했는지 확인
-    checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
-        TEXT("The pooled actor does not implement the IPooled interface."));
-
-    IPooled::Execute_OnReturnedToPool(Object);
-
-    ActorPools[Index].Add(Object);  // 풀에 객체를 다시 추가
-}
-
-void UActorPoolManager::ExpandPool(EActorPoolType ActorType, FTransform const& Transform, const FActorSpawnParameters& SpawnParameters)
-{
-    UWorld* World = GetWorld();
-    int32 Index = static_cast<int32>(ActorType);
-    int32 ReservedActorCount = PoolSettings[Index].ReservedActorCount;
-
-    for (int32 i = 0; i < ReservedActorCount; i++)
-    {
-        // 액터 클래스는 ActorType에 맞게 정의된 클래스 타입이어야 함
-        AActor* NewActor = World->SpawnActor<AActor>(PoolSettings[Index].ActorClass, Transform, SpawnParameters);
-        NewActor->SetActorHiddenInGame(true);  // 비활성화된 상태로 추가
-        ActorPools[Index].Add(NewActor);
     }
 }
 

@@ -14,7 +14,6 @@ UShowSequencerComponent::UShowSequencerComponent()
 	// ...
 }
 
-
 // Called when the game starts
 void UShowSequencerComponent::BeginPlay()
 {
@@ -24,20 +23,34 @@ void UShowSequencerComponent::BeginPlay()
 	
 }
 
-
 // Called every frame
 void UShowSequencerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	for (TObjectPtr<UShowSequencer> showSequencer : ShowSequencers)
+	{
+		showSequencer->Tick(DeltaTime);
+	}
 }
 
 void UShowSequencerComponent::PlayShow(UShowSequencer* ShowSequencer)
-{}
+{
+	checkf(ShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
+
+	int32 ID = ShowSequencers.Add(ShowSequencer);
+	ShowSequencer->SetOwner(GetOwner());
+	ShowSequencer->SetID(ID);
+}
 
 void UShowSequencerComponent::StopShow(UShowSequencer* ShowSequencer)
-{}
+{
+	checkf(ShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
+
+	ShowSequencer->ClearID();
+	ShowSequencer->ClearOwner();
+	ShowSequencers.RemoveAt(ShowSequencer->GetID());
+}
 
 void UShowSequencerComponent::PauseShow(UShowSequencer* ShowSequencer)
 {}
