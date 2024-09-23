@@ -32,8 +32,12 @@ void UShowSequencer::GenerateShowBase()
 
 UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
 {
-    EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey.KeyType);
-    UObjectPoolManager* PoolManager = GetWorld()->GetSubsystem<UObjectPoolManager>();
+    checkf(Owner, TEXT("UShowSequencer::CreateShowObject: Owner is Invalid."));
+
+    UWorld* World = Owner->GetWorld();
+    UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
+
+    EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey.KeyType);    
     UShowBase* ShowBase = PoolManager->GetPooledObject<UShowBase>(PoolType);
     ShowBase->InitShowKey(InShowKey);
     return ShowBase;
@@ -41,7 +45,10 @@ UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
 
 void UShowSequencer::ClearShowObjects()
 {
-    UObjectPoolManager* PoolManager = GetWorld()->GetSubsystem<UObjectPoolManager>();
+    checkf(Owner, TEXT("UShowSequencer::ClearShowObjects: Owner is Invalid."));
+
+    UWorld* World = Owner->GetWorld();
+    UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
     for (TObjectPtr<UShowBase> showBase : RuntimeShowKeys)
     {
         EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(showBase->GetKeyType());
@@ -63,8 +70,7 @@ void UShowSequencer::Stop()
 {
     ShowSequencerState = EShowSequencerState::ShowSequencer_End;
 
-    ClearID();
-    ClearOwner();
+    ClearShowObjects();
 }
 
 void UShowSequencer::Pause()

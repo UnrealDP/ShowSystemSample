@@ -7,6 +7,7 @@
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
 #include "Misc/PathsUtil.h"
+#include "RunTime/ShowPlayer.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
@@ -46,22 +47,42 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
                 [
                     ConstructPreviewScenePanel()
                 ]
-        ];
 
-    if (EditShowSequencer)
-    {
-        // ShowSequencer로부터 데이터를 받아 초기화
-    }
-    else
-    {
-        // 기본값으로 초기화
-    }
+                + SVerticalBox::Slot()
+                .Padding(2.0f)
+                .AutoHeight()
+                [
+                    SNew(SShowSequencerScrubPanel)
+                        .EditShowSequencer(EditShowSequencer)
+                        .ViewInputMin(0.0f)
+                        .ViewInputMax(100.0f)
+                        .bDisplayAnimScrubBarEditing(true)
+                        .OnSetInputViewRange_Lambda([](float Min, float Max)
+                            {})
+                        .OnCropAnimSequence_Lambda([](bool Min, float Max)
+                            {})
+                        .OnReZeroAnimSequence_Lambda([]()
+                            {})
+                        .bAllowZoom(true)
+                ]
+        ];
 
     LoadedSkeletalMesh = CheckLoadSkeletalMesh();
     if (LoadedSkeletalMesh)
     {
         PreviewViewport->SetPreviewAsset(LoadedSkeletalMesh);
         PreviewViewport->RefreshViewport();
+    }
+
+    UWorld* PreviewWorld = PreviewViewport->GetPreviewWorld();
+    if (PreviewWorld)
+    {
+        ShowPlayer = PreviewWorld->GetSubsystem<UShowPlayer>();
+    }
+
+    if (Actor && EditShowSequencer)
+    {
+        ShowPlayer->PlaySoloShow(Actor, EditShowSequencer);
     }
 }
 
@@ -207,6 +228,8 @@ void SShowMakerWidget::OnSkeletalMeshSelected(const FAssetData& SelectedAsset)
 TSharedRef<SWidget> SShowMakerWidget::ConstructPreviewScenePanel()
 {
     PreviewViewport = SNew(SActorPreviewViewport);
+    PreviewViewport->SpawnActorInPreviewWorld(AActor::StaticClass());
+    Actor = PreviewViewport->GetActor();
 
     return SNew(SOverlay)
         + SOverlay::Slot()

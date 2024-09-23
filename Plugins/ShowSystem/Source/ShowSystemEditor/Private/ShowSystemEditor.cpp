@@ -60,6 +60,32 @@ void FShowSystemEditor::StartupModule()
 	AddMenuExtension();
 }
 
+void FShowSystemEditor::ShutdownModule()
+{
+	// 모듈이 종료될 때 등록된 애셋 액션을 해제
+	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		for (const TSharedPtr<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
+		{
+			if (Action.IsValid())
+			{
+				AssetTools.UnregisterAssetTypeActions(Action.ToSharedRef());
+			}
+		}
+	}
+
+	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
+	{
+		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+		PropertyModule.UnregisterCustomClassLayout("ShowSequencer");
+	}
+
+	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner("ShowMakerTab");
+
+	UE_LOG(ShowSystemEditor, Warning, TEXT("ShowSystemEditor module has been unloaded"));
+}
+
 TSharedRef<SDockTab> FShowSystemEditor::OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs)
 {
 	// 탭 매니저를 가져옴
@@ -100,30 +126,6 @@ void FShowSystemEditor::AddMenuExtension()
 			OpenShowMakerTab(nullptr);
 			}))
 	);
-}
-
-void FShowSystemEditor::ShutdownModule()
-{
-	// 모듈이 종료될 때 등록된 애셋 액션을 해제
-	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
-	{
-		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-		for (const TSharedPtr<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
-		{
-			if (Action.IsValid())
-			{
-				AssetTools.UnregisterAssetTypeActions(Action.ToSharedRef());
-			}
-		}
-	}
-
-	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
-	{
-		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-		PropertyModule.UnregisterCustomClassLayout("ShowSequencer");
-	}
-
-	UE_LOG(ShowSystemEditor, Warning, TEXT("ShowSystemEditor module has been unloaded"));
 }
 
 #undef LOCTEXT_NAMESPACE

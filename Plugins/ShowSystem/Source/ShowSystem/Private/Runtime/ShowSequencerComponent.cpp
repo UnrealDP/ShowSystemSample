@@ -34,28 +34,64 @@ void UShowSequencerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	}
 }
 
-void UShowSequencerComponent::PlayShow(UShowSequencer* ShowSequencer)
+int32 UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
 {
-	checkf(ShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
 
-	int32 ID = ShowSequencers.Add(ShowSequencer);
-	ShowSequencer->Initialize(ID, GetOwner());
-	ShowSequencer->Play();
+	int32 ID = ShowSequencers.Add(InShowSequencer);
+	InShowSequencer->Initialize(ID, GetOwner());
+	InShowSequencer->Play();
+	return ID;
 }
 
-void UShowSequencerComponent::StopShow(UShowSequencer* ShowSequencer)
+void UShowSequencerComponent::StopShow(int32 ID)
 {
-	checkf(ShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
+	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::StopShow: ID is invalid."), ID);
 
-	ShowSequencer->Stop();
-	ShowSequencers.RemoveAt(ShowSequencer->GetID());
+	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
+	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::StopShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
+
+	FoundShowSequencer->Stop();
+	FoundShowSequencer->Dispose();
 }
 
-void UShowSequencerComponent::PauseShow(UShowSequencer* ShowSequencer)
-{}
+void UShowSequencerComponent::DisposeShow(int32 ID)
+{
+	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::DisposeShow: ID is invalid."), ID);
 
-void UShowSequencerComponent::UnPauseShow(UShowSequencer* ShowSequencer)
-{}
+	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
+	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::DisposeShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
 
-void UShowSequencerComponent::ChangeSpeedShow(UShowSequencer* ShowSequencer, float Speed)
-{}
+	FoundShowSequencer->Dispose();
+	ShowSequencers.RemoveAt(ID);
+}
+
+void UShowSequencerComponent::PauseShow(int32 ID)
+{
+	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::PauseShow: ID is invalid."), ID);
+	
+	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
+	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::PauseShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
+
+	FoundShowSequencer->Pause();
+}
+
+void UShowSequencerComponent::UnPauseShow(int32 ID)
+{
+	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::UnPauseShow: ID is invalid."), ID);
+
+	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
+	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::UnPauseShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
+
+	FoundShowSequencer->UnPause();
+}
+
+void UShowSequencerComponent::ChangeSpeedShow(int32 ID, float Speed)
+{
+	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::ChangeSpeedShow: ID is invalid."), ID);
+
+	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
+	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::ChangeSpeedShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
+
+	FoundShowSequencer->ChangeSpeed(Speed);
+}

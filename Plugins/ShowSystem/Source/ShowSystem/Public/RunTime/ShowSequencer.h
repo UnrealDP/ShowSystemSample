@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "RunTime/ShowBase.h"
 #include "InstancedStruct.h"
 #include "ShowSequencer.generated.h"
 
@@ -63,6 +62,12 @@ public:
         ID = InID;
         Owner = InOwner;
     }
+    void Dispose()
+    {
+        ID = -1;
+        Owner = nullptr;
+        ClearShowObjects();
+    }
     void Tick(float DeltaTime);
 
     EShowSequencerState GetShowSequencerState() const { return ShowSequencerState; }
@@ -73,7 +78,7 @@ public:
 
 private:
     void GenerateShowBase();
-    UShowBase* CreateShowObject(const FShowKey& InShowKey);
+    class UShowBase* CreateShowObject(const struct FShowKey& InShowKey);
     void ClearShowObjects();
 
 private:

@@ -9,13 +9,18 @@
 
 void UObjectPoolManager::Initialize(FSubsystemCollectionBase& Collection)
 {
-    Super::Initialize(Collection);
-
     if (bIsInitialized)
     {
         UE_LOG(LogTemp, Warning, TEXT("UObjectPoolManager::Initialize called again, skipping as it is already initialized."));
         return;
     }
+    ON_SCOPE_EXIT
+    {
+        bIsInitialized = true;
+    };
+
+    Super::Initialize(Collection);
+    
 
     // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
     FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
@@ -41,8 +46,7 @@ void UObjectPoolManager::Initialize(FSubsystemCollectionBase& Collection)
     // 풀 설정을 초기화
     InitializePoolSettings(AssetPath);
 
-    bIsInitialized = true;
-    UE_LOG(LogTemp, Warning, TEXT("UObjectPoolManager Initialized successfully."));
+    UE_LOG(LogTemp, Log, TEXT("UObjectPoolManager Initialized successfully."));
 }
 
 void UObjectPoolManager::Deinitialize()
@@ -65,7 +69,7 @@ void UObjectPoolManager::Deinitialize()
     PoolSettings.Empty();
 
     Super::Deinitialize();
-    UE_LOG(LogTemp, Warning, TEXT("UObjectPoolManager: Object pool cleaned up."));
+    UE_LOG(LogTemp, Log, TEXT("UObjectPoolManager: Object pool cleaned up."));
 }
 
 void UObjectPoolManager::InitializePoolSettings(FString AssetPath)

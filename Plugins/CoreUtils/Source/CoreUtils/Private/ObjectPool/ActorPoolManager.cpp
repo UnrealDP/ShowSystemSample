@@ -9,13 +9,17 @@
 
 void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
 {
-    Super::Initialize(Collection);
-
     if (bIsInitialized)
     {
         UE_LOG(LogTemp, Warning, TEXT("UActorPoolManager::Initialize called again, skipping as it is already initialized."));
         return;
     }
+    ON_SCOPE_EXIT
+    {
+        bIsInitialized = true;
+    };
+
+    Super::Initialize(Collection);
 
     // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
     FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
@@ -41,8 +45,7 @@ void UActorPoolManager::Initialize(FSubsystemCollectionBase& Collection)
     // 풀 설정을 초기화
     InitializePoolSettings(AssetPath);
 
-    bIsInitialized = true;
-    UE_LOG(LogTemp, Warning, TEXT("UActorPoolManager Initialized successfully."));
+    UE_LOG(LogTemp, Log, TEXT("UActorPoolManager Initialized successfully."));
 }
 
 void UActorPoolManager::Deinitialize()
@@ -65,7 +68,7 @@ void UActorPoolManager::Deinitialize()
     PoolSettings.Empty();
 
     Super::Deinitialize();
-    UE_LOG(LogTemp, Warning, TEXT("UActorPoolManager: Actor pool cleaned up."));
+    UE_LOG(LogTemp, Log, TEXT("UActorPoolManager: Actor pool cleaned up."));
 }
 
 void UActorPoolManager::InitializePoolSettings(FString AssetPath)

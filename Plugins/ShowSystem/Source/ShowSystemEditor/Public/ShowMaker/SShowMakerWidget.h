@@ -49,4 +49,7 @@ private:
 	TObjectPtr<UShowSequencer> EditShowSequencer;
 	TObjectPtr<UWorld> LoadedWorld;
 	TObjectPtr<USkeletalMesh> LoadedSkeletalMesh;
+
+	AActor* Actor;
+	class UShowPlayer* ShowPlayer;
 };

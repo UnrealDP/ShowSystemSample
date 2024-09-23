@@ -18,13 +18,11 @@
 #include "Animation/DebugSkelMeshComponent.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
-void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArguments& InArgs, const TSharedRef<IPersonaPreviewScene>& InPreviewScene)
+void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArguments& InArgs)
 {
 	bSliderBeingDragged = false;
 	EditShowSequencer = InArgs._EditShowSequencer;
 	OnSetInputViewRange = InArgs._OnSetInputViewRange;
-
-	PreviewScenePtr = InPreviewScene;
 
 	this->ChildSlot
 		[
@@ -74,31 +72,6 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 FReply SShowSequencerScrubPanel::OnClick_Forward_Step()
 {
-	UDebugSkelMeshComponent* SMC = GetPreviewScene()->GetPreviewMeshComponent();
-
-	if (UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance())
-	{
-		bool bShouldStepCloth = FMath::Abs(PreviewInstance->GetLength() - PreviewInstance->GetCurrentTime()) > SMALL_NUMBER;
-
-		PreviewInstance->SetPlaying(false);
-		PreviewInstance->StepForward();
-
-		if (SMC && bShouldStepCloth)
-		{
-			SMC->bPerformSingleClothingTick = true;
-		}
-	}
-	else if (SMC)
-	{
-		// BlendSpaces and Animation Blueprints combine animations so there's no such thing as a frame. However, 1/30 is a sensible/common rate.
-		const float FixedFrameRate = 30.0f;
-
-		// Advance a single frame, leaving it paused afterwards
-		SMC->GlobalAnimRateScale = 1.0f;
-		GetPreviewScene()->Tick(1.0f / FixedFrameRate);
-		SMC->GlobalAnimRateScale = 0.0f;
-	}
-
 	return FReply::Handled();
 }
 
@@ -116,20 +89,6 @@ FReply SShowSequencerScrubPanel::OnClick_Forward_End()
 
 FReply SShowSequencerScrubPanel::OnClick_Backward_Step()
 {
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	UDebugSkelMeshComponent* SMC = GetPreviewScene()->GetPreviewMeshComponent();
-	if (PreviewInstance)
-	{
-		bool bShouldStepCloth = PreviewInstance->GetCurrentTime() > SMALL_NUMBER;
-
-		PreviewInstance->SetPlaying(false);
-		PreviewInstance->StepBackward();
-
-		if (SMC && bShouldStepCloth)
-		{
-			SMC->bPerformSingleClothingTick = true;
-		}
-	}
 	return FReply::Handled();
 }
 
@@ -146,51 +105,6 @@ FReply SShowSequencerScrubPanel::OnClick_Backward_End()
 
 FReply SShowSequencerScrubPanel::OnClick_Forward()
 {
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	UDebugSkelMeshComponent* SMC = GetPreviewScene()->GetPreviewMeshComponent();
-
-	if (PreviewInstance)
-	{
-		bool bIsReverse = PreviewInstance->IsReverse();
-		bool bIsPlaying = PreviewInstance->IsPlaying();
-		// if current bIsReverse and bIsPlaying, we'd like to just turn off reverse
-		if (bIsReverse && bIsPlaying)
-		{
-			PreviewInstance->SetReverse(false);
-		}
-		// already playing, simply pause
-		else if (bIsPlaying)
-		{
-			PreviewInstance->SetPlaying(false);
-
-			if (SMC && SMC->bPauseClothingSimulationWithAnim)
-			{
-				SMC->SuspendClothingSimulation();
-			}
-		}
-		// if not playing, play forward
-		else
-		{
-			//if we're at the end of the animation, jump back to the beginning before playing
-			if (GetScrubValue() >= GetSequenceLength())
-			{
-				PreviewInstance->SetPosition(0.0f, false);
-			}
-
-			PreviewInstance->SetReverse(false);
-			PreviewInstance->SetPlaying(true);
-
-			if (SMC && SMC->bPauseClothingSimulationWithAnim)
-			{
-				SMC->ResumeClothingSimulation();
-			}
-		}
-	}
-	else if (SMC)
-	{
-		SMC->GlobalAnimRateScale = (SMC->GlobalAnimRateScale > 0.0f) ? 0.0f : 1.0f;
-	}
-
 	return FReply::Handled();
 }
 
@@ -251,19 +165,6 @@ bool SShowSequencerScrubPanel::IsLoopStatusOn() const
 
 EPlaybackMode::Type SShowSequencerScrubPanel::GetPlaybackMode() const
 {
-	if (UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance())
-	{
-		if (PreviewInstance->IsPlaying())
-		{
-			return PreviewInstance->IsReverse() ? EPlaybackMode::PlayingReverse : EPlaybackMode::PlayingForward;
-		}
-		return EPlaybackMode::Stopped;
-	}
-	else if (UDebugSkelMeshComponent* SMC = GetPreviewScene()->GetPreviewMeshComponent())
-	{
-		return (SMC->GlobalAnimRateScale > 0.0f) ? EPlaybackMode::PlayingForward : EPlaybackMode::Stopped;
-	}
-
 	return EPlaybackMode::Stopped;
 }
 
@@ -385,16 +286,11 @@ bool SShowSequencerScrubPanel::DoesSyncViewport() const
 
 void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
-	if (bSliderBeingDragged)
-	{
-		GetPreviewScene()->InvalidateViews();
-	}
 }
 
 class UAnimSingleNodeInstance* SShowSequencerScrubPanel::GetPreviewInstance() const
 {
-	UDebugSkelMeshComponent* PreviewMeshComponent = GetPreviewScene()->GetPreviewMeshComponent();
-	return PreviewMeshComponent && PreviewMeshComponent->IsPreviewOn() ? PreviewMeshComponent->PreviewInstance : nullptr;
+	return nullptr;
 }
 
 float SShowSequencerScrubPanel::GetScrubValue() const

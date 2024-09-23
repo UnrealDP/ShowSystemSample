@@ -6,6 +6,7 @@
 #include "ObjectPool/Pooled.h"
 #include "UObject/NoExportTypes.h"
 #include "RunTime/ShowSystem.h"
+#include "RunTime/ShowSequencer.h"
 #include "ShowBase.generated.h"
 
 UENUM(BlueprintType)
@@ -57,10 +58,10 @@ public:
     void InitShowKey(const FShowKey& InShowKey)
     {
         ShowKey = TSharedPtr<const FShowKey>(&InShowKey);
-        Initialize();
+        Initialize(InShowKey);
     }
 
-    virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
+    virtual void Initialize(const FShowKey& InShowKey) PURE_VIRTUAL(UShowBase::Initialize, );
     virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );
     virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
     virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
@@ -88,11 +89,17 @@ public:
         return ShowKey->StartTime >= InPassedTime;
     }
 
+protected:
+    AActor* GetOwner() const
+    {
+        return ShowSequencer->GetOwner();
+    }
+
 private:
     virtual void Tick(float DeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
 
 private:
-    TObjectPtr<class UShowSequencer> ShowSequencer;
+    TObjectPtr<UShowSequencer> ShowSequencer;
     TSharedPtr<const FShowKey> ShowKey;
     EShowKeyState ShowKeyState = EShowKeyState::ShowKey_Wait;
 

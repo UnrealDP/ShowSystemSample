@@ -5,24 +5,28 @@
 #include "RunTime/ShowSequencer.h"
 #include "RunTime/ShowSequencerComponent.h"
 
-bool UShowPlayer::ShouldCreateSubsystem(UObject* Outer) const { return true; }
-
 /** Implement this for initialization of instances of the system */
 void UShowPlayer::Initialize(FSubsystemCollectionBase& Collection)
 {
-    Initialized = false;
+    if (Initialized)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UShowPlayer::Initialize called again, skipping as it is already initialized."));
+        return;
+    }
     ON_SCOPE_EXIT
     {
         Initialized = true;
     };
 
-    UGameInstanceSubsystem::Initialize(Collection);
+    Super::Initialize(Collection);
+    UE_LOG(LogTemp, Log, TEXT("UShowPlayer Initialized successfully."));
 }
 
 /** Implement this for deinitialization of instances of the system */
 void UShowPlayer::Deinitialize()
 {
-    UGameInstanceSubsystem::Deinitialize();
+    Super::Deinitialize();
+    UE_LOG(LogTemp, Log, TEXT("UShowPlayer: Object pool cleaned up."));
 }
 
 void UShowPlayer::Tick(float DeltaTime)
@@ -31,10 +35,6 @@ void UShowPlayer::Tick(float DeltaTime)
     {
         return;
     }
-
-    double T = FApp::GetCurrentTime();
-    UE_LOG(LogTemp, Warning, TEXT("Tick running with current time: %f, delta time: %f, frame: %d"),
-        T, DeltaTime, GFrameCounter);
 }
 
 void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
@@ -50,21 +50,20 @@ void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
         ShowSequencerComponent = NewObject<UShowSequencerComponent>(Owner);
         if (ShowSequencerComponent)
         {
-            ShowSequencerComponent->RegisterComponent();
             Owner->AddInstanceComponent(ShowSequencerComponent);
+            ShowSequencerComponent->RegisterComponent();
         }
     }
 
     ShowSequencerComponent->PlayShow(ShowSequencer);
 }
 
-void UShowPlayer::StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
+void UShowPlayer::StopSoloShow(AActor* Owner, int32 ID)
 {
     checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
-    checkf(ShowSequencer, TEXT("UShowPlayer::StopSoloShow: The ShowSequencer provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
-    checkf(ShowSequencer, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
 
-    ShowSequencerComponent->StopShow(ShowSequencer);
+    ShowSequencerComponent->StopShow(ID);
 }

@@ -26,19 +26,22 @@ public:
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void PlayShow(class UShowSequencer* ShowSequencer);
+    int32 PlayShow(class UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void StopShow(UShowSequencer* ShowSequencer);
+    void StopShow(int32 ID);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void PauseShow(UShowSequencer* ShowSequencer);
+    void DisposeShow(int32 ID);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void UnPauseShow(UShowSequencer* ShowSequencer);
+    void PauseShow(int32 ID);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void ChangeSpeedShow(UShowSequencer* ShowSequencer, float Speed);
+    void UnPauseShow(int32 ID);
+
+    UFUNCTION(BlueprintCallable, Category = "Show")
+    void ChangeSpeedShow(int32 ID, float Speed);
 
 private:
     bool bIsPlaying = true;

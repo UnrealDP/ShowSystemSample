@@ -34,7 +34,7 @@ public:
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
-	void Construct(const FArguments& InArgs, const TSharedRef<IPersonaPreviewScene>& InPreviewScene);
+	void Construct(const FArguments& InArgs);
 
 	// SWidget interface
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
@@ -42,7 +42,6 @@ public:
 
 	void ReplaceLockedSequence(class UShowSequencer* ShowSequencer);
 protected:
-	TWeakPtr<IPersonaPreviewScene> PreviewScenePtr;
 	FOnSetInputViewRange OnSetInputViewRange;
 
 	bool bSliderBeingDragged;
@@ -100,8 +99,6 @@ protected:
 
 	// Returns the debug data if the current preview is of an anim blueprint that is the selected debug object, or NULL
 	bool GetAnimBlueprintDebugData(UAnimInstance*& Instance, FAnimBlueprintDebugData*& DebugInfo) const;
-
-	TSharedRef<IPersonaPreviewScene> GetPreviewScene() const { return PreviewScenePtr.Pin().ToSharedRef(); }
 
 	bool GetDisplayDrag() const;	
 };
