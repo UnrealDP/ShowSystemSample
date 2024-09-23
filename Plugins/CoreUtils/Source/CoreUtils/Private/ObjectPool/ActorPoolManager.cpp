@@ -99,8 +99,35 @@ void UActorPoolManager::InitializePoolSettings(FString AssetPath)
     }
 }
 
+void UActorPoolManager::ReturnPooledObject(AActor* Object, EActorPoolType ActorType)
+{
+    EnsurePoolsInitialized(ActorType);
+
+    int32 Index = static_cast<int32>(ActorType);
+    Object->SetActorHiddenInGame(true);  // 객체 비활성화
+
+    // Object가 PoolSettings[Index].ActorClass 의 인스턴스인지 확인
+    checkf(Object->IsA(PoolSettings[Index].ActorClass),
+        TEXT("The pooled Object is not an instance of the expected class type."));
+
+    // 객체가 IPooled 인터페이스를 구현했는지 확인
+    checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
+        TEXT("The pooled actor does not implement the IPooled interface."));
+
+    IPooled* PooledInterface = Cast<IPooled>(Object);
+    if (PooledInterface)
+    {
+        PooledInterface->OnReturnedToPool();
+    }
+
+    ActorPools[Index].Add(Object);  // 풀에 객체를 다시 추가
+}
+
 // 액터의 스폰 파라미터를 업데이트하는 메서드
 // 여기는 추후 사용하게 되면 필히 수정이 필요함
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// IPooled -> 이거를 actor 전용 만들어서 처리해야 할 것이라고 예상됨
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 void UActorPoolManager::UpdateSpawnParameters(AActor* Actor, const FActorSpawnParameters& SpawnParameters)
 {
     if (!Actor)

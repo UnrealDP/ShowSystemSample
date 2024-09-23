@@ -98,3 +98,26 @@ void UObjectPoolManager::InitializePoolSettings(FString AssetPath)
         UE_LOG(LogTemp, Error, TEXT("Failed to load the pool settings data asset."));
     }
 }
+
+void UObjectPoolManager::ReturnPooledObject(UObject* Object, EObjectPoolType ObjectType)
+{
+    EnsurePoolsInitialized(ObjectType);
+
+    int32 Index = static_cast<int32>(ObjectType);
+
+    // Object가 PoolSettings[Index].ObjectClass 의 인스턴스인지 확인
+    checkf(Object->IsA(PoolSettings[Index].ObjectClass),
+        TEXT("The pooled Object is not an instance of the expected class type."));
+
+    // 객체가 IPooled 인터페이스를 구현했는지 확인
+    checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
+        TEXT("The pooled Object does not implement the IPooled interface."));
+
+    IPooled* PooledInterface = Cast<IPooled>(Object);
+    if (PooledInterface)
+    {
+        PooledInterface->OnReturnedToPool();
+    }
+
+    ObjectPools[Index].Add(Object);  // 풀에 객체를 다시 추가
+}

@@ -45,6 +45,8 @@ void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
     if (!ShowSequencerComponent)
     {
+        UE_LOG(LogTemp, Warning, TEXT("UShowPlayer::PlaySoloShow add UShowSequencerComponent"));
+
         ShowSequencerComponent = NewObject<UShowSequencerComponent>(Owner);
         if (ShowSequencerComponent)
         {

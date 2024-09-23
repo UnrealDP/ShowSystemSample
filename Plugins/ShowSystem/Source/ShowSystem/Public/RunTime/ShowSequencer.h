@@ -58,6 +58,11 @@ public:
     AActor* GetOwner() { return Owner.Get(); }
     // end of setter getter
 
+    void Initialize(int InID, AActor* InOwner) 
+    {
+        ID = InID;
+        Owner = InOwner;
+    }
     void Tick(float DeltaTime);
 
     EShowSequencerState GetShowSequencerState() const { return ShowSequencerState; }
@@ -67,7 +72,9 @@ public:
     bool IsEnd() const { return ShowSequencerState == EShowSequencerState::ShowSequencer_End; }
 
 private:
+    void GenerateShowBase();
     UShowBase* CreateShowObject(const FShowKey& InShowKey);
+    void ClearShowObjects();
 
 private:
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;

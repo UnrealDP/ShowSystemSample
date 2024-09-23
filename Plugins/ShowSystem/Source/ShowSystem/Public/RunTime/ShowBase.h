@@ -72,6 +72,11 @@ public:
         Tick(DeltaTime, PassedTime);
     }
 
+    EShowKeyType GetKeyType() const 
+    { 
+        checkf(ShowKey, TEXT("UShowBase::IsPassed: The ShowKey provided is invalid or null."));
+        return ShowKey->KeyType; 
+    }
     EShowKeyState GetShowKeyState() const { return ShowKeyState; }
     bool IsWait() const { return ShowKeyState == EShowKeyState::ShowKey_Wait; }
     bool IsPlaying() const { return ShowKeyState == EShowKeyState::ShowKey_Playing; }

@@ -39,16 +39,15 @@ void UShowSequencerComponent::PlayShow(UShowSequencer* ShowSequencer)
 	checkf(ShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
 
 	int32 ID = ShowSequencers.Add(ShowSequencer);
-	ShowSequencer->SetOwner(GetOwner());
-	ShowSequencer->SetID(ID);
+	ShowSequencer->Initialize(ID, GetOwner());
+	ShowSequencer->Play();
 }
 
 void UShowSequencerComponent::StopShow(UShowSequencer* ShowSequencer)
 {
 	checkf(ShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
 
-	ShowSequencer->ClearID();
-	ShowSequencer->ClearOwner();
+	ShowSequencer->Stop();
 	ShowSequencers.RemoveAt(ShowSequencer->GetID());
 }
 

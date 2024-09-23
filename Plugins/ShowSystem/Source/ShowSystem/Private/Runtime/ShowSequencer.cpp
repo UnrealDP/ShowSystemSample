@@ -7,10 +7,26 @@
 
 UShowSequencer::UShowSequencer()
 {
-    for (const FInstancedStruct Key : ShowKeys)
+    GenerateShowBase();
+}
+
+void UShowSequencer::GenerateShowBase()
+{
+    RuntimeShowKeys.SetNum(ShowKeys.Num());
+    for (int32 i = 0; i < ShowKeys.Num(); ++i)
     {
-        // FShowKey 타입에 따라 UShowKey 인스턴스 생성
-        // RuntimeShowKeys에 추가
+        const FInstancedStruct& Key = ShowKeys[i];
+
+        checkf(Key.GetScriptStruct() == FShowKey::StaticStruct(), TEXT("UShowSequencer::GenerateShowBase: not FShowKey."));
+
+        const FShowKey* ShowKey = Key.GetPtr<FShowKey>();
+        if (!ShowKey)
+        {
+            continue;
+        }
+
+        UShowBase* ShowBase = CreateShowObject(*ShowKey);
+        RuntimeShowKeys[i] = ShowBase;
     }
 }
 
@@ -23,8 +39,22 @@ UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
     return ShowBase;
 }
 
+void UShowSequencer::ClearShowObjects()
+{
+    UObjectPoolManager* PoolManager = GetWorld()->GetSubsystem<UObjectPoolManager>();
+    for (TObjectPtr<UShowBase> showBase : RuntimeShowKeys)
+    {
+        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(showBase->GetKeyType());
+        PoolManager->ReturnPooledObject(showBase, PoolType);
+    }
+    RuntimeShowKeys.Empty();
+}
+
 void UShowSequencer::Play()
 {
+    checkf(ID >= 0, TEXT("UShowSequencer::Play: ID is invalid [ %d ]"), ID);
+    checkf(Owner, TEXT("UShowSequencer::Play: Owner is invalid"));
+
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
     PassedTime = 0.0f;
 }
@@ -32,6 +62,9 @@ void UShowSequencer::Play()
 void UShowSequencer::Stop()
 {
     ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+
+    ClearID();
+    ClearOwner();
 }
 
 void UShowSequencer::Pause()
@@ -55,12 +88,17 @@ void UShowSequencer::Tick(float DeltaTime)
     {
         PassedTime += DeltaTime;
 
-        int endCount = 0;
+        bool bIsAllEnd = true;
         for (TObjectPtr<UShowBase> showBase : RuntimeShowKeys)
         {
             if (!showBase)
             {
                 continue;
+            }
+
+            if (bIsAllEnd && !showBase->IsEnd())
+            {
+                bIsAllEnd = false;
             }
 
             if (showBase->IsWait())
@@ -74,15 +112,16 @@ void UShowSequencer::Tick(float DeltaTime)
 			{
 				showBase->Tick(DeltaTime);
 			}
-			else if (showBase->IsEnd())
-			{
-				endCount++;
-			}
         }
         
-        if (endCount == RuntimeShowKeys.Num())
+        // IsEnd() 에서 바로 Object Pool로 반환안하는 이유는
+        // UShowSequencer 같은 경우는 그다지 길지 않은 연출에 사용하는데
+        // Object Pool로 반환하고 TArray<TObjectPtr<UShowBase>> RuntimeShowKeys 에서 remove를 하는 것은
+        // 메모리 이동이 너무 자주 발생할 것이기에 모든 키가 끝났을 때 한번에 반환하도록 함
+        if (bIsAllEnd)
 		{
 			ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+            ClearShowObjects();
 		}
     }
 }

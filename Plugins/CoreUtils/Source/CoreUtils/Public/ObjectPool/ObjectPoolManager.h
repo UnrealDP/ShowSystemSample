@@ -58,29 +58,7 @@ public:
     }
 
     // 객체를 풀로 반환하는 메서드
-    template <typename T>
-    void ReturnPooledObject(T* Object, EObjectPoolType ObjectType)
-    {
-        EnsurePoolsInitialized(ObjectType);
-
-        int32 Index = static_cast<int32>(ObjectType);
-
-        // Object가 PoolSettings[Index].ObjectClass 의 인스턴스인지 확인
-        checkf(Object->IsA(PoolSettings[Index].ObjectClass),
-            TEXT("The pooled Object is not an instance of the expected class type."));
-
-        // 객체가 IPooled 인터페이스를 구현했는지 확인
-        checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
-            TEXT("The pooled Object does not implement the IPooled interface."));
-
-        IPooled* PooledInterface = Cast<IPooled>(Object);
-        if (PooledInterface)
-        {
-            PooledInterface->OnReturnedToPool();
-        }
-
-        ObjectPools[Index].Add(Object);  // 풀에 객체를 다시 추가
-    }
+    void ReturnPooledObject(UObject* Object, EObjectPoolType ObjectType);
 
 private:
     inline void EnsurePoolsInitialized(EObjectPoolType ObjectType)
@@ -109,7 +87,7 @@ private:
 
         for (int32 i = 0; i < ReservedObjectCount; i++)
         {
-            T* Object = NewObject<T>(PoolSettings[Index].ObjectClass);  // UObject를 직접 생성
+            T* Object = NewObject<T>();  // UObject를 직접 생성
             if (Object)
             {
                 ObjectPools[Index].Add(Object);

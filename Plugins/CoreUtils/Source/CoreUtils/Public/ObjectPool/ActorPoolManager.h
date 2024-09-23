@@ -86,30 +86,7 @@ public:
     }
 
     // 객체를 풀로 반환하는 메서드
-    template <typename T>
-    void ReturnPooledObject(T* Object, EActorPoolType ActorType)
-    {
-        EnsurePoolsInitialized(ActorType);
-
-        int32 Index = static_cast<int32>(ActorType);
-        Object->SetActorHiddenInGame(true);  // 객체 비활성화
-
-        // Object가 PoolSettings[Index].ActorClass 의 인스턴스인지 확인
-        checkf(Object->IsA(PoolSettings[Index].ActorClass),
-            TEXT("The pooled Object is not an instance of the expected class type."));
-
-        // 객체가 IPooled 인터페이스를 구현했는지 확인
-        checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
-            TEXT("The pooled actor does not implement the IPooled interface."));
-
-        IPooled* PooledInterface = Cast<IPooled>(Object);
-        if (PooledInterface)
-        {
-            PooledInterface->OnReturnedToPool();
-        }
-
-        ActorPools[Index].Add(Object);  // 풀에 객체를 다시 추가
-    }
+    void ReturnPooledObject(AActor* Object, EActorPoolType ActorType);
 
 private:
     inline void EnsurePoolsInitialized(EActorPoolType ActorType)
