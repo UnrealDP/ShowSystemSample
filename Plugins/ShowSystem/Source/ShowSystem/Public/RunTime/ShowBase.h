@@ -57,6 +57,10 @@ public:
 
     void InitShowKey(const FShowKey& InShowKey)
     {
+        if (ShowKey.IsValid())
+        {
+            ShowKey.Reset();
+        }
         ShowKey = TSharedPtr<const FShowKey>(&InShowKey);
         Initialize(InShowKey);
     }
@@ -100,7 +104,10 @@ private:
 
 private:
     TObjectPtr<UShowSequencer> ShowSequencer;
+
+    // ShowSequencer 어셋으로 받아온거라 절대 편집하면 안됨, 편집은 오로지 툴에서만 가능함
     TSharedPtr<const FShowKey> ShowKey;
+
     EShowKeyState ShowKeyState = EShowKeyState::ShowKey_Wait;
 
     float PassedTime = 0.0f;

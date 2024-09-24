@@ -28,3 +28,4 @@ public:
 	// 객체가 풀로 반환될 때 호출됨
 	virtual void OnReturnedToPool() = 0;
 };
+
