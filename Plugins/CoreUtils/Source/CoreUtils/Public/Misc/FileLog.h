@@ -8,13 +8,10 @@
 
 #define UE_FILE_LOG(ClassType, Verbosity, Format, ...) \
 { \
-    if (UGameInstance* GameInstance = GEngine->GetGameInstance()) \
+    if (ULogSubsystem* LogSubsystem = GEngine->GetEngineSubsystem<ULogSubsystem>()) \
     { \
-        if (ULogSubsystem* LogSubsystem = GameInstance->GetSubsystem<ULogSubsystem>()) \
-        { \
-            FString TempStr = FString::Printf(Format, ##__VA_ARGS__); \
-            LogSubsystem->LogToFile(ClassType, *TempStr); \
-        } \
+        FString TempStr = FString::Printf(Format, ##__VA_ARGS__); \
+        LogSubsystem->LogToFile(ClassType, *TempStr); \
     } \
 }
 
@@ -55,7 +52,11 @@ class COREUTILS_API UFileLog : public UEngineSubsystem
 	GENERATED_BODY()
 	
 public:
-    virtual bool ShouldCreateSubsystem(UObject* Outer) const override { return true; }
+    virtual bool ShouldCreateSubsystem(UObject* Outer) const override 
+    { 
+        // 여기서 return false; 하면 subsystem 자체를 생성하지 않고 로그도 안남음
+        return true; 
+    }
 
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 

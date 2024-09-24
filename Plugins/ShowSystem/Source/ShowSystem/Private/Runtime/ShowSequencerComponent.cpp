@@ -52,7 +52,11 @@ void UShowSequencerComponent::StopShow(int32 ID)
 	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::StopShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
 
 	FoundShowSequencer->Stop();
-	FoundShowSequencer->Dispose();
+	// FoundShowSequencer->Dispose(); 를 안하는 이유는 Stop은 다시 재생할 수도 있음
+	// 완전히 삭제하고 싶으면 DisposeShow를 사용해야함
+	// 특히나 자주 사용되는 Show 같은 경우에는 DontDestroy를 사용하여 DisposeShow를 사용하지 않는 것이 좋음
+	FoundShowSequencer->ClearID();
+	FoundShowSequencer->ClearOwner();
 }
 
 void UShowSequencerComponent::DisposeShow(int32 ID)

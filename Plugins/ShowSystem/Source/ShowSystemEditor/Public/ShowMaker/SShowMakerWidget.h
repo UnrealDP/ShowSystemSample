@@ -50,6 +50,8 @@ private:
 	TObjectPtr<UWorld> LoadedWorld;
 	TObjectPtr<USkeletalMesh> LoadedSkeletalMesh;
 
+	TSharedPtr<class FShowSequencerEditorHelper> EditorHelper;
+
 	AActor* Actor;
 	class UShowPlayer* ShowPlayer;
 };

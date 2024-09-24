@@ -8,10 +8,13 @@
 #include "IContentBrowserSingleton.h"
 #include "Misc/PathsUtil.h"
 #include "RunTime/ShowPlayer.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
 {
+    EditorHelper = MakeShared<FShowSequencerEditorHelper>();
+
     EditShowSequencer = InArgs._EditShowSequencer;
 
     FMenuBarBuilder MenuBarBuilder(nullptr);
@@ -83,6 +86,7 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     if (Actor && EditShowSequencer)
     {
         ShowPlayer->PlaySoloShow(Actor, EditShowSequencer);
+        EditorHelper->SetShowSequencerEditor(EditShowSequencer);
     }
 }
 

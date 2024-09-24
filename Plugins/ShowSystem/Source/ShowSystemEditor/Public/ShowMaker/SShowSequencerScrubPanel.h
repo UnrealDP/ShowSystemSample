@@ -17,7 +17,6 @@ class SHOWSYSTEMEDITOR_API SShowSequencerScrubPanel : public SCompoundWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SShowSequencerScrubPanel)
-		: _EditShowSequencer()
 		{}
 		/** If you'd like to lock to one asset for this scrub control, give this**/
 		SLATE_ARGUMENT(class UShowSequencer*, EditShowSequencer)

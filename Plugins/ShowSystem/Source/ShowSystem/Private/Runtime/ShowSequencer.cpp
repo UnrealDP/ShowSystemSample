@@ -124,7 +124,7 @@ void UShowSequencer::Tick(float DeltaTime)
         // UShowSequencer 같은 경우는 그다지 길지 않은 연출에 사용하는데
         // Object Pool로 반환하고 TArray<TObjectPtr<UShowBase>> RuntimeShowKeys 에서 remove를 하는 것은
         // 메모리 이동이 너무 자주 발생할 것이기에 모든 키가 끝났을 때 한번에 반환하도록 함
-        if (bIsAllEnd)
+        if (bIsAllEnd && !bIsDontDestroy)
 		{
 			ShowSequencerState = EShowSequencerState::ShowSequencer_End;
             ClearShowObjects();

@@ -55,6 +55,9 @@ public:
     void SetOwner(AActor* InOwner) { Owner = InOwner; }
     void ClearOwner() { Owner = nullptr; }
     AActor* GetOwner() { return Owner.Get(); }
+
+    void SetDontDestroy() { bIsDontDestroy = true; }
+    void ReleaseDontDestroy() { bIsDontDestroy = false; }
     // end of setter getter
 
     void Initialize(int InID, AActor* InOwner) 
@@ -82,6 +85,7 @@ private:
     void ClearShowObjects();
 
 private:
+    bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
     float PassedTime = 0.0f;
     int ID = -1;
