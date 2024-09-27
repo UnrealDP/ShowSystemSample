@@ -5,7 +5,9 @@
 #include "ShowSequencerCustomization.h"
 #include "ShowMaker/SShowMakerWidget.h"
 #include "Editor.h"
-#include "PersonaModule.h"
+#include "AssetTypeActions_AnimContainer.h"
+#include "AnimContainerFactory.h"
+
 
 DEFINE_LOG_CATEGORY(ShowSystemEditor);
 
@@ -13,7 +15,7 @@ DEFINE_LOG_CATEGORY(ShowSystemEditor);
 
 void FShowSystemEditor::StartupModule()
 {
-	UE_LOG(ShowSystemEditor, Warning, TEXT("ShowSystemEditor module has been loaded"));
+	UE_LOG(ShowSystemEditor, Log, TEXT("ShowSystemEditor module has been loaded"));
 
 	// 에디터에서 Asset Tools 모듈 로드 -----------------------------------------------------------------------------------------------------------------------------
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
@@ -24,10 +26,7 @@ void FShowSystemEditor::StartupModule()
 	// ShowSequencer 액션 등록
 	TSharedRef<IAssetTypeActions> ShowSequencerAction = MakeShareable(new FAssetTypeActions_ShowSequencer(ShowSystemAssetCategory));
 	AssetTools.RegisterAssetTypeActions(ShowSequencerAction);
-	RegisteredAssetTypeActions.Add(ShowSequencerAction);	
-
-
-
+	RegisteredAssetTypeActions.Add(ShowSequencerAction);
 
 
 	// PropertyEditor 모듈을 로드하여 커스터마이저를 등록
@@ -47,14 +46,10 @@ void FShowSystemEditor::StartupModule()
 
 	//FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
 
-
-
-
-
-	if (FModuleManager::Get().IsModuleLoaded("Persona"))
-	{
-		FModuleManager::LoadModuleChecked<FPersonaModule>("Persona");
-	}
+	
+	TSharedRef<IAssetTypeActions> AnimContainerAction = MakeShareable(new FAssetTypeActions_AnimContainer(ShowSystemAssetCategory));
+	AssetTools.RegisterAssetTypeActions(AnimContainerAction);
+	RegisteredAssetTypeActions.Add(AnimContainerAction);
 
 
 	AddMenuExtension();
@@ -73,6 +68,7 @@ void FShowSystemEditor::ShutdownModule()
 				AssetTools.UnregisterAssetTypeActions(Action.ToSharedRef());
 			}
 		}
+		RegisteredAssetTypeActions.Empty();
 	}
 
 	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
@@ -83,7 +79,7 @@ void FShowSystemEditor::ShutdownModule()
 
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner("ShowMakerTab");
 
-	UE_LOG(ShowSystemEditor, Warning, TEXT("ShowSystemEditor module has been unloaded"));
+	UE_LOG(ShowSystemEditor, Log, TEXT("ShowSystemEditor module has been unloaded"));
 }
 
 TSharedRef<SDockTab> FShowSystemEditor::OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs)

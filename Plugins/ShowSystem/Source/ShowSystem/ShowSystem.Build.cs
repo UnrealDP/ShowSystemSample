@@ -48,6 +48,7 @@ public class ShowSystem : ModuleRules
 				"EditorInteractiveToolsFramework",
                 "AssetTools",
                 "CoreUtils",
+				"AnimGraphRuntime"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

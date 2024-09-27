@@ -17,7 +17,7 @@ struct FShowAnimStaticKey : public FShowKey
     }
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-    TSubclassOf<UAnimationAsset> AnimSequenceClass;
+    TSubclassOf<UAnimSequenceBase> AnimSequenceClass;
 };
 
 /**
@@ -42,5 +42,8 @@ private:
     }
 
 private:
-    TObjectPtr<UAnimationAsset> AnimationAsset;
+    const FShowAnimStaticKey* AnimStaticKeyPtr;
+
+    TObjectPtr<USkeletalMeshComponent> SkeletalMeshComp;
+    TObjectPtr<UAnimSequenceBase> AnimSequenceBase;
 };

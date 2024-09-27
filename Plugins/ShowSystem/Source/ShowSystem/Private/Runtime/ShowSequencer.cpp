@@ -120,14 +120,18 @@ void UShowSequencer::Tick(float DeltaTime)
 			}
         }
         
-        // IsEnd() 에서 바로 Object Pool로 반환안하는 이유는
+        // IsEnd() 에서 바로 Object Pool로 반환 안하는 이유 :
         // UShowSequencer 같은 경우는 그다지 길지 않은 연출에 사용하는데
         // Object Pool로 반환하고 TArray<TObjectPtr<UShowBase>> RuntimeShowKeys 에서 remove를 하는 것은
         // 메모리 이동이 너무 자주 발생할 것이기에 모든 키가 끝났을 때 한번에 반환하도록 함
-        if (bIsAllEnd && !bIsDontDestroy)
-		{
-			ShowSequencerState = EShowSequencerState::ShowSequencer_End;
-            ClearShowObjects();
-		}
+        // 물론 툴에서는 지속적으로 플레이 해보면서 확인 하기 때문에 FShowSequencerEditorHelper::SetShowSequencerEditor 여기서 DontDestroy 함
+        if (bIsAllEnd)
+        {
+            ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+            if (!bIsDontDestroy)
+            {
+                ClearShowObjects();
+            }
+        }
     }
 }

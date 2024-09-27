@@ -14,14 +14,14 @@
 #include "Animation/BlendSpace.h"
 #include "Animation/AnimData/IAnimationDataModel.h"
 #include "Animation/AnimSequenceHelpers.h"
-#include "RunTime/ShowSequencer.h"
 #include "Animation/DebugSkelMeshComponent.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArguments& InArgs)
 {
 	bSliderBeingDragged = false;
-	EditShowSequencer = InArgs._EditShowSequencer;
+	ShowSequencerEditorHelper = InArgs._ShowSequencerEditorHelper;
 	OnSetInputViewRange = InArgs._OnSetInputViewRange;
 
 	this->ChildSlot
@@ -105,25 +105,9 @@ FReply SShowSequencerScrubPanel::OnClick_Backward_End()
 
 FReply SShowSequencerScrubPanel::OnClick_Forward()
 {
-	if (EditShowSequencer)
+	if (ShowSequencerEditorHelper)
 	{
-		EShowSequencerState showSequencerState  = EditShowSequencer->GetShowSequencerState();
-		switch (showSequencerState)
-		{
-		case EShowSequencerState::ShowSequencer_Wait:
-			EditShowSequencer->Play();
-			break;
-		case EShowSequencerState::ShowSequencer_Playing:
-			break;
-		case EShowSequencerState::ShowSequencer_Pause:
-			EditShowSequencer->UnPause();
-			break;
-		case EShowSequencerState::ShowSequencer_End:
-			EditShowSequencer->Play();
-			break;
-		default:
-			break;
-		}
+		ShowSequencerEditorHelper->Play();
 	}
 
 	return FReply::Handled();
@@ -339,7 +323,6 @@ float SShowSequencerScrubPanel::GetScrubValue() const
 
 void SShowSequencerScrubPanel::ReplaceLockedSequence(UShowSequencer* InShowSequencer)
 {
-	EditShowSequencer = InShowSequencer;
 }
 
 UAnimInstance* SShowSequencerScrubPanel::GetAnimInstanceWithBlueprint() const

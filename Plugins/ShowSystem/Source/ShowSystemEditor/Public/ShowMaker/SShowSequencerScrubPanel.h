@@ -19,7 +19,7 @@ public:
 	SLATE_BEGIN_ARGS(SShowSequencerScrubPanel)
 		{}
 		/** If you'd like to lock to one asset for this scrub control, give this**/
-		SLATE_ARGUMENT(class UShowSequencer*, EditShowSequencer)
+		SLATE_ARGUMENT(TSharedPtr<class FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
 		/** View Input range **/
 		SLATE_ATTRIBUTE(float, ViewInputMin)
 		SLATE_ATTRIBUTE(float, ViewInputMax)
@@ -86,7 +86,7 @@ protected:
 	class UAnimSingleNodeInstance* GetPreviewInstance() const;
 
 	TSharedPtr<class SScrubControlPanel> ScrubControlPanel;
-	class UShowSequencer* EditShowSequencer;
+	TSharedPtr<class FShowSequencerEditorHelper> ShowSequencerEditorHelper;
 
 	/** Do I need to sync with viewport? **/
 	bool DoesSyncViewport() const;

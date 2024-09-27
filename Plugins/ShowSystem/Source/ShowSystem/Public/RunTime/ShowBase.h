@@ -26,13 +26,16 @@ struct FShowKey
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
-    EShowKeyType KeyType;
+    EShowKeyType KeyType = EShowKeyType::Max;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
     float StartTime = 0.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
     float Duration = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
+    bool IsLoop = false;
 };
 
 /**
@@ -102,7 +105,7 @@ protected:
 private:
     virtual void Tick(float DeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
 
-private:
+protected:
     TObjectPtr<UShowSequencer> ShowSequencer;
 
     // ShowSequencer 어셋으로 받아온거라 절대 편집하면 안됨, 편집은 오로지 툴에서만 가능함

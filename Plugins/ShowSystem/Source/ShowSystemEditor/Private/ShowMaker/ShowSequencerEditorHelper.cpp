@@ -25,3 +25,27 @@ void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequence
 	EditShowSequencer = Sequencer;
 	EditShowSequencer->SetDontDestroy();
 }
+
+void FShowSequencerEditorHelper::Play()
+{
+	if (EditShowSequencer)
+	{
+		EShowSequencerState showSequencerState = EditShowSequencer->GetShowSequencerState();
+		switch (showSequencerState)
+		{
+		case EShowSequencerState::ShowSequencer_Wait:
+			EditShowSequencer->Play();
+			break;
+		case EShowSequencerState::ShowSequencer_Playing:
+			break;
+		case EShowSequencerState::ShowSequencer_Pause:
+			EditShowSequencer->UnPause();
+			break;
+		case EShowSequencerState::ShowSequencer_End:
+			EditShowSequencer->Play();
+			break;
+		default:
+			break;
+		}
+	}
+}

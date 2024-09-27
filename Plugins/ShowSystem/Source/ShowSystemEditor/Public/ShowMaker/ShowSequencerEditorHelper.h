@@ -16,5 +16,7 @@ public:
 
 	void SetShowSequencerEditor(UShowSequencer* Sequencer);
 
+	void Play();
+
 	TObjectPtr<UShowSequencer> EditShowSequencer;
 };

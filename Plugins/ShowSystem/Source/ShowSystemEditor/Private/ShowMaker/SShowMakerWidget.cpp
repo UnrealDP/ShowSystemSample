@@ -56,7 +56,7 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
                 .AutoHeight()
                 [
                     SNew(SShowSequencerScrubPanel)
-                        .EditShowSequencer(EditShowSequencer)
+                        .ShowSequencerEditorHelper(EditorHelper)
                         .ViewInputMin(0.0f)
                         .ViewInputMax(100.0f)
                         .bDisplayAnimScrubBarEditing(true)
@@ -183,7 +183,7 @@ void SShowMakerWidget::OpenSkeletalMeshPicker()
     // 애셋 선택기 생성 설정
     FAssetPickerConfig AssetPickerConfig;
     // 스켈레탈 메쉬만 표시되도록 필터링 설정
-    AssetPickerConfig.Filter.ClassNames.Add(USkeletalMesh::StaticClass()->GetFName());
+    AssetPickerConfig.Filter.ClassPaths.Add(USkeletalMesh::StaticClass()->GetClassPathName());
     /*AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateLambda([](const FAssetData& AssetData) -> bool
         {
             return AssetData.GetClass()->IsChildOf(USkeletalMesh::StaticClass());
