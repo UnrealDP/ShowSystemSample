@@ -11,11 +11,11 @@ struct FActionBaseShowData : public FTableRowBase
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Show Data")
-	FSoftObjectPath CastShow;
+	FSoftObjectPath CastShow = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Show Data")
-	FSoftObjectPath ExecShow;
+	FSoftObjectPath ExecShow = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Show Data")
-	FSoftObjectPath FinishShow;
+	FSoftObjectPath FinishShow = nullptr;
 };

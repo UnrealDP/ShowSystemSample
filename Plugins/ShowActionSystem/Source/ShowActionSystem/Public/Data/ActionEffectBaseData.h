@@ -11,5 +11,5 @@ struct FActionEffectBaseData : public FTableRowBase
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Effect Base Data")
-	FSoftObjectPath Show;
+	FSoftObjectPath Show = nullptr;
 };

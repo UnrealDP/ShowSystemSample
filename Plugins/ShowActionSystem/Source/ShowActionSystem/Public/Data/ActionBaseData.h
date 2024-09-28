@@ -11,11 +11,11 @@ struct FActionBaseData : public FTableRowBase
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Data")
-	float CastDuration;
+	float CastDuration = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Data")
-	float ExecDuration;
+	float ExecDuration = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Data")
-	float FinishDuration;
+	float FinishDuration = 0.0f;
 };
