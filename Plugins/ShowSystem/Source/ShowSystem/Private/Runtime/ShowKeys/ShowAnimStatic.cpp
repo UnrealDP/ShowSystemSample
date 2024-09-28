@@ -30,7 +30,7 @@ void UShowAnimStatic::Play()
         return;
     }
 
-    if (UShowAnimInstance* ShowAnimInstance = Cast<UShowAnimInstance>(SkeletalMeshComp->AnimClass))
+    if (UShowAnimInstance* ShowAnimInstance = Cast<UShowAnimInstance>(SkeletalMeshComp->GetAnimInstance()))
     {
         ShowAnimInstance->PlayAnimation(AnimSequenceBase, AnimStaticKeyPtr->IsLoop);
     }

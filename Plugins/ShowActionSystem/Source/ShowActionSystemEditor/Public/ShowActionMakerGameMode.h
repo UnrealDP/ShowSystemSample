@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class SHOWACTIONSYSTEM_API AShowActionMakerGameMode : public AGameMode
+class SHOWACTIONSYSTEMEDITOR_API AShowActionMakerGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
@@ -23,4 +23,12 @@ protected:
 public:
     // Enabling Tick for GameMode
     virtual void Tick(float DeltaSeconds) override;
+
+public:
+    UPROPERTY(EditAnywhere, Category = "ShowActionMakerGameMode")
+    TObjectPtr<AActor> DefaultActor;
+    
+private:
+    TObjectPtr<AActor> Caster;
+    TArray<TObjectPtr<AActor>> Targets;
 };
