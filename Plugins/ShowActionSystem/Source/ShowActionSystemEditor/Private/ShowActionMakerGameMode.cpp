@@ -18,6 +18,8 @@ void AShowActionMakerGameMode::BeginPlay()
 
     DataTableManager::Get().InitializeDataTables({ EDataTable::SkillData });
     UDataTable* SkillDataTable = DataTableManager::DataTable(EDataTable::SkillData);
+    FSkillData* SkillData1 = DataTableManager::Data<FSkillData>(EDataTable::SkillData, FName(TEXT("test_skill_1")));
+    UE_LOG(LogTemp, Log, TEXT("----------- > Skill Name: %s, CastDuration: %f"), *SkillData1->Name, SkillData1->CastDuration);
 
     if (SkillDataTable)
     {
