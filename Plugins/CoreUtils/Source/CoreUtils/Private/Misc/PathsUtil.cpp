@@ -53,30 +53,53 @@ FString PathsUtil::GetGameAssetPathFromFilePath(const FString& FilePath)
         // /Game 경로로 변환
         return FString::Printf(TEXT("/Game/%s"), *RelativePath);
     }
-    else
+    //else
+    //{
+    //    // 플러그인의 콘텐츠 디렉터리에서 확인
+    //    const TArray<TSharedRef<IPlugin>> Plugins = IPluginManager::Get().GetEnabledPlugins();
+    //    for (const TSharedRef<IPlugin>& Plugin : Plugins)
+    //    {
+    //        FString PluginContentDir = FPaths::ConvertRelativePathToFull(Plugin->GetContentDir());
+
+    //        // 파일 경로가 플러그인 콘텐츠 디렉터리 안에 있는지 확인
+    //        if (FullFilePath.StartsWith(PluginContentDir))
+    //        {
+    //            // /Content/ 뒤로 경로 추출
+    //            FString RelativePath = FullFilePath.RightChop(PluginContentDir.Len());
+
+    //            // 슬래시 중복 방지
+    //            if (RelativePath.StartsWith(TEXT("/")))
+    //            {
+    //                RelativePath.RemoveAt(0);
+    //            }
+
+    //            // 플러그인의 경로는 /PluginName 경로로 변환
+    //            return FString::Printf(TEXT("/%s/%s"), *Plugin->GetName(), *RelativePath);
+    //        }
+    //    }
+    //}
+
+    // 파일 경로에 "Plugins"가 포함되어 있는지 확인
+    int32 PluginIndex = FullFilePath.Find(TEXT("/Plugins/"), ESearchCase::IgnoreCase, ESearchDir::FromStart);
+    if (PluginIndex != INDEX_NONE)
     {
-        // 플러그인의 콘텐츠 디렉터리에서 확인
-        const TArray<TSharedRef<IPlugin>> Plugins = IPluginManager::Get().GetEnabledPlugins();
-        for (const TSharedRef<IPlugin>& Plugin : Plugins)
+        // "/Plugins/" 이후의 경로 추출
+        FString PathAfterPlugins = FullFilePath.RightChop(PluginIndex + 9); // 9는 "/Plugins/"의 길이
+
+        // 플러그인 이름 추출 (플러그인 이름은 그 다음 슬래시 전까지)
+        FString PluginName = PathAfterPlugins.Left(PathAfterPlugins.Find(TEXT("/")));
+
+        // "/Content/" 이후의 경로 추출
+        FString RelativePath = PathAfterPlugins.RightChop(PluginName.Len() + 9); // 9는 "/Content/"의 길이
+
+        // 슬래시 중복 방지
+        if (RelativePath.StartsWith(TEXT("/")))
         {
-            FString PluginContentDir = FPaths::ConvertRelativePathToFull(Plugin->GetContentDir());
-
-            // 파일 경로가 플러그인 콘텐츠 디렉터리 안에 있는지 확인
-            if (FullFilePath.StartsWith(PluginContentDir))
-            {
-                // /Content/ 뒤로 경로 추출
-                FString RelativePath = FullFilePath.RightChop(PluginContentDir.Len());
-
-                // 슬래시 중복 방지
-                if (RelativePath.StartsWith(TEXT("/")))
-                {
-                    RelativePath.RemoveAt(0);
-                }
-
-                // 플러그인의 경로는 /PluginName 경로로 변환
-                return FString::Printf(TEXT("/%s/%s"), *Plugin->GetName(), *RelativePath);
-            }
+            RelativePath.RemoveAt(0);
         }
+
+        // 플러그인의 경로는 /PluginName 경로로 변환
+        return FString::Printf(TEXT("/%s/%s"), *PluginName, *RelativePath);
     }
 
     return FString();

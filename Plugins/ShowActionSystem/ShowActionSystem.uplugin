@@ -25,5 +25,11 @@
 			"type": "Editor",
 			"loadingPhase": "PostEngineInit"
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "ExcelImporter",
+			"Enabled": true
+		}
 	]
 }
