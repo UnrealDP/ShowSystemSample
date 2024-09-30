@@ -17,6 +17,10 @@ class SHOWACTIONSYSTEMEDITOR_API AShowActionMakerGameMode : public AGameMode
 public:
     AShowActionMakerGameMode();
 
+private:
+    void GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& TargetRotator);
+    void SaveActorPositions();
+
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
@@ -25,11 +29,14 @@ public:
     // Enabling Tick for GameMode
     virtual void Tick(float DeltaSeconds) override;
 
+
 public:
-    UPROPERTY(EditAnywhere, Category = "ShowActionMakerGameMode")
-    TObjectPtr<AActor> DefaultActor;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowActionMakerGameMode")
+    TSubclassOf<AActor> DefaultActorClass = nullptr;
     
 private:
-    TObjectPtr<AActor> Caster;
+    TObjectPtr<AActor> Caster = nullptr;
     TArray<TObjectPtr<AActor>> Targets;
+
+    UDataTable* SkillDataTable = nullptr;
 };

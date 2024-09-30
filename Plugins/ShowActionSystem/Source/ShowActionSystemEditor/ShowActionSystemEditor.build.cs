@@ -16,6 +16,7 @@ public class ShowActionSystemEditor : ModuleRules
             {
                 "ShowActionSystem",
                 "DataTableSubsystem",
+                "CoreUtils",
 				// ... add private dependencies that you statically link with here ...	
 			}
             );
