@@ -19,6 +19,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+    virtual void BeginDestroy() override;
 
 public:	
 	// Called every frame
@@ -26,24 +27,24 @@ public:
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Show")
-    int32 PlayShow(class UShowSequencer* InShowSequencer);
+    void PlayShow(class UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void StopShow(int32 ID);
+    void StopShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void DisposeShow(int32 ID);
+    void DisposeShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void PauseShow(int32 ID);
+    void PauseShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void UnPauseShow(int32 ID);
+    void UnPauseShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void ChangeSpeedShow(int32 ID, float Speed);
+    void ChangeSpeedShow(UShowSequencer* InShowSequencer, float Speed);
 
 private:
     bool bIsPlaying = true;
-    TSparseArray<TObjectPtr<UShowSequencer>> ShowSequencers; // 연출 시퀀스 트래킹
+    TArray<TObjectPtr<UShowSequencer>> ShowSequencers; // 연출 시퀀스 트래킹
 };

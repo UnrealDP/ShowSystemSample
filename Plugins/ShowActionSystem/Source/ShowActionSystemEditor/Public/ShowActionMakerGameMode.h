@@ -29,6 +29,9 @@ public:
     // Enabling Tick for GameMode
     virtual void Tick(float DeltaSeconds) override;
 
+    void SelectAction(const FName& ActionName);
+    void DoAction();
+
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowActionMakerGameMode")

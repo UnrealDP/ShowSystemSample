@@ -25,33 +25,35 @@ UCLASS(BlueprintType)
 class SHOWSYSTEM_API UShowSequencer : public UObject
 {
 	GENERATED_BODY()
-	
+
+    friend class UShowSequencerComponent;
+
 public:
     UShowSequencer();
+    virtual void BeginDestroy() override;
 
-    UFUNCTION(BlueprintCallable, Category = "Show")
+private:
     void Play();
-
-    UFUNCTION(BlueprintCallable, Category = "Show")
     void Stop();
-
-    UFUNCTION(BlueprintCallable, Category = "Show")
     void Pause();
-
-    UFUNCTION(BlueprintCallable, Category = "Show")
     void UnPause();
-
-    UFUNCTION(BlueprintCallable, Category = "Show")
     void ChangeSpeed(float Speed);
 
+#if WITH_EDITOR
+public:
+    void EditorPlay() { Play(); }
+    void EditorStop() { Stop(); }
+    void EditorPause() { Pause(); }
+    void EditorUnPause() { UnPause(); }
+    void EditorChangeSpeed(float Speed) { ChangeSpeed(Speed); }
+#endif
+
+public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
     TArray<FInstancedStruct> ShowKeys;
 
+public:
     // setter getter
-    void SetID(int InID) { ID = InID; } 
-    void ClearID() { ID = -1; }
-    int GetID() { return ID; }
-
     void SetOwner(AActor* InOwner) { Owner = InOwner; }
     void ClearOwner() { Owner = nullptr; }
     AActor* GetOwner() { return Owner.Get(); }
@@ -60,14 +62,12 @@ public:
     void ReleaseDontDestroy() { bIsDontDestroy = false; }
     // end of setter getter
 
-    void Initialize(int InID, AActor* InOwner) 
+    void Initialize(AActor* InOwner) 
     {
-        ID = InID;
         Owner = InOwner;
     }
     void Dispose()
     {
-        ID = -1;
         Owner = nullptr;
         ClearShowObjects();
     }
@@ -88,7 +88,6 @@ private:
     bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
     float PassedTime = 0.0f;
-    int ID = -1;
     TObjectPtr<AActor> Owner;
     TArray<TObjectPtr<UShowBase>> RuntimeShowKeys;
 };

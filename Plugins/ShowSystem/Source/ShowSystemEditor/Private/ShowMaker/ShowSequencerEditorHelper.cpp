@@ -34,15 +34,15 @@ void FShowSequencerEditorHelper::Play()
 		switch (showSequencerState)
 		{
 		case EShowSequencerState::ShowSequencer_Wait:
-			EditShowSequencer->Play();
+			EditShowSequencer->EditorPlay();
 			break;
 		case EShowSequencerState::ShowSequencer_Playing:
 			break;
 		case EShowSequencerState::ShowSequencer_Pause:
-			EditShowSequencer->UnPause();
+			EditShowSequencer->EditorUnPause();
 			break;
 		case EShowSequencerState::ShowSequencer_End:
-			EditShowSequencer->Play();
+			EditShowSequencer->EditorPlay();
 			break;
 		default:
 			break;

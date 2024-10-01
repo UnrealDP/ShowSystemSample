@@ -17,6 +17,7 @@ class SHOWSYSTEM_API UShowAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
+    virtual void BeginDestroy() override;
     virtual void NativeInitializeAnimation() override;
 
     void PlayAnimation(UAnimSequenceBase* NewAsset, bool bLooping, float BlendOutTriggerTime = -1.0f, float InTimeToStartMontageAt = 0.0f);

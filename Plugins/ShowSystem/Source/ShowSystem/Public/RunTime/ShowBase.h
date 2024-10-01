@@ -55,11 +55,16 @@ public:
     // 객체가 풀로 반환될 때 호출됨
     virtual void OnReturnedToPool() override
     {
+        ShowSequencer = nullptr;
+        ShowKey = nullptr;
+
         Dispose();
     }
 
-    void InitShowKey(const FShowKey& InShowKey)
+    void InitShowKey(TObjectPtr<UShowSequencer> InShowSequencer, const FShowKey& InShowKey)
     {
+        ShowSequencer = InShowSequencer;
+
         if (ShowKey.IsValid())
         {
             ShowKey.Reset();

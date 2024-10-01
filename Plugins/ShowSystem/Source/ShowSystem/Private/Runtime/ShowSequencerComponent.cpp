@@ -23,6 +23,12 @@ void UShowSequencerComponent::BeginPlay()
 	
 }
 
+void UShowSequencerComponent::BeginDestroy()
+{
+	ShowSequencers.Empty();
+	Super::BeginDestroy();
+}
+
 // Called every frame
 void UShowSequencerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -34,68 +40,51 @@ void UShowSequencerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 	}
 }
 
-int32 UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
+void UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
 
-	int32 ID = ShowSequencers.Add(InShowSequencer);
-	InShowSequencer->Initialize(ID, GetOwner());
+	ShowSequencers.Add(InShowSequencer);
+	InShowSequencer->Initialize(GetOwner());
 	InShowSequencer->Play();
-	return ID;
 }
 
-void UShowSequencerComponent::StopShow(int32 ID)
+void UShowSequencerComponent::StopShow(UShowSequencer* InShowSequencer)
 {
-	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::StopShow: ID is invalid."), ID);
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::StopShow: InShowSequencer is invalid or null"));
 
-	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
-	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::StopShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
-
-	FoundShowSequencer->Stop();
-	// FoundShowSequencer->Dispose(); 를 안하는 이유는 Stop은 다시 재생할 수도 있음
+	InShowSequencer->Stop();
+	// InShowSequencer->Dispose(); 를 안하는 이유는 Stop은 다시 재생할 수도 있음
 	// 완전히 삭제하고 싶으면 DisposeShow를 사용해야함
 	// 특히나 자주 사용되는 Show 같은 경우에는 DontDestroy를 사용하여 DisposeShow를 사용하지 않는 것이 좋음
-	FoundShowSequencer->ClearID();
-	FoundShowSequencer->ClearOwner();
+	InShowSequencer->ClearOwner();
 }
 
-void UShowSequencerComponent::DisposeShow(int32 ID)
+void UShowSequencerComponent::DisposeShow(UShowSequencer* InShowSequencer)
 {
-	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::DisposeShow: ID is invalid."), ID);
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::DisposeShow: InShowSequencer is invalid or null"));
 
-	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
-	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::DisposeShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
-
-	FoundShowSequencer->Dispose();
-	ShowSequencers.RemoveAt(ID);
+	InShowSequencer->Dispose();
+	ShowSequencers.Remove(InShowSequencer);
 }
 
-void UShowSequencerComponent::PauseShow(int32 ID)
+void UShowSequencerComponent::PauseShow(UShowSequencer* InShowSequencer)
 {
-	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::PauseShow: ID is invalid."), ID);
-	
-	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
-	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::PauseShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::PauseShow: InShowSequencer is invalid or null."));
 
-	FoundShowSequencer->Pause();
+	InShowSequencer->Pause();
 }
 
-void UShowSequencerComponent::UnPauseShow(int32 ID)
+void UShowSequencerComponent::UnPauseShow(UShowSequencer* InShowSequencer)
 {
-	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::UnPauseShow: ID is invalid."), ID);
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::UnPauseShow: InShowSequencer is invalid or null"));
 
-	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
-	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::UnPauseShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
-
-	FoundShowSequencer->UnPause();
+	InShowSequencer->UnPause();
 }
 
-void UShowSequencerComponent::ChangeSpeedShow(int32 ID, float Speed)
+void UShowSequencerComponent::ChangeSpeedShow(UShowSequencer* InShowSequencer, float Speed)
 {
-	checkf(ShowSequencers.IsValidIndex(ID), TEXT("UShowSequencerComponent::ChangeSpeedShow: ID is invalid."), ID);
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::ChangeSpeedShow: InShowSequencer is invalid or null"));
 
-	UShowSequencer* FoundShowSequencer = ShowSequencers[ID];
-	checkf(FoundShowSequencer, TEXT("UShowSequencerComponent::ChangeSpeedShow: FoundShowSequencer is invalid or null. [ %d ]"), ID);
-
-	FoundShowSequencer->ChangeSpeed(Speed);
+	InShowSequencer->ChangeSpeed(Speed);
 }

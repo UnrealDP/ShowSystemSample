@@ -58,12 +58,22 @@ void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
     ShowSequencerComponent->PlayShow(ShowSequencer);
 }
 
-void UShowPlayer::StopSoloShow(AActor* Owner, int32 ID)
+void UShowPlayer::StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
 {
     checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
     checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
 
-    ShowSequencerComponent->StopShow(ID);
+    ShowSequencerComponent->StopShow(ShowSequencer);
+}
+
+void UShowPlayer::DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
+{
+    checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
+
+    UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
+
+    ShowSequencerComponent->DisposeShow(ShowSequencer);
 }

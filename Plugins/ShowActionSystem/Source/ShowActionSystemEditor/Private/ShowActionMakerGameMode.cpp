@@ -6,6 +6,7 @@
 #include "EDataTable.h"
 #include "Data/SkillData.h"
 #include "Misc/PathsUtil.h"
+#include "ActionComponent.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -32,9 +33,21 @@ void AShowActionMakerGameMode::BeginPlay()
         GetPos(CasterPos, TargetPos, TargetRotator);
 
         Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator);
+        if (!Caster->FindComponentByClass<UActionComponent>())
+        {
+            UActionComponent* ActionComponent = NewObject<UActionComponent>(Caster, UActionComponent::StaticClass());
+			ActionComponent->RegisterComponent();
+        }
+
         AActor* SpawnedTarget = GetWorld()->SpawnActor<AActor>(DefaultActorClass, TargetPos, TargetRotator);
         if (SpawnedTarget)
         {
+            if (!SpawnedTarget->FindComponentByClass<UActionComponent>())
+            {
+                UActionComponent* ActionComponent = NewObject<UActionComponent>(SpawnedTarget, UActionComponent::StaticClass());
+                ActionComponent->RegisterComponent();
+            }
+
             Targets.Add(SpawnedTarget);
         }
     }
@@ -47,6 +60,22 @@ void AShowActionMakerGameMode::BeginPlay()
 void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
+
+    if (Caster && !Caster->IsPendingKillPending())
+    {
+        Caster->Destroy();
+        Caster = nullptr;
+    }
+
+    for (AActor* Target : Targets)
+	{
+		if (Target && !Target->IsPendingKillPending())
+		{
+			Target->Destroy();
+            Target = nullptr;
+		}
+	}
+    Targets.Empty();
 
     SkillDataTable = nullptr;
     DataTableManager::Destroy();
@@ -122,4 +151,22 @@ void AShowActionMakerGameMode::SaveActorPositions()
     {
         GConfig->Flush(false, *ConfigFilePath);
     }
+}
+
+void AShowActionMakerGameMode::SelectAction(const FName& ActionName)
+{
+    if (Caster)
+    {
+        UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
+        ActionComponent->InitializeActionPool({ ActionName });
+    }
+}
+
+void AShowActionMakerGameMode::DoAction()
+{
+	if (Caster)
+	{
+		UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
+		ActionComponent->DoActionPool(FName("Skill_1"));
+	}
 }

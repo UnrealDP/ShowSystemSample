@@ -38,6 +38,9 @@ public class ShowActionSystem : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "ShowSystem",
+                "DataTableSubsystem",
+                "CoreUtils",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

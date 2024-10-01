@@ -14,6 +14,13 @@ void UShowAnimStatic::Initialize(const FShowKey& InShowKey)
     checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
 }
 
+void UShowAnimStatic::Dispose()
+{
+    AnimStaticKeyPtr = nullptr;
+    SkeletalMeshComp = nullptr;
+    AnimSequenceBase = nullptr;
+}
+
 void UShowAnimStatic::Play() 
 {
     AActor* Owner = GetOwner();

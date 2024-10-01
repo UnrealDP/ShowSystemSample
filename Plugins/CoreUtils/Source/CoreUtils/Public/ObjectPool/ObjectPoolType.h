@@ -15,6 +15,7 @@
 UENUM(BlueprintType)
 enum class EObjectPoolType : uint8
 {
+    ObjectPool_Action   UMETA(DisplayName = "ObjectPool Action"),
     ObjectPool_ShowKeyAnim   UMETA(DisplayName = "ObjectPool ShowKeyAnim"),
     Max   UMETA(DisplayName = "Max Types")
 };

@@ -10,6 +10,15 @@ UShowSequencer::UShowSequencer()
     GenerateShowBase();
 }
 
+void UShowSequencer::BeginDestroy()
+{
+	ClearShowObjects();
+
+    Owner = nullptr;
+
+    Super::BeginDestroy();
+}
+
 void UShowSequencer::GenerateShowBase()
 {
     RuntimeShowKeys.SetNum(ShowKeys.Num());
@@ -39,7 +48,7 @@ UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
 
     EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey.KeyType);    
     UShowBase* ShowBase = PoolManager->GetPooledObject<UShowBase>(PoolType);
-    ShowBase->InitShowKey(InShowKey);
+    ShowBase->InitShowKey(this, InShowKey);
     return ShowBase;
 }
 
@@ -59,7 +68,6 @@ void UShowSequencer::ClearShowObjects()
 
 void UShowSequencer::Play()
 {
-    checkf(ID >= 0, TEXT("UShowSequencer::Play: ID is invalid [ %d ]"), ID);
     checkf(Owner, TEXT("UShowSequencer::Play: Owner is invalid"));
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;

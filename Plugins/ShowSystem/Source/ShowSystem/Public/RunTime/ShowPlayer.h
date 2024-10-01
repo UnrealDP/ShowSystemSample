@@ -16,10 +16,13 @@ class SHOWSYSTEM_API UShowPlayer : public UWorldSubsystem, public FTickableGameO
 	
 public:
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-    void PlaySoloShow(AActor* Owner, class UShowSequencer* ShowSequencer);
+	void PlaySoloShow(AActor* Owner, class UShowSequencer* ShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-    void StopSoloShow(AActor* Owner, int32 ID);
+	void StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
+
+	UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
+	void DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
 
 	/** Implement this for initialization of instances of the system */
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;

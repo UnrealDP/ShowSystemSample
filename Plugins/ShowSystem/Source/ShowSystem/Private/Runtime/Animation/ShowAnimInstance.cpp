@@ -6,6 +6,16 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AnimNodes/AnimNode_LayeredBoneBlend.h"
 
+void UShowAnimInstance::BeginDestroy()
+{
+	OwnerComponent = nullptr;
+	Skeleton = nullptr;
+	OwnerActor = nullptr;
+	MovementComponent = nullptr;
+
+	Super::BeginDestroy();
+}
+
 void UShowAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
