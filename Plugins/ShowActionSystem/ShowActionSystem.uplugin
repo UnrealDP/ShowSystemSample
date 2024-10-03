@@ -38,6 +38,13 @@
 		{
 			"Name": "CoreUtils",
 			"Enabled": true
+		},
+		{
+			"Name": "SlateEditorUtils",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
 		}
 	]
 }

@@ -27,9 +27,10 @@ void UShowAnimInstance::NativeInitializeAnimation()
 	}
     else
     {
-        if (OwnerComponent->SkeletalMesh)
+        USkeletalMesh* SkeletalMesh = OwnerComponent->GetSkeletalMeshAsset();
+        if (SkeletalMesh)
         {
-            Skeleton = OwnerComponent->SkeletalMesh->GetSkeleton();
+            Skeleton = SkeletalMesh->GetSkeleton();
         }
     }
 

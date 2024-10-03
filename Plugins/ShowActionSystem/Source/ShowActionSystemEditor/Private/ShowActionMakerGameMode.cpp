@@ -2,11 +2,14 @@
 
 
 #include "ShowActionMakerGameMode.h"
-#include "DataTableManager.h"
 #include "EDataTable.h"
 #include "Data/SkillData.h"
+#include "Data/SkillShowData.h"
 #include "Misc/PathsUtil.h"
 #include "ActionComponent.h"
+#include "SSkillDataDetailsWidget.h"
+#include "DataTableManager.h"
+#include "ShowActionSystemEditor.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -17,13 +20,6 @@ AShowActionMakerGameMode::AShowActionMakerGameMode()
 void AShowActionMakerGameMode::BeginPlay()
 {
     Super::BeginPlay();
-
-    DataTableManager::Get().InitializeDataTables({ EDataTable::SkillData });
-    SkillDataTable = DataTableManager::DataTable(EDataTable::SkillData);
-    if (!SkillDataTable)
-    {
-        UE_LOG(LogTemp, Error, TEXT("SkillDataTable is null"));
-    }
 
     if (DefaultActorClass)
     {
@@ -55,11 +51,20 @@ void AShowActionMakerGameMode::BeginPlay()
     {
         UE_LOG(LogTemp, Warning, TEXT("DefaultActorClass is not set!"));
     }
+
+    if (FShowActionSystemEditor* ShowActionSystemEditorModule = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
+    {
+        ShowActionSystemEditorModule->ShowActionMakerGameMode = this;
+        ShowActionSystemEditorModule->OpenSkillDataDetails();
+        ShowActionSystemEditorModule->RegisterMenus();
+    }
 }
 
 void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
+
+    SaveActorPositions();
 
     if (Caster && !Caster->IsPendingKillPending())
     {
@@ -77,9 +82,11 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
     Targets.Empty();
 
-    SkillDataTable = nullptr;
-    DataTableManager::Destroy();
-    SaveActorPositions();
+    if (FShowActionSystemEditor* ShowActionSystemEditorModule = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
+    {
+        ShowActionSystemEditorModule->UnRegisterMenus();
+        ShowActionSystemEditorModule->ShowActionMakerGameMode = nullptr;
+    }
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }
@@ -153,20 +160,23 @@ void AShowActionMakerGameMode::SaveActorPositions()
     }
 }
 
-void AShowActionMakerGameMode::SelectAction(const FName& ActionName)
+void AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, FSkillData* InSkillData)
 {
+    SkillData = InSkillData;
+    SelectedActionName = InSelectedActionName;
+
     if (Caster)
     {
         UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
-        ActionComponent->InitializeActionPool({ ActionName });
+        //ActionComponent->InitializeActionPool({ SelectedActionName });
     }
 }
 
 void AShowActionMakerGameMode::DoAction()
 {
-	if (Caster)
+	if (Caster && SelectedActionName.IsValid())
 	{
 		UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
-		ActionComponent->DoActionPool(FName("Skill_1"));
+		ActionComponent->DoActionPool(SelectedActionName);
 	}
 }

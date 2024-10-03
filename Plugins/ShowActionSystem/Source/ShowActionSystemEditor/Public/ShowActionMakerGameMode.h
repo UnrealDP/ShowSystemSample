@@ -6,6 +6,9 @@
 #include "GameFramework/GameMode.h"
 #include "ShowActionMakerGameMode.generated.h"
 
+struct FSkillData;
+struct FSkillShowData;
+
 /**
  * 
  */
@@ -29,9 +32,8 @@ public:
     // Enabling Tick for GameMode
     virtual void Tick(float DeltaSeconds) override;
 
-    void SelectAction(const FName& ActionName);
-    void DoAction();
-
+    void SelectAction(FName InSelectedActionName, FSkillData* InSkillData);
+    void DoAction();    
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowActionMakerGameMode")
@@ -41,5 +43,6 @@ private:
     TObjectPtr<AActor> Caster = nullptr;
     TArray<TObjectPtr<AActor>> Targets;
 
-    UDataTable* SkillDataTable = nullptr;
+    FName SelectedActionName;
+    FSkillData* SkillData = nullptr;
 };

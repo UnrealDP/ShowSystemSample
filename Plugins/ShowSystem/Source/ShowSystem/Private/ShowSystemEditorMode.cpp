@@ -28,8 +28,6 @@ FString UShowSystemEditorMode::InteractiveToolName = TEXT("ShowSystem_MeasureDis
 
 UShowSystemEditorMode::UShowSystemEditorMode()
 {
-	FModuleManager::Get().LoadModule("EditorStyle");
-
 	// appearance and icon in the editing mode ribbon can be customized here
 	Info = FEditorModeInfo(UShowSystemEditorMode::EM_ShowSystemEditorModeId,
 		LOCTEXT("ModeName", "ShowSystem"),

@@ -2,11 +2,11 @@
 
 
 #include "ActionComponent.h"
-#include "DataTableManager.h"
-#include "Data/SkillData.h"
-#include "Data/SkillShowData.h"
-#include "ActionBase.h"
-#include "ObjectPool/ObjectPoolManager.h"
+//#include "DataTableManager.h"
+//#include "Data/SkillData.h"
+//#include "Data/SkillShowData.h"
+//#include "ActionBase.h"
+//#include "ObjectPool/ObjectPoolManager.h"
 
 
 // Sets default values for this component's properties
@@ -129,29 +129,6 @@ bool UActionComponent::DefaultFilterRule(const FName& ActionName, const FActionB
 	return true;
 }
 
-void UActionComponent::InitializeActionPool(const TArray<FName>& ActionNames)
-{
-	ClearActionPool();
-
-	UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-	for (FName ActionName : ActionNames)
-	{
-		FSkillData* SkillData = DataTableManager::Data<FSkillData>(EDataTable::SkillData, ActionName);
-		checkf(SkillData != nullptr, TEXT("UActionComponent::InitializeActionPool SkillData Fail [ %s ]"), *ActionName.ToString());
-
-		FSkillShowData* SkillShowData = DataTableManager::Data<FSkillShowData>(EDataTable::SkillShowData, ActionName);
-
-		UActionBase* ActionBase = PoolManager->GetPooledObject<UActionBase>(EObjectPoolType::ObjectPool_Action);
-		checkf(ActionBase != nullptr, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
-
-		if (ActionBase)
-		{
-			ActionBase->Initialize(GetOwner(), ActionName, SkillData, SkillShowData);
-			ActionPool.Add(ActionName, ActionBase);
-		}
-	}
-}
-
 void UActionComponent::ClearActionPool()
 {
 	if (ActionPool.Num() == 0)
@@ -227,19 +204,19 @@ UActionBase* UActionComponent::DoAction(const FName& ActionName, ActionFilterFun
 	}
 	else
 	{
-		FSkillData* SkillData = DataTableManager::Data<FSkillData>(EDataTable::SkillData, ActionName);
-		checkf(SkillData != nullptr, TEXT("UActionComponent::DoAction SkillData Fail"));
+		FActionBaseData* ActionBaseData = DataTableManager::Data<FActionBaseData>(EDataTable::SkillData, ActionName);
+		checkf(ActionBaseData != nullptr, TEXT("UActionComponent::DoAction ActionBaseData Fail"));
 
-		FSkillShowData* SkillShowData = DataTableManager::Data<FSkillShowData>(EDataTable::SkillShowData, ActionName);
+		FActionBaseShowData* ActionBaseShowData = DataTableManager::Data<FActionBaseShowData>(EDataTable::SkillShowData, ActionName);
 
 		if (ActionFilter)
 		{
-			if (!ActionFilter(this, ActionName, SkillData))
+			if (!ActionFilter(this, ActionName, ActionBaseData))
 			{
 				return nullptr;
 			}
 		}
-		else if (!DefaultFilterRule(ActionName, SkillData))
+		else if (!DefaultFilterRule(ActionName, ActionBaseData))
 		{
 			return nullptr;
 		}
@@ -248,7 +225,7 @@ UActionBase* UActionComponent::DoAction(const FName& ActionName, ActionFilterFun
 		ActionBase = PoolManager->GetPooledObject<UActionBase>(EObjectPoolType::ObjectPool_Action);
 		checkf(ActionBase != nullptr, TEXT("UActionComponent::DoAction GetPooledObject Fail"));
 
-		ActionBase->Initialize(GetOwner(), ActionName, SkillData, SkillShowData);
+		ActionBase->Initialize(GetOwner(), ActionName, ActionBaseData, ActionBaseShowData);
 		OneShotActions.Add(ActionName, ActionBase);
 	}
 

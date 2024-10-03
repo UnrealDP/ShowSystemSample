@@ -8,7 +8,6 @@
 #include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
 #include "SStructComboBoxWidget.h"
-#include "EditorStyleSet.h"
 #include "IDetailGroup.h"
 #include "RunTime/ShowKeys/ShowAnimStatic.h"
 
@@ -121,12 +120,12 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
                 .AutoWidth()
                 [
                     SNew(SButton)
-                        .ButtonStyle(FEditorStyle::Get(), "FlatButton")
+                        .ButtonStyle(FAppStyle::Get(), "FlatButton")
                         .ContentPadding(2.0f)
                         .OnClicked(this, &FShowSequencerCustomization::OnAddButtonClicked)
                         [
                             SNew(SImage)
-                                .Image(FEditorStyle::GetBrush("PListEditor.Button_AddToArray"))
+                                .Image(FAppStyle::GetBrush("PListEditor.Button_AddToArray"))
                         ]
                 ]
                 + SHorizontalBox::Slot()
@@ -135,12 +134,12 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
                 .AutoWidth()
                 [
                     SNew(SButton)
-                        .ButtonStyle(FEditorStyle::Get(), "FlatButton")
+                        .ButtonStyle(FAppStyle::Get(), "FlatButton")
                         .ContentPadding(2.0f)
                         .OnClicked(this, &FShowSequencerCustomization::OnEmptyButtonClicked)
                         [
                             SNew(SImage)
-                                .Image(FEditorStyle::GetBrush("ContentReference.Clear"))
+                                .Image(FAppStyle::GetBrush("ContentReference.Clear"))
                         ]
                 ]
         ];

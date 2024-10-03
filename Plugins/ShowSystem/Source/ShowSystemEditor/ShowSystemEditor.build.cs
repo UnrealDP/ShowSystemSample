@@ -25,7 +25,6 @@ public class ShowSystemEditor : ModuleRules
                 "SlateCore",
                 "InputCore",
                 "SlateEditorUtils",
-                "EditorStyle",
                 "ToolMenus",
                 "AdvancedPreviewScene",
                 "CoreUtils",

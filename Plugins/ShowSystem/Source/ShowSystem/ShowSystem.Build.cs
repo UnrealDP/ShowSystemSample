@@ -41,7 +41,6 @@ public class ShowSystem : ModuleRules
 				"SlateCore",
 				"InputCore",
 				"EditorFramework",
-				"EditorStyle",
 				"UnrealEd",
 				"LevelEditor",
 				"InteractiveToolsFramework",

@@ -2,7 +2,6 @@
 
 #include "ShowSystemEditorModeCommands.h"
 #include "ShowSystemEditorMode.h"
-#include "EditorStyleSet.h"
 
 #define LOCTEXT_NAMESPACE "ShowSystemEditorModeCommands"
 
@@ -10,7 +9,7 @@ FShowSystemEditorModeCommands::FShowSystemEditorModeCommands()
 	: TCommands<FShowSystemEditorModeCommands>("ShowSystemEditorMode",
 		NSLOCTEXT("ShowSystemEditorMode", "ShowSystemEditorModeCommands", "ShowSystem Editor Mode"),
 		NAME_None,
-		FEditorStyle::GetStyleSetName())
+		FAppStyle::GetAppStyleSetName())
 {
 }
 

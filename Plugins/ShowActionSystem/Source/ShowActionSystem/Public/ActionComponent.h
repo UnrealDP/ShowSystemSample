@@ -4,12 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DataTableManager.h"
+#include "Data/ActionBaseData.h"
+#include "Data/ActionBaseShowData.h"
+#include "ActionBase.h"
+#include "ObjectPool/ObjectPoolManager.h"
 #include "ActionComponent.generated.h"
 
-class UActionBase;
+//class UActionBase;
 class UActionComponent;
-struct FActionBaseData;
-struct FActionBaseShowData;
+//struct FActionBaseData;
+//struct FActionBaseShowData;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SHOWACTIONSYSTEM_API UActionComponent : public UActorComponent
@@ -33,14 +38,41 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void InitializeActionPool(const TArray<FName>& ActionNames);
 	void ClearActionPool();
 
 	UActionBase* DoActionPool(const FName& ActionName, ActionFilterFuncPtr ActionFilter = nullptr);
 	UActionBase* DoAction(const FName& ActionName, ActionFilterFuncPtr ActionFilter = nullptr);
 
 	const UActionBase* GetMainAction() const { return MainAction; }
-	
+
+	template<typename TActionData, typename TActionShowData, typename TActionObject>
+	void InitializeActionPool(const TArray<FName>& ActionNames)
+	{
+		static_assert(TIsDerivedFrom<TActionData, FActionBaseData>::IsDerived, "TActionData must be derived from FActionBaseData");
+		static_assert(TIsDerivedFrom<TActionShowData, FActionBaseShowData>::IsDerived, "TActionShowData must be derived from FActionShowBaseData");
+		static_assert(TIsDerivedFrom<TActionObject, UActionBase>::IsDerived, "TActionObject must be derived from UActionBase");
+
+		ClearActionPool();
+
+		UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
+		for (FName ActionName : ActionNames)
+		{
+			TActionData* ActionData = DataTableManager::Data<TActionData>(EDataTable::SkillData, ActionName);
+			checkf(ActionData != nullptr, TEXT("UActionComponent::InitializeActionPool SkillData Fail [ %s ]"), *ActionName.ToString());
+
+			TActionShowData* SkillShowData = DataTableManager::Data<TActionShowData>(EDataTable::SkillShowData, ActionName);
+
+			TActionObject* ActionBase = PoolManager->GetPooledObject<TActionObject>(EObjectPoolType::ObjectPool_Action);
+			checkf(ActionBase != nullptr, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
+
+			if (ActionBase)
+			{
+				ActionBase->Initialize(GetOwner(), ActionName, ActionData, SkillShowData);
+				ActionPool.Add(ActionName, ActionBase);
+			}
+		}
+	}
+
 private:
 	UActionBase* MainAction = nullptr;
 

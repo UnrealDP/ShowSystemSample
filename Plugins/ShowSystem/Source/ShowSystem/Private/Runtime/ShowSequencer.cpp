@@ -12,9 +12,12 @@ UShowSequencer::UShowSequencer()
 
 void UShowSequencer::BeginDestroy()
 {
-	ClearShowObjects();
-
-    Owner = nullptr;
+    // Owner 를 null 먼저 하면 ClearShowObjects 에서 checkf(Owner) 에서 에러 발생
+    if (Owner)
+    {
+        ClearShowObjects();
+        Owner = nullptr;
+    }
 
     Super::BeginDestroy();
 }

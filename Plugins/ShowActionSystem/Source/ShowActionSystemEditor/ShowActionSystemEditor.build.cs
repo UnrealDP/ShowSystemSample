@@ -22,9 +22,17 @@ public class ShowActionSystemEditor : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
+                "Slate",
+                "SlateCore",
+                "InputCore",
+                "EditorFramework",
                 "ShowActionSystem",
                 "DataTableSubsystem",
                 "CoreUtils",
+                "PropertyEditor",
+                "ShowSystem",
+                "SlateEditorUtils",
+                "ToolMenus",
 				// ... add private dependencies that you statically link with here ...	
 			}
             );
