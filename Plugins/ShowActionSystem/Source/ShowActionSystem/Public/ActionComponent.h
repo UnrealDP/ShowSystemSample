@@ -11,10 +11,7 @@
 #include "ObjectPool/ObjectPoolManager.h"
 #include "ActionComponent.generated.h"
 
-//class UActionBase;
 class UActionComponent;
-//struct FActionBaseData;
-//struct FActionBaseShowData;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SHOWACTIONSYSTEM_API UActionComponent : public UActorComponent
@@ -41,16 +38,15 @@ public:
 	void ClearActionPool();
 
 	UActionBase* DoActionPool(const FName& ActionName, ActionFilterFuncPtr ActionFilter = nullptr);
-	UActionBase* DoAction(const FName& ActionName, ActionFilterFuncPtr ActionFilter = nullptr);
 
 	const UActionBase* GetMainAction() const { return MainAction; }
 
-	template<typename TActionData, typename TActionShowData, typename TActionObject>
+	template<typename TActionObject, typename TActionData, typename TActionShowData>
 	void InitializeActionPool(const TArray<FName>& ActionNames)
 	{
-		static_assert(TIsDerivedFrom<TActionData, FActionBaseData>::IsDerived, "TActionData must be derived from FActionBaseData");
-		static_assert(TIsDerivedFrom<TActionShowData, FActionBaseShowData>::IsDerived, "TActionShowData must be derived from FActionShowBaseData");
 		static_assert(TIsDerivedFrom<TActionObject, UActionBase>::IsDerived, "TActionObject must be derived from UActionBase");
+		static_assert(TIsDerivedFrom<TActionData, FActionBaseData>::IsDerived, "TActionData must be derived from FActionBaseData");
+		static_assert(TIsDerivedFrom<TActionShowData, FActionBaseShowData>::IsDerived, "TActionShowData must be derived from FActionShowBaseData");		
 
 		ClearActionPool();
 
@@ -62,15 +58,80 @@ public:
 
 			TActionShowData* SkillShowData = DataTableManager::Data<TActionShowData>(ActionName);
 
-			TActionObject* ActionBase = PoolManager->GetPooledObject<TActionObject>(EObjectPoolType::ObjectPool_Action);
+			UActionBase* ActionBase = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
 			checkf(ActionBase != nullptr, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
 
 			if (ActionBase)
 			{
-				ActionBase->Initialize(GetOwner(), ActionName, ActionData, SkillShowData);
+				ActionBase->Initialize<TActionObject, TActionData, TActionShowData>(GetOwner(), ActionName, ActionData, SkillShowData);
 				ActionPool.Add(ActionName, ActionBase);
 			}
 		}
+	}
+
+	// 서버 연동하게 되면 서버에서 액션 패킷을 보내주면 해야해서 로직 바껴야함
+	// 지금은 클라 베이스로 우선 만들어서 로직 검증부터 한다
+	template<typename TActionObject, typename TActionData, typename TActionShowData>
+	UActionBase* DoAction(const FName& ActionName, ActionFilterFuncPtr ActionFilter)
+	{
+		UActionBase** ActionBasePtr = OneShotActions.Find(ActionName);
+		UActionBase* ActionBase = nullptr;
+		if (ActionBasePtr)
+		{
+			ActionBase = *ActionBasePtr;
+
+			if (ActionFilter)
+			{
+				if (!ActionFilter(this, ActionName, ActionBase->GetActionBaseData()))
+				{
+					return nullptr;
+				}
+			}
+			else if (!DefaultFilterRule(ActionName, ActionBase->GetActionBaseData()))
+			{
+				return nullptr;
+			}
+
+			ActionBase->Cancel();
+		}
+		else
+		{
+			TActionData* ActionBaseData = DataTableManager::Data<TActionData>(ActionName);
+			checkf(ActionBaseData != nullptr, TEXT("UActionComponent::DoAction ActionBaseData Fail"));
+
+			TActionShowData* ActionBaseShowData = DataTableManager::Data<TActionShowData>(ActionName);
+
+			if (ActionFilter)
+			{
+				if (!ActionFilter(this, ActionName, ActionBaseData))
+				{
+					return nullptr;
+				}
+			}
+			else if (!DefaultFilterRule(ActionName, ActionBaseData))
+			{
+				return nullptr;
+			}
+
+			UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
+			ActionBase = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
+			checkf(ActionBase != nullptr, TEXT("UActionComponent::DoAction GetPooledObject Fail"));
+
+			ActionBase->Initialize<TActionObject, TActionData, TActionShowData>(GetOwner(), ActionName, ActionBaseData, ActionBaseShowData);
+			OneShotActions.Add(ActionName, ActionBase);
+		}
+
+		if (ActionBase)
+		{
+			if (MainAction)
+			{
+				MainAction->Cancel();
+			}
+
+			MainAction = ActionBase;
+		}
+
+		return ActionBase;
 	}
 
 private:

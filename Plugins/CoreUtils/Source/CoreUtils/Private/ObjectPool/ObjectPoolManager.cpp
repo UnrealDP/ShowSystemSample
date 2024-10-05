@@ -87,6 +87,13 @@ void UObjectPoolManager::InitializePoolSettings(FString AssetPath)
         {
             int32 PoolIndex = static_cast<int32>(PoolTypeSetting.PoolType);
 
+            if (PoolIndex < 0 || PoolIndex >= ObjectPoolCapacityData->PoolSettings.Num())
+            {
+                checkf(false, TEXT("UObjectPoolCapacityDataAsset PoolType is Invalid [ %lld ]"), (long long)PoolIndex);
+                UE_LOG(LogTemp, Error, TEXT("UObjectPoolCapacityDataAsset PoolType is Invalid [ %lld ]"), (long long)PoolIndex);
+                continue;
+            }
+
             // 풀 설정을 저장
             PoolSettings[PoolIndex] = PoolTypeSetting;
 

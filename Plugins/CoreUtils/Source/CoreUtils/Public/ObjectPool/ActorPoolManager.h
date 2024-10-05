@@ -92,6 +92,7 @@ public:
             }
         }
         PooledActor->SetActorHiddenInGame(false);  // 객체 활성화
+        PooledActor->SetActorTickEnabled(true);  // 객체의 틱 활성화
 
         // 객체가 IPooled 인터페이스를 구현했는지 확인
         checkf(PooledActor->GetClass()->ImplementsInterface(UPooled::StaticClass()),

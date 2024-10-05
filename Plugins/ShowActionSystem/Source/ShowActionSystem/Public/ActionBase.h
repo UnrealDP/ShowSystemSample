@@ -6,6 +6,8 @@
 #include "UObject/NoExportTypes.h"
 #include "ObjectPool/Pooled.h"
 #include "Data/ActionBaseData.h"
+#include "ObjectPool/ObjectPoolType.h"
+#include "EDataTable.h"
 #include "ActionBase.generated.h"
 
 class UShowSequencer;
@@ -16,7 +18,7 @@ class UShowSequencer;
  * 액션을 진행하는 서버 시뮬레이션 로직은 ActionExecutor 에 구현
  * 데디케이트 서버를 사용한다면 ActionExecutor 로 가능할지 구조를 다시 고려해야함
  */
-UCLASS()
+UCLASS(Abstract)
 class SHOWACTIONSYSTEM_API UActionBase : public UObject, public IPooled
 {
 	GENERATED_BODY()
@@ -24,7 +26,29 @@ class SHOWACTIONSYSTEM_API UActionBase : public UObject, public IPooled
 public:
 	virtual void Tick(float DeltaTime);
 
-	virtual UActionBase* Initialize(TObjectPtr<AActor> InOwner, const FName& InActionName, const struct FActionBaseData* InActionBaseData, const struct FActionBaseShowData* InActionBaseShowData);
+	template<typename TActionObject, typename TActionData, typename TActionShowData>
+	TActionObject* Initialize(TObjectPtr<AActor> InOwner, const FName& InActionName, const TActionData* InActionBaseData, const TActionShowData* InActionBaseShowData)
+	{
+		static_assert(TIsDerivedFrom<TActionObject, UActionBase>::IsDerived, "TActionObject must be derived from UActionBase");
+		static_assert(TIsDerivedFrom<TActionData, FActionBaseData>::IsDerived, "TActionData must be derived from FActionBaseData");
+		static_assert(TIsDerivedFrom<TActionShowData, FActionBaseShowData>::IsDerived, "TActionShowData must be derived from FActionBaseShowData");
+
+		checkf(InOwner != nullptr, TEXT("UActionBase::Initialize InOwner is invalid"));
+		checkf(InActionBaseData != nullptr, TEXT("UActionBase::Initialize InActionBaseData is invalid"));
+
+		ActionName = &InActionName;
+		Owner = InOwner;
+		ActionBaseData = InActionBaseData;
+		ActionBaseShowData = InActionBaseShowData;
+		State = EActionState::Wait;
+		StepPassedTime = 0.0f;
+		RemainCoolDown = 0.0f;
+		bIsComplete = false;
+
+		ObjectPoolType = ObjectPoolTypeIndex<TActionObject>::GetType();
+
+		return static_cast<TActionObject*>(this);
+	}
 	virtual void Casting(TArray<TObjectPtr<AActor>> Targets);
 	virtual void Exec(TArray<TObjectPtr<AActor>> Targets);
 	virtual void ExecInterval();
@@ -35,7 +59,10 @@ public:
 
 	EActionState GetState() const { return State; }
 	const FName& GetActionName() const { return *ActionName; }
-	const struct FActionBaseData* GetActionBaseData() const { return ActionBaseData; }
+	const struct FActionBaseData* GetActionBaseData() const { return ActionBaseData; }	
+	const EObjectPoolType GetObjectPoolType() const { return ObjectPoolType; }
+	const EDataTable GetDataType() const { return DataType; }
+	const EDataTable GetShowDataType() const { return ShowDataType; }
 
 	virtual void OnPooled() override;
 	virtual void OnReturnedToPool() override;
@@ -68,6 +95,10 @@ protected:
 
 	const FName* ActionName;
 	bool bIsComplete = false;
+
+	EObjectPoolType ObjectPoolType = EObjectPoolType::Max;
+	EDataTable DataType = EDataTable::Max;
+	EDataTable ShowDataType = EDataTable::Max;
 
 public:
 	StepNotiFuncPtr StepNotiFunc = nullptr;

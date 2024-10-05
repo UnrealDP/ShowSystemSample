@@ -65,7 +65,7 @@ public:
         checkf(ObjectType != EObjectPoolType::Max,
             TEXT("UObjectPoolManager::GetPooledObject / ObjectType is invalid"));
 
-        return GetPooledObject(ObjectType);
+        return GetPooledObject<T>(ObjectType);
     }
 
     // 객체를 풀로 반환하는 메서드

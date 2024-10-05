@@ -75,23 +75,6 @@ void UActionBase::Tick(float DeltaTime)
 	}
 }
 
-UActionBase* UActionBase::Initialize(TObjectPtr<AActor> InOwner, const FName& InActionName, const FActionBaseData* InActionBaseData, const FActionBaseShowData* InActionBaseShowData)
-{
-	checkf(InOwner != nullptr, TEXT("UActionBase::Do InOwner is invalid"));
-	checkf(InActionBaseData != nullptr, TEXT("UActionBase::Do InActionBaseData is invalid"));
-
-	ActionName = &InActionName;
-	Owner = InOwner;
-	ActionBaseData = InActionBaseData;
-	ActionBaseShowData = InActionBaseShowData;
-	State = EActionState::Wait;
-	StepPassedTime = 0.0f;
-	RemainCoolDown = 0.0f;
-	bIsComplete = false;
-
-	return this;
-}
-
 TObjectPtr<UShowSequencer> UActionBase::PlayShow(const FSoftObjectPath& ShowPath)
 {
 	checkf(ShowPath.IsValid(), TEXT("UActionBase::PlayShow ShowPath is invalid"));

@@ -10,6 +10,7 @@
 #include "SSkillDataDetailsWidget.h"
 #include "DataTableManager.h"
 #include "ShowActionSystemEditor.h"
+#include "ActionSkill.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -168,7 +169,7 @@ void AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, FSkillDa
     if (Caster)
     {
         UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
-        //ActionComponent->InitializeActionPool({ SelectedActionName });
+        ActionComponent->InitializeActionPool<UActionSkill, FSkillData, FSkillShowData>({ SelectedActionName });
     }
 }
 

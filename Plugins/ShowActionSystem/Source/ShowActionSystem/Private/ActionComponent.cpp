@@ -2,11 +2,8 @@
 
 
 #include "ActionComponent.h"
-//#include "DataTableManager.h"
 #include "Data/SkillData.h"
 #include "Data/SkillShowData.h"
-//#include "ActionBase.h"
-//#include "ObjectPool/ObjectPoolManager.h"
 
 
 // Sets default values for this component's properties
@@ -18,7 +15,6 @@ UActionComponent::UActionComponent()
 
 	// ...
 }
-
 
 // Called when the game starts
 void UActionComponent::BeginPlay()
@@ -38,7 +34,7 @@ void UActionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	for (auto& Pair : ActionPool)
 	{
 		UActionBase* Value = Pair.Value;
-		PoolManager->ReturnPooledObject(Value, EObjectPoolType::ObjectPool_Action);
+		PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
 		Pair.Value = nullptr;
 	}
 	ActionPool.Empty();
@@ -46,7 +42,7 @@ void UActionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	for (auto& Pair : OneShotActions)
 	{
 		UActionBase* Value = Pair.Value;
-		PoolManager->ReturnPooledObject(Value, EObjectPoolType::ObjectPool_Action);
+		PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
 		Pair.Value = nullptr;
 	}
 	OneShotActions.Empty();
@@ -81,7 +77,7 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			if (ActionBase->IsCompleted())
 			{
 				UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-				PoolManager->ReturnPooledObject(ActionBase, EObjectPoolType::ObjectPool_Action);
+				PoolManager->ReturnPooledObject(ActionBase, ActionBase->GetObjectPoolType());
 				ActionBase = nullptr;
 
 				It.RemoveCurrent();
@@ -142,7 +138,7 @@ void UActionComponent::ClearActionPool()
 	ActionPool.GenerateValueArray(Values);
 	for (UActionBase* Value : Values)
 	{
-		PoolManager->ReturnPooledObject(Value, EObjectPoolType::ObjectPool_Action);
+		PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
 	}
 	ActionPool.Empty();
 }
@@ -178,66 +174,3 @@ UActionBase* UActionComponent::DoActionPool(const FName& ActionName, ActionFilte
 	return ActionBase;
 }
 
-// 서버 연동하게 되면 서버에서 액션 패킷을 보내주면 해야해서 로직 바껴야함
-// 지금은 클라 베이스로 우선 만들어서 로직 검증부터 한다
-UActionBase* UActionComponent::DoAction(const FName& ActionName, ActionFilterFuncPtr ActionFilter)
-{
-	UActionBase** ActionBasePtr = OneShotActions.Find(ActionName);
-	UActionBase* ActionBase = nullptr;
-	if (ActionBasePtr)
-	{
-		ActionBase = *ActionBasePtr;
-
-		if (ActionFilter)
-		{
-			if (!ActionFilter(this, ActionName, ActionBase->GetActionBaseData()))
-			{
-				return nullptr;
-			}
-		}
-		else if (!DefaultFilterRule(ActionName, ActionBase->GetActionBaseData()))
-		{
-			return nullptr;
-		}
-
-		ActionBase->Cancel();
-	}
-	else
-	{
-		FSkillData* ActionBaseData = DataTableManager::Data<FSkillData>(ActionName);
-		checkf(ActionBaseData != nullptr, TEXT("UActionComponent::DoAction ActionBaseData Fail"));
-
-		FSkillShowData* ActionBaseShowData = DataTableManager::Data<FSkillShowData>(ActionName);
-
-		if (ActionFilter)
-		{
-			if (!ActionFilter(this, ActionName, ActionBaseData))
-			{
-				return nullptr;
-			}
-		}
-		else if (!DefaultFilterRule(ActionName, ActionBaseData))
-		{
-			return nullptr;
-		}
-
-		UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-		ActionBase = PoolManager->GetPooledObject<UActionBase>(EObjectPoolType::ObjectPool_Action);
-		checkf(ActionBase != nullptr, TEXT("UActionComponent::DoAction GetPooledObject Fail"));
-
-		ActionBase->Initialize(GetOwner(), ActionName, ActionBaseData, ActionBaseShowData);
-		OneShotActions.Add(ActionName, ActionBase);
-	}
-
-	if (ActionBase)
-	{
-		if (MainAction)
-		{
-			MainAction->Cancel();
-		}
-
-		MainAction = ActionBase;
-	}
-
-	return ActionBase;
-}
