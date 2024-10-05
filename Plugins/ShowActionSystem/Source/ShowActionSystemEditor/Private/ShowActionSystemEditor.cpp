@@ -61,11 +61,14 @@ void FShowActionSystemEditor::ShutdownModule()
 {
     FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(SkillDataTabId.TabType);
 
-    DataTableManager::Get().ReleaseDatas({
-        EDataTable::SkillData,
-        EDataTable::SkillShowData,
-        EDataTable::EffectData,
-        });
+    if (DataTableManager::IsInitialized())
+    {
+        DataTableManager::Get().ReleaseDatas({
+            EDataTable::SkillData,
+            EDataTable::SkillShowData,
+            EDataTable::EffectData,
+            });
+    }
 
 	UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been unloaded"));
 }

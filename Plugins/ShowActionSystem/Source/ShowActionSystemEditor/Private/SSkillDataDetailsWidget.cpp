@@ -120,7 +120,7 @@ void SSkillDataDetailsWidget::OnSkillSelected(TSharedPtr<FString> NewSelection, 
 
             if (SkillShowDetailsView.IsValid())
             {
-                if (FSkillShowData* SkillShowData = DataTableManager::Data<FSkillShowData>(EDataTable::SkillShowData, NewSelectionName))
+                if (FSkillShowData* SkillShowData = DataTableManager::Data<FSkillShowData>(NewSelectionName))
                 {
                     TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(FSkillShowData::StaticStruct(), (uint8*)SkillShowData));
                     SkillShowDetailsView->SetStructureData(StructData);

@@ -19,3 +19,29 @@ enum class EObjectPoolType : uint8
     ObjectPool_ShowKeyAnim   UMETA(DisplayName = "ObjectPool ShowKeyAnim"),
     Max   UMETA(DisplayName = "Max Types")
 };
+
+template<typename T>
+struct ObjectPoolTypeIndex
+{
+    static EObjectPoolType GetType()
+    {
+        static_assert(sizeof(T) == 0, "OBJPOOL_TYPE_INDEX must be defined for this class. "
+            "Please define OBJPOOL_TYPE_INDEX for your pool object class.");
+        return EObjectPoolType::Max;  // 기본값
+    }
+
+    static int32 GetIndex()
+    {
+        static_assert(sizeof(T) == 0, "OBJPOOL_TYPE_INDEX must be defined for this class. "
+            "Please define OBJPOOL_TYPE_INDEX for your pool object class.");
+        return -1;  // 기본값
+    }
+};
+
+#define OBJPOOL_TYPE_INDEX(ClassType, EnumValue)      \
+template<>                                           \
+struct ObjectPoolTypeIndex<ClassType>                          \
+{                                                    \
+    static EObjectPoolType GetType() { return EnumValue; } \
+    static int32 GetIndex() { return static_cast<int32>(EnumValue); } \
+};

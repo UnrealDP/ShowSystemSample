@@ -17,3 +17,30 @@ enum class EActorPoolType : uint8
 {
     Max   UMETA(DisplayName = "Max Types")
 };
+
+
+template<typename T>
+struct ActorPoolTypeIndex
+{
+    static EActorPoolType GetType()
+    {
+        static_assert(sizeof(T) == 0, "ACTORPOOL_TYPE_INDEX must be defined for this class. "
+            "Please define ACTORPOOL_TYPE_INDEX for your pool object class.");
+        return EActorPoolType::Max;  // 기본값
+    }
+
+    static int32 GetIndex()
+    {
+        static_assert(sizeof(T) == 0, "ACTORPOOL_TYPE_INDEX must be defined for this class. "
+            "Please define ACTORPOOL_TYPE_INDEX for your pool object class.");
+        return -1;  // 기본값
+    }
+};
+
+#define ACTORPOOL_TYPE_INDEX(ClassType, EnumValue)      \
+template<>                                           \
+struct ActorPoolTypeIndex<ClassType>                          \
+{                                                    \
+    static EObjectPoolType GetType() { return EnumValue; } \
+    static int32 GetIndex() { return static_cast<int32>(EnumValue); } \
+};

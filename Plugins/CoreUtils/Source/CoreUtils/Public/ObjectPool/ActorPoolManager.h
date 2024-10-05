@@ -24,11 +24,21 @@ public:
 	// 풀 설정을 초기화하는 메서드
     void InitializePoolSettings(FString AssetPath);
 
-    // 특정 타입의 객체를 풀에서 가져오는 메서드
+        // 특정 타입의 객체를 풀에서 가져오는 메서드
     template <typename T>
     T* GetPooledObject(EActorPoolType ActorType, const FActorSpawnParameters& SpawnParameters = nullptr)
     {
         GetPooledObject(ActorType, NULL, SpawnParameters);
+    }
+    template <typename T>
+    T* GetPooledObject(const FActorSpawnParameters& SpawnParameters = nullptr)
+    {
+        EActorPoolType ActorType = ActorPoolTypeIndex<T>::GetType();
+
+        checkf(ActorType != EActorPoolType::Max,
+            TEXT("UActorPoolManager::GetPooledObject / ActorType is invalid"));
+
+        return GetPooledObject(ActorType, NULL, SpawnParameters);
     }
 
     template <typename T>
@@ -45,6 +55,16 @@ public:
         }
 
         GetPooledObject(ActorType, Transform, SpawnParameters);
+    }
+    template <typename T>
+    T* GetPooledObject(FVector const& Location, FRotator const& Rotation, const FActorSpawnParameters& SpawnParameters = nullptr)
+    {
+        EActorPoolType ActorType = ActorPoolTypeIndex<T>::GetType();
+
+        checkf(ActorType != EActorPoolType::Max,
+            TEXT("UActorPoolManager::GetPooledObject / ActorType is invalid"));
+
+        return GetPooledObject(ActorType, Location, Rotation, SpawnParameters);
     }
 
     template <typename T>
@@ -83,6 +103,16 @@ public:
             PooledInterface->OnPooled();
         }
         return Cast<T>(PooledActor);
+    }
+    template <typename T>
+    T* GetPooledObject(FTransform const& Transform, const FActorSpawnParameters& SpawnParameters = nullptr)
+    {
+        EActorPoolType ActorType = ActorPoolTypeIndex<T>::GetType();
+
+        checkf(ActorType != EActorPoolType::Max,
+            TEXT("UActorPoolManager::GetPooledObject / ActorType is invalid"));
+
+        return GetPooledObject(ActorType, Transform, SpawnParameters);
     }
 
     // 객체를 풀로 반환하는 메서드

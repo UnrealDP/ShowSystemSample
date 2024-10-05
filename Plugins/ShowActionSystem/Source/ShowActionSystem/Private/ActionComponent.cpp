@@ -3,8 +3,8 @@
 
 #include "ActionComponent.h"
 //#include "DataTableManager.h"
-//#include "Data/SkillData.h"
-//#include "Data/SkillShowData.h"
+#include "Data/SkillData.h"
+#include "Data/SkillShowData.h"
 //#include "ActionBase.h"
 //#include "ObjectPool/ObjectPoolManager.h"
 
@@ -204,10 +204,10 @@ UActionBase* UActionComponent::DoAction(const FName& ActionName, ActionFilterFun
 	}
 	else
 	{
-		FActionBaseData* ActionBaseData = DataTableManager::Data<FActionBaseData>(EDataTable::SkillData, ActionName);
+		FSkillData* ActionBaseData = DataTableManager::Data<FSkillData>(ActionName);
 		checkf(ActionBaseData != nullptr, TEXT("UActionComponent::DoAction ActionBaseData Fail"));
 
-		FActionBaseShowData* ActionBaseShowData = DataTableManager::Data<FActionBaseShowData>(EDataTable::SkillShowData, ActionName);
+		FSkillShowData* ActionBaseShowData = DataTableManager::Data<FSkillShowData>(ActionName);
 
 		if (ActionFilter)
 		{

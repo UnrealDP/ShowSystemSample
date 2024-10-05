@@ -2,8 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "EDataTable.h"
 #include "ActionBaseData.h"
 #include "SkillData.generated.h"
+
+DATATABLE_TYPE_INDEX(FSkillData, EDataTable::SkillData)
 
 USTRUCT(BlueprintType)
 struct FSkillData : public FActionBaseData
@@ -12,6 +15,6 @@ struct FSkillData : public FActionBaseData
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	FString Name = "";
+	float FinishDuration = 0.0f;
 
 };

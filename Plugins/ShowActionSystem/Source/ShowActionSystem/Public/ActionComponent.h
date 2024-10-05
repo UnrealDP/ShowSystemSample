@@ -57,10 +57,10 @@ public:
 		UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
 		for (FName ActionName : ActionNames)
 		{
-			TActionData* ActionData = DataTableManager::Data<TActionData>(EDataTable::SkillData, ActionName);
+			TActionData* ActionData = DataTableManager::Data<TActionData>(ActionName);
 			checkf(ActionData != nullptr, TEXT("UActionComponent::InitializeActionPool SkillData Fail [ %s ]"), *ActionName.ToString());
 
-			TActionShowData* SkillShowData = DataTableManager::Data<TActionShowData>(EDataTable::SkillShowData, ActionName);
+			TActionShowData* SkillShowData = DataTableManager::Data<TActionShowData>(ActionName);
 
 			TActionObject* ActionBase = PoolManager->GetPooledObject<TActionObject>(EObjectPoolType::ObjectPool_Action);
 			checkf(ActionBase != nullptr, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());

@@ -57,6 +57,17 @@ public:
         return Cast<T>(PooledObject);
     }
 
+    template <typename T>
+    T* GetPooledObject()
+    {
+        EObjectPoolType ObjectType = ObjectPoolTypeIndex<T>::GetType();
+
+        checkf(ObjectType != EObjectPoolType::Max,
+            TEXT("UObjectPoolManager::GetPooledObject / ObjectType is invalid"));
+
+        return GetPooledObject(ObjectType);
+    }
+
     // 객체를 풀로 반환하는 메서드
     void ReturnPooledObject(UObject* Object, EObjectPoolType ObjectType);
 
