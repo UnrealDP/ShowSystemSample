@@ -2,6 +2,7 @@
 
 
 #include "ShowMaker/ShowSequencerEditorHelper.h"
+#include "RunTime/ShowBase.h"
 
 FShowSequencerEditorHelper::FShowSequencerEditorHelper()
 {
@@ -24,6 +25,22 @@ void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequence
 
 	EditShowSequencer = Sequencer;
 	EditShowSequencer->SetDontDestroy();
+}
+
+TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
+{
+	TArray<FShowKey*> ShowKeyPointers;
+
+	for (FInstancedStruct& Struct : EditShowSequencer->ShowKeys)
+	{
+		if (Struct.IsValid())
+		{
+			FShowKey* ShowKey = Struct.GetMutablePtr<FShowKey>();
+			ShowKeyPointers.Add(ShowKey);
+		}
+	}
+
+	return ShowKeyPointers;
 }
 
 void FShowSequencerEditorHelper::Play()

@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "RunTime/ShowSequencer.h"
 
+struct FShowKey;
+
 /**
  * 
  */
@@ -15,6 +17,8 @@ public:
 	~FShowSequencerEditorHelper();
 
 	void SetShowSequencerEditor(UShowSequencer* Sequencer);
+
+	TArray<FShowKey*> GetShowKeys();
 
 	void Play();
 

@@ -9,13 +9,16 @@
 #include "Misc/PathsUtil.h"
 #include "RunTime/ShowPlayer.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
+#include "ShowMaker/SShowKeyBoxHandler.h"
+#include "SVerticalResizableSplitter.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
 {
-    EditorHelper = MakeShared<FShowSequencerEditorHelper>();
-
     EditShowSequencer = InArgs._EditShowSequencer;
+
+    EditorHelper = MakeShared<FShowSequencerEditorHelper>();
+    EditorHelper->SetShowSequencerEditor(EditShowSequencer);
 
     FMenuBarBuilder MenuBarBuilder(nullptr);
 
@@ -43,12 +46,50 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
                     CreateMenuBar()
                 ]
 
-                // 여기에 다른 위젯들을 추가해 편집 창을 완성
                 + SVerticalBox::Slot()
+                .AutoHeight()
+                [
+                    ConstructPreviewScenePanel()
+                ]
+
+                // 여기에 다른 위젯들을 추가해 편집 창을 완성
+                /*+ SVerticalBox::Slot()
                 .Padding(2.0f)
                 .FillHeight(1.0f)
                 [
-                    ConstructPreviewScenePanel()
+                    SNew(SVerticalResizableSplitter)
+                        .Widgets
+                        (
+                            { 
+                                ConstructPreviewScenePanel(),
+                                SNew(SShowKeyBoxHandler)
+                                    .ShowKeys(EditorHelper->GetShowKeys())
+                                    .Height(20.0f)
+                                    .MinWidth(50.0f)
+                                    .SecondToWidthRatio(10.0f)
+                                    .OnAddKey_Lambda([](FShowKey* Key) {})
+                                    .OnRemoveKey_Lambda([](FShowKey* Key) {})
+                            }
+                        )
+                        .InitialRatios
+                        (
+                            { 
+                                0.7f,
+                                0.3f
+                            }
+                        )
+                ]*/
+                +SVerticalBox::Slot()
+                .Padding(2.0f)
+                .FillHeight(1.0f)
+                [
+                    SNew(SShowKeyBoxHandler)
+                        .ShowKeys(EditorHelper->GetShowKeys())
+                        .Height(20.0f)
+                        .MinWidth(50.0f)
+                        .SecondToWidthRatio(10.0f)
+                        .OnAddKey_Lambda([](FShowKey* Key) {})
+                        .OnRemoveKey_Lambda([](FShowKey* Key) {})
                 ]
 
                 + SVerticalBox::Slot()
@@ -86,7 +127,6 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     if (Actor && EditShowSequencer)
     {
         ShowPlayer->PlaySoloShow(Actor, EditShowSequencer);
-        EditorHelper->SetShowSequencerEditor(EditShowSequencer);
     }
 }
 
