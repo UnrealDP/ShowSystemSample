@@ -6,6 +6,13 @@
 #include "RunTime/ShowSequencer.h"
 #include "Widgets/SCompoundWidget.h"
 
+class SActorPreviewViewport;
+class SShowSequencerScrubPanel;
+class IStructureDetailsView;
+class FShowSequencerEditorHelper;
+class UShowPlayer;
+class ShowSequencerNotifyHook;
+
 /**
  * 
  */
@@ -20,7 +27,9 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
+	TSharedRef<SWidget> ConstructMainBody();
 	TSharedRef<SWidget> ConstructPreviewScenePanel();
+	TSharedRef<SWidget> ConstructShowKeyDetails();
 	TSharedRef<SWidget> CreateMenuBar();
 	TSharedRef<SWidget> GenerateMenuContent();
 	FReply OnMenuButtonClicked();
@@ -37,21 +46,26 @@ private:
 	void OpenSkeletalMeshPicker();
 	void OnSkeletalMeshSelected(const FAssetData& SelectedAsset);
 
+	void SetShowKey(FShowKey* NewShowKey);
 
 	/** Preview Viewport widget */
-	TSharedPtr<class SActorPreviewViewport> PreviewViewport;
+	TSharedPtr<SActorPreviewViewport> PreviewViewport = nullptr;
+	TSharedPtr<IStructureDetailsView> StructureDetailsView = nullptr;
+	TSharedPtr<SDockTab> ShowKeyDetailsTab = nullptr;
 
-	TSharedPtr<class SShowSequencerScrubPanel> ShowSequencerScrubPanel;
+	TSharedPtr<SShowSequencerScrubPanel> ShowSequencerScrubPanel = nullptr;
 
-	TSharedPtr<SWindow> SkeletalMeshPickerWindow;
-	TSharedPtr<SWindow> WorldPickerWindow;
+	TSharedPtr<SWindow> SkeletalMeshPickerWindow = nullptr;
+	TSharedPtr<SWindow> WorldPickerWindow = nullptr;
 
-	TObjectPtr<UShowSequencer> EditShowSequencer;
-	TObjectPtr<UWorld> LoadedWorld;
-	TObjectPtr<USkeletalMesh> LoadedSkeletalMesh;
+	TObjectPtr<UShowSequencer> EditShowSequencer = nullptr;
+	TObjectPtr<UWorld> LoadedWorld = nullptr;
+	TObjectPtr<USkeletalMesh> LoadedSkeletalMesh = nullptr;
 
-	TSharedPtr<class FShowSequencerEditorHelper> EditorHelper;
+	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 
-	AActor* Actor;
-	class UShowPlayer* ShowPlayer;
+	AActor* Actor = nullptr;
+	UShowPlayer* ShowPlayer = nullptr;
+	FShowKey* SelectedShowKey = nullptr;
+	TSharedPtr<ShowSequencerNotifyHook> NotifyHookInstance = nullptr;
 };

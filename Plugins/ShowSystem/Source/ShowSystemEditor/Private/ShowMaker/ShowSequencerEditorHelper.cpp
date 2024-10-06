@@ -15,7 +15,11 @@ FShowSequencerEditorHelper::~FShowSequencerEditorHelper()
 
 void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequencer)
 {
-	checkf(Sequencer, TEXT("FShowSequencerEditorHelper::SetShowSequencerEditor: Sequencer is invalid."));
+	if (!Sequencer)
+	{
+		EditShowSequencer = nullptr;
+		return;
+	}
 
 	if (EditShowSequencer)
 	{
@@ -29,6 +33,11 @@ void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequence
 
 TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
 {
+	if (!EditShowSequencer)
+	{
+		return TArray<FShowKey*>();
+	}
+
 	TArray<FShowKey*> ShowKeyPointers;
 
 	for (FInstancedStruct& Struct : EditShowSequencer->ShowKeys)

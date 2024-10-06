@@ -51,6 +51,8 @@ void SShowKeyDetailsWidget::SetSkillKey(FShowKey* NewShowKey)
             StructData,
             FText::FromString("ShowKey Details")
         );
+
+        StructureDetailsView->SetStructureData(StructData);
     }
     else
     {

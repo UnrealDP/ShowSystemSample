@@ -22,31 +22,30 @@ public:
         SLATE_ATTRIBUTE(float, SecondToWidthRatio)
         SLATE_EVENT(FOnShowKeyEvent, OnAddKey)
         SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
+        SLATE_EVENT(FOnShowKeyEvent, OnClickedKey)
+        SLATE_EVENT(FOnShowKeyEvent, OnChangedKey)
     SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 
-    /*virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
-        FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;*/
-
     TSharedRef<SWidget> CreateMenuBar();
     void GenerateMenu(FMenuBuilder& MenuBuilder);
 
-    /*FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
-    FReply OnAddKeyClicked();*/
     void OnKeyClicked(FShowKey* ClickedKey);
     void OnKeyTypeSelected(FString SelectedKeyType);
-    FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
 
 private:
     TArray<FShowKey*> ShowKeys;
-    TAttribute<float> Height;
-    TAttribute<float> MinWidth;
-    TAttribute<float> SecondToWidthRatio;
+    TAttribute<float> Height = 30.0f;
+    TAttribute<float> MinWidth = 50.0f;
+    TAttribute<float> SecondToWidthRatio = 10.0f;
+
     FOnShowKeyEvent OnAddKey;
     FOnShowKeyEvent OnRemoveKey;
+    FOnShowKeyEvent OnClickedKey;
+    FOnShowKeyEvent OnChangedKey;
+    
     TArray<TSharedPtr<SShowKeyBox>> ShowKeyBoxes;
-    FShowKey* SelectedKey;
-    TSharedPtr<IMenu> MenuWindow;
+    TSharedPtr<IMenu> MenuWindow = nullptr;
 };

@@ -20,6 +20,7 @@ public:
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
         SLATE_EVENT(FOnShowKeyClicked, OnClick)
+        SLATE_EVENT(FOnShowKeyClicked, OnChanged)
     SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -46,4 +47,5 @@ private:
     TAttribute<float> MinWidth = 50.0f;
     TAttribute<float> SecondToWidthRatio = 10.0f;
     FOnShowKeyClicked OnClick;
+    FOnShowKeyClicked OnChanged;
 };

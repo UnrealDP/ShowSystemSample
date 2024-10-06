@@ -14,6 +14,8 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnAddKey = InArgs._OnAddKey;
     OnRemoveKey = InArgs._OnRemoveKey;
+    OnClickedKey = InArgs._OnClickedKey;
+    OnChangedKey = InArgs._OnChangedKey;
 
     ShowKeyBoxes.Empty();
     TSharedPtr<SVerticalBox> VerticalBox;
@@ -26,7 +28,7 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
                 [
                     CreateMenuBar()
                 ]
-                SLATE_SPACE_SLOT(0, 10)
+                SLATE_SPACE_SLOT(0, 5)
         ];
 
 
@@ -38,7 +40,8 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
             .Height(Height)
             .MinWidth(MinWidth)
             .SecondToWidthRatio(SecondToWidthRatio)
-            .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked);
+            .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
+            .OnChanged(OnChangedKey);
 
         ShowKeyBoxes.Add(NewKeyBox);
 
@@ -50,27 +53,6 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     }
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-//int32 SShowKeyBoxHandler::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
-//    FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
-//{
-//    for (int32 Index = 0; Index < ShowKeyBoxes.Num(); ++Index)
-//    {
-//        // 바 왼쪽 정보 출력 박스 (임시로 키 이름 출력)
-//        FSlateDrawElement::MakeText(
-//            OutDrawElements,
-//            LayerId + 1,
-//            AllottedGeometry.ToPaintGeometry(FVector2D(100, 20), FSlateLayoutTransform(FVector2D(0, Index * 30))),
-//            FString::Printf(TEXT("Key %d"), Index),
-//            FCoreStyle::Get().GetFontStyle("Regular"),
-//            ESlateDrawEffect::None,
-//            FLinearColor::White
-//        );
-//    }
-//
-//    return LayerId;
-//}
-
 
 TSharedRef<SWidget> SShowKeyBoxHandler::CreateMenuBar()
 {
@@ -122,19 +104,8 @@ void SShowKeyBoxHandler::OnKeyTypeSelected(FString SelectedKeyType)
 void SShowKeyBoxHandler::OnKeyClicked(FShowKey* ClickedKey)
 {
     // 키 관련 로직 처리
-}
-
-// 우클릭 시 Remove Key
-FReply SShowKeyBoxHandler::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
-{
-    if (MouseEvent.GetEffectingButton() == EKeys::RightMouseButton && SelectedKey)
-    {
-        // 우클릭한 키 삭제
-        if (OnRemoveKey.IsBound())
-        {
-            OnRemoveKey.Execute(SelectedKey);
-        }
-        return FReply::Handled();
-    }
-    return FReply::Unhandled();
+    if (OnClickedKey.IsBound())
+	{
+		OnClickedKey.Execute(ClickedKey);
+	}
 }

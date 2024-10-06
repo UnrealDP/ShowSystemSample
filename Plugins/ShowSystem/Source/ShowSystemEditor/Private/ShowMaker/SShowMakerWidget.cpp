@@ -11,6 +11,10 @@
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "ShowMaker/SShowKeyBoxHandler.h"
 #include "SVerticalResizableSplitter.h"
+#include "SHorizontalResizableSplitter.h"
+#include "IStructureDetailsView.h"
+#include "SlateEditorUtils.h"
+#include "ShowMaker/ShowSequencerNotifyHook.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
@@ -25,90 +29,16 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     // 기본 UI 레이아웃 구성
     ChildSlot
         [
-            SNew(SVerticalBox)
-                // 메뉴 버튼 추가
-                + SVerticalBox::Slot()
-                .AutoHeight()
-                [
-                    SNew(SMenuAnchor)
-                        .OnGetMenuContent(this, &SShowMakerWidget::GenerateMenuContent)  // 메뉴 생성 함수 연결
-                        [
-                            SNew(SButton)
-                                .Text(FText::FromString("Select Skeletal Mesh"))
-                                .OnClicked(this, &SShowMakerWidget::OnMenuButtonClicked)  // 메뉴 버튼 클릭 시 메뉴를 보여줌
-                        ]
-                ]
-
-                // 메뉴바 추가
-                + SVerticalBox::Slot()
-                .AutoHeight()
-                [
-                    CreateMenuBar()
-                ]
-
-                + SVerticalBox::Slot()
-                .AutoHeight()
-                [
-                    ConstructPreviewScenePanel()
-                ]
-
-                // 여기에 다른 위젯들을 추가해 편집 창을 완성
-                /*+ SVerticalBox::Slot()
-                .Padding(2.0f)
-                .FillHeight(1.0f)
-                [
-                    SNew(SVerticalResizableSplitter)
-                        .Widgets
-                        (
-                            { 
-                                ConstructPreviewScenePanel(),
-                                SNew(SShowKeyBoxHandler)
-                                    .ShowKeys(EditorHelper->GetShowKeys())
-                                    .Height(20.0f)
-                                    .MinWidth(50.0f)
-                                    .SecondToWidthRatio(10.0f)
-                                    .OnAddKey_Lambda([](FShowKey* Key) {})
-                                    .OnRemoveKey_Lambda([](FShowKey* Key) {})
-                            }
-                        )
-                        .InitialRatios
-                        (
-                            { 
-                                0.7f,
-                                0.3f
-                            }
-                        )
-                ]*/
-                +SVerticalBox::Slot()
-                .Padding(2.0f)
-                .FillHeight(1.0f)
-                [
-                    SNew(SShowKeyBoxHandler)
-                        .ShowKeys(EditorHelper->GetShowKeys())
-                        .Height(20.0f)
-                        .MinWidth(50.0f)
-                        .SecondToWidthRatio(10.0f)
-                        .OnAddKey_Lambda([](FShowKey* Key) {})
-                        .OnRemoveKey_Lambda([](FShowKey* Key) {})
-                ]
-
-                + SVerticalBox::Slot()
-                .Padding(2.0f)
-                .AutoHeight()
-                [
-                    SNew(SShowSequencerScrubPanel)
-                        .ShowSequencerEditorHelper(EditorHelper)
-                        .ViewInputMin(0.0f)
-                        .ViewInputMax(100.0f)
-                        .bDisplayAnimScrubBarEditing(true)
-                        .OnSetInputViewRange_Lambda([](float Min, float Max)
-                            {})
-                        .OnCropAnimSequence_Lambda([](bool Min, float Max)
-                            {})
-                        .OnReZeroAnimSequence_Lambda([]()
-                            {})
-                        .bAllowZoom(true)
-                ]
+            SNew(SHorizontalResizableSplitter)
+                .Widgets(
+                    {
+                        ConstructMainBody(),
+                        ConstructShowKeyDetails()
+                    }
+                )
+                .InitialRatios(
+					{ 0.83f, 0.17f }
+                )
         ];
 
     LoadedSkeletalMesh = CheckLoadSkeletalMesh();
@@ -162,6 +92,84 @@ USkeletalMesh* SShowMakerWidget::CheckLoadSkeletalMesh()
 	}
 
     return SkeletalMesh;
+}
+
+TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
+{
+    return SNew(SVerticalBox)
+        // 메뉴 버튼 추가
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        [
+            SNew(SMenuAnchor)
+                .OnGetMenuContent(this, &SShowMakerWidget::GenerateMenuContent)  // 메뉴 생성 함수 연결
+                [
+                    SNew(SButton)
+                        .Text(FText::FromString("Select Skeletal Mesh"))
+                        .OnClicked(this, &SShowMakerWidget::OnMenuButtonClicked)  // 메뉴 버튼 클릭 시 메뉴를 보여줌
+                ]
+        ]
+
+        // 메뉴바 추가
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        [
+            CreateMenuBar()
+        ]
+
+        // 여기에 다른 위젯들을 추가해 편집 창을 완성
+        + SVerticalBox::Slot()
+        .Padding(2.0f)
+        .FillHeight(1.0f)
+        [
+            SNew(SVerticalResizableSplitter)
+                .Widgets
+                (
+                    {
+                        ConstructPreviewScenePanel(),
+                        SNew(SShowKeyBoxHandler)
+                            .ShowKeys(EditorHelper->GetShowKeys())
+                            .Height(20.0f)
+                            .MinWidth(50.0f)
+                            .SecondToWidthRatio(10.0f)
+                            .OnAddKey_Lambda([](FShowKey* Key) {})
+                            .OnRemoveKey_Lambda([](FShowKey* Key) {})
+                            .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
+                            .OnChangedKey_Lambda([this](FShowKey* Key) 
+                                {
+                                    if (NotifyHookInstance)
+                                    {
+                                        NotifyHookInstance->MarkPackageDirty();
+                                    }
+                                })
+                    }
+                )
+                .InitialRatios
+                (
+                    {
+                        0.7f,
+                        0.3f
+                    }
+                )
+        ]
+
+        + SVerticalBox::Slot()
+        .Padding(2.0f)
+        .AutoHeight()
+        [
+            SNew(SShowSequencerScrubPanel)
+                .ShowSequencerEditorHelper(EditorHelper)
+                .ViewInputMin(0.0f)
+                .ViewInputMax(100.0f)
+                .bDisplayAnimScrubBarEditing(true)
+                .OnSetInputViewRange_Lambda([](float Min, float Max)
+                    {})
+                .OnCropAnimSequence_Lambda([](bool Min, float Max)
+                    {})
+                .OnReZeroAnimSequence_Lambda([]()
+                    {})
+                .bAllowZoom(true)
+        ];
 }
 
 TSharedRef<SWidget> SShowMakerWidget::GenerateMenuContent()
@@ -280,6 +288,67 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructPreviewScenePanel()
         [
             PreviewViewport.ToSharedRef()
         ];
+}
+
+TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
+{
+    FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+    FDetailsViewArgs SkillShowDetailsViewArgs;
+    SkillShowDetailsViewArgs.bAllowSearch = true;
+    SkillShowDetailsViewArgs.bShowOptions = true;
+    NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditShowSequencer));
+    SkillShowDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
+
+    FStructureDetailsViewArgs SkillShowDetailsArgs;
+    SkillShowDetailsArgs.bShowObjects = true;
+
+    StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
+        SkillShowDetailsViewArgs,
+        SkillShowDetailsArgs,
+        nullptr,
+        FText::FromString("Skill Key Details")
+    );
+
+    return SNew(SVerticalBox)
+        + SVerticalBox::Slot()
+        .AutoHeight()
+        [
+            SNew(SMenuAnchor)
+                .OnGetMenuContent(this, &SShowMakerWidget::GenerateMenuContent)
+                [
+                    SNew(SButton)
+                        .Text(FText::FromString("Show Key"))
+                ]
+        ]
+
+        SLATE_SPACE_SLOT(0, 5)
+
+    + SVerticalBox::Slot()
+        .AutoHeight()
+        [
+            StructureDetailsView->GetWidget().ToSharedRef()
+        ];
+}
+
+void SShowMakerWidget::SetShowKey(FShowKey* NewShowKey)
+{
+    if (SelectedShowKey == NewShowKey)
+    {
+        return;
+    }
+
+    SelectedShowKey = NewShowKey;
+    if (SelectedShowKey)
+    {
+        // 구조체 데이터
+        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(FShowKey::StaticStruct(), (uint8*)SelectedShowKey));
+        StructureDetailsView->SetStructureData(StructData);
+    }
+    else
+    {
+        StructureDetailsView = nullptr;
+    }
 }
 
 void SShowMakerWidget::RefreshPreviewViewport()
