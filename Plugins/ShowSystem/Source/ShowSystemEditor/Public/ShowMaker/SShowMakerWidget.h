@@ -25,6 +25,14 @@ public:
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
+	
+	virtual ~SShowMakerWidget()
+	{
+		if (EditShowSequencer)
+		{
+			EditShowSequencer->EditorBeginDestroy();
+		}
+	}
 
 private:
 	TSharedRef<SWidget> ConstructMainBody();

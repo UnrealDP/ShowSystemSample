@@ -22,29 +22,38 @@ void UObjectPoolManager::Initialize(FSubsystemCollectionBase& Collection)
     Super::Initialize(Collection);
     
 
-    // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
-    FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
+    //// 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
+    //FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
 
-    // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
-    FString AssetPath;
-    if (GConfig)
+    //// 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+    //FString AssetPath;
+    //if (GConfig)
+    //{
+    //    GConfig->GetString(
+    //        TEXT("PoolSettings"),   // 섹션 이름
+    //        TEXT("ObjectPoolCapacityDataPath"),                  // 키 이름
+    //        AssetPath,                                     // 값을 저장할 변수
+    //        *ConfigFilePath                                // 플러그인의 ini 파일 경로
+    //    );
+    //}
+
+    //// 경로가 유효하지 않은 경우 기본 경로 설정
+    //if (AssetPath.IsEmpty())
+    //{
+    //    AssetPath = TEXT("/CoreUtils/ObjectPool/ObjectPoolCapacityData");
+    //}
+    //
+    //// 풀 설정을 초기화
+    //InitializePoolSettings(AssetPath);
+
+    UObjectPoolManager::GetPoolSettings(PoolSettings);
+
+    // 풀의 초기 용량을 설정
+    ObjectPools.SetNum(PoolSettings.Num());    
+    for (int32 i = 0; i < PoolSettings.Num(); ++i)
     {
-        GConfig->GetString(
-            TEXT("PoolSettings"),   // 섹션 이름
-            TEXT("ObjectPoolCapacityDataPath"),                  // 키 이름
-            AssetPath,                                     // 값을 저장할 변수
-            *ConfigFilePath                                // 플러그인의 ini 파일 경로
-        );
+        ObjectPools[i].Reserve(PoolSettings[i].InitialCapacity);
     }
-
-    // 경로가 유효하지 않은 경우 기본 경로 설정
-    if (AssetPath.IsEmpty())
-    {
-        AssetPath = TEXT("/CoreUtils/ObjectPool/ObjectPoolCapacityData");
-    }
-
-    // 풀 설정을 초기화
-    InitializePoolSettings(AssetPath);
 
     UE_LOG(LogTemp, Log, TEXT("UObjectPoolManager Initialized successfully."));
 }
@@ -70,6 +79,61 @@ void UObjectPoolManager::Deinitialize()
 
     Super::Deinitialize();
     UE_LOG(LogTemp, Log, TEXT("UObjectPoolManager: Object pool cleaned up."));
+}
+
+void UObjectPoolManager::GetPoolSettings(TArray<FObjectPoolTypeSettings>& OutPoolSettings)
+{
+    // 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
+    FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("CoreUtils"), TEXT("Config/DefaultCoreUtils.ini"));
+
+    // 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+    FString AssetPath;
+    if (GConfig)
+    {
+        GConfig->GetString(
+            TEXT("PoolSettings"),   // 섹션 이름
+            TEXT("ObjectPoolCapacityDataPath"),                  // 키 이름
+            AssetPath,                                     // 값을 저장할 변수
+            *ConfigFilePath                                // 플러그인의 ini 파일 경로
+        );
+    }
+
+    // 경로가 유효하지 않은 경우 기본 경로 설정
+    if (AssetPath.IsEmpty())
+    {
+        AssetPath = TEXT("/CoreUtils/ObjectPool/ObjectPoolCapacityData");
+    }
+
+    // 데이터 어셋을 로드
+    UObjectPoolCapacityDataAsset* ObjectPoolCapacityData = LoadObject<UObjectPoolCapacityDataAsset>(nullptr, *AssetPath);
+
+    if (ObjectPoolCapacityData)
+    {
+        int32 NumPools = ObjectPoolCapacityData->PoolSettings.Num();
+        OutPoolSettings.SetNum(NumPools);
+
+        for (const FObjectPoolTypeSettings& PoolTypeSetting : ObjectPoolCapacityData->PoolSettings)
+        {
+            int32 PoolIndex = static_cast<int32>(PoolTypeSetting.PoolType);
+
+            if (PoolIndex < 0 || PoolIndex >= ObjectPoolCapacityData->PoolSettings.Num())
+            {
+                checkf(false, TEXT("UObjectPoolCapacityDataAsset PoolType is Invalid [ %lld ]"), (long long)PoolIndex);
+                UE_LOG(LogTemp, Error, TEXT("UObjectPoolCapacityDataAsset PoolType is Invalid [ %lld ]"), (long long)PoolIndex);
+                continue;
+            }
+
+            // 풀 설정을 저장
+            OutPoolSettings[PoolIndex] = PoolTypeSetting;
+        }
+
+        // ObjectPoolCapacityData 는 더 이상 필요하지 않으므로 참조를 끊음
+        ObjectPoolCapacityData = nullptr;  // 참조를 끊으면 가비지 컬렉션에 의해 자동 해제됨
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to load the pool settings data asset."));
+    }
 }
 
 void UObjectPoolManager::InitializePoolSettings(FString AssetPath)

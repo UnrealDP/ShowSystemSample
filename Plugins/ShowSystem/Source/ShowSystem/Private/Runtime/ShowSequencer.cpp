@@ -47,8 +47,12 @@ UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
     checkf(Owner, TEXT("UShowSequencer::CreateShowObject: Owner is Invalid."));
 
     UWorld* World = Owner->GetWorld();
-    UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
+    if (!World)
+	{
+		return nullptr;
+	}
 
+    UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
     EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey.KeyType);    
     UShowBase* ShowBase = PoolManager->GetPooledObject<UShowBase>(PoolType);
     ShowBase->InitShowKey(this, InShowKey);
@@ -60,8 +64,13 @@ void UShowSequencer::ClearShowObjects()
     checkf(Owner, TEXT("UShowSequencer::ClearShowObjects: Owner is Invalid."));
 
     UWorld* World = Owner->GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
     UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
-    for (TObjectPtr<UShowBase> showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
     {
         EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(showBase->GetKeyType());
         PoolManager->ReturnPooledObject(showBase, PoolType);
@@ -106,7 +115,7 @@ void UShowSequencer::Tick(float DeltaTime)
         PassedTime += DeltaTime;
 
         bool bIsAllEnd = true;
-        for (TObjectPtr<UShowBase> showBase : RuntimeShowKeys)
+        for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
         {
             if (!showBase)
             {
@@ -146,3 +155,59 @@ void UShowSequencer::Tick(float DeltaTime)
         }
     }
 }
+
+#if WITH_EDITOR
+void UShowSequencer::EditorPlay()
+{ 
+    TArray<FObjectPoolTypeSettings> PoolSettings;
+    for (int32 i = 0; i < ShowKeys.Num(); ++i)
+    {
+        if (RuntimeShowKeys.Num() <= i || RuntimeShowKeys[i])
+        {
+            continue;
+        }
+
+        const FInstancedStruct& Key = ShowKeys[i];
+        checkf(Key.GetScriptStruct() == FShowKey::StaticStruct(), TEXT("UShowSequencer::EditorPlay: not FShowKey."));
+
+        const FShowKey* ShowKey = Key.GetPtr<FShowKey>();
+        if (!ShowKey)
+        {
+            continue;
+        }
+
+        if (PoolSettings.Num() == 0)
+        {
+            UObjectPoolManager::GetPoolSettings(PoolSettings);
+        }
+
+        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowKey[i].KeyType);
+        int32 Index = static_cast<int32>(PoolType);
+        UShowBase* ShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), PoolSettings[Index].ObjectClass);
+        RuntimeShowKeys[i] = ShowBase;
+    }
+
+    Play(); 
+}
+
+void UShowSequencer::EditorStop() 
+{ 
+    ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+    EditorClearShowObjects();
+}
+
+void UShowSequencer::EditorClearShowObjects()
+{
+    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    {
+        showBase = nullptr;
+    }
+    RuntimeShowKeys.Empty();
+}
+
+void UShowSequencer::EditorBeginDestroy()
+{
+    EditorClearShowObjects();
+    Owner = nullptr;
+}
+#endif

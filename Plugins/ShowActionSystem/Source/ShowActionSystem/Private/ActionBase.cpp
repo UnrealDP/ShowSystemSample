@@ -21,15 +21,6 @@ void UActionBase::OnPooled()
 
 void UActionBase::OnReturnedToPool()
 {
-	ActionName = nullptr;
-	Owner = nullptr;
-	ActionBaseData = nullptr;
-	ActionBaseShowData = nullptr;
-	State = EActionState::Wait;
-	StepPassedTime = 0.0f;
-	RemainCoolDown = 0.0f;
-	bIsComplete = false;
-
 	UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 	if (ShowPlayer)
 	{
@@ -51,6 +42,15 @@ void UActionBase::OnReturnedToPool()
 			FinishShow = nullptr;
 		}
 	}
+
+	ActionName = nullptr;
+	Owner = nullptr;
+	ActionBaseData = nullptr;
+	ActionBaseShowData = nullptr;
+	State = EActionState::Wait;
+	StepPassedTime = 0.0f;
+	RemainCoolDown = 0.0f;
+	bIsComplete = false;
 }
 
 void UActionBase::Tick(float DeltaTime)

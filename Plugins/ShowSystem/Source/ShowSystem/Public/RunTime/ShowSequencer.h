@@ -41,11 +41,13 @@ private:
 
 #if WITH_EDITOR
 public:
-    void EditorPlay() { Play(); }
-    void EditorStop() { Stop(); }
+    void EditorPlay();
+    void EditorStop();
     void EditorPause() { Pause(); }
     void EditorUnPause() { UnPause(); }
     void EditorChangeSpeed(float Speed) { ChangeSpeed(Speed); }
+    void EditorClearShowObjects();
+    void EditorBeginDestroy();
 #endif
 
 public:

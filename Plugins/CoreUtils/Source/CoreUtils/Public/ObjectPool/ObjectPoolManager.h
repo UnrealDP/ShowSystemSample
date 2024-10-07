@@ -21,6 +21,10 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection);
     virtual void Deinitialize() override;
 
+    // 에디터에서 프리뷰는 UWorldSubsystem 을 상속받은 서브시스템은 지원하지 않음.
+    // 그래서 직접 PoolSettings 를 가져오는 함수를 만들어서 에디터에서 사용할 수 있도록 함.
+    static void GetPoolSettings(TArray<FObjectPoolTypeSettings>& OutPoolSettings);
+
     // 풀 설정을 초기화하는 메서드
     void InitializePoolSettings(FString AssetPath);
 
@@ -98,10 +102,10 @@ private:
 
         for (int32 i = 0; i < ReservedObjectCount; i++)
         {
-            T* Object = NewObject<T>();  // UObject를 직접 생성
-            if (Object)
+            T* NewObjectInstance = NewObject<T>((UObject*)GetTransientPackage(), PoolSettings[Index].ObjectClass);
+            if (NewObjectInstance)
             {
-                ObjectPools[Index].Add(Object);
+                ObjectPools[Index].Add(NewObjectInstance);
             }
         }
     }
