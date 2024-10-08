@@ -28,6 +28,7 @@ void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequence
 	}
 
 	EditShowSequencer = Sequencer;
+	EditShowSequencer->EditorInitialize();
 	EditShowSequencer->SetDontDestroy();
 }
 

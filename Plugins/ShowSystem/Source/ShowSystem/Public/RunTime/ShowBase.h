@@ -32,7 +32,7 @@ public:
     float StartTime = 0.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
-    float Duration = 0.0f;
+    float Length = 0.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
     bool IsLoop = false;
@@ -61,19 +61,21 @@ public:
         Dispose();
     }
 
-    void InitShowKey(TObjectPtr<UShowSequencer> InShowSequencer, const FShowKey& InShowKey)
+    void InitShowKey(TObjectPtr<UShowSequencer> InShowSequencer, const FShowKey* InShowKey)
     {
+        checkf(InShowSequencer, TEXT("UShowBase::InitShowKey: The InShowSequencer is invalid."));
+        checkf(InShowKey, TEXT("UShowBase::InitShowKey: The InShowKey is invalid."));
+
         ShowSequencer = InShowSequencer;
 
-        if (ShowKey.IsValid())
-        {
-            ShowKey.Reset();
-        }
-        ShowKey = TSharedPtr<const FShowKey>(&InShowKey);
+        ShowKey = InShowKey;
         Initialize(InShowKey);
+        Length = InShowKey->Length;
     }
 
-    virtual void Initialize(const FShowKey& InShowKey) PURE_VIRTUAL(UShowBase::Initialize, );
+    virtual void Initialize(const FShowKey* InShowKey) PURE_VIRTUAL(UShowBase::Initialize, );
+    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
+    virtual float InitializeAssetLength() PURE_VIRTUAL(UShowBase::InitializeAssetLength, return 0.f;);
     virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );
     virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
     virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
@@ -101,6 +103,25 @@ public:
         return ShowKey->StartTime >= InPassedTime;
     }
 
+    float GetStartTime()
+    {
+        if (!ShowKey)
+        {
+			return 0.0f;
+		}
+        return ShowKey->StartTime;
+    }
+    float GetLength() 
+    { 
+        if (Length == FLT_MAX)
+		{
+			Length = InitializeAssetLength();
+		}
+        return Length;
+    }
+
+    const FShowKey* GetShowKey() const { return ShowKey; }
+
 protected:
     AActor* GetOwner() const
     {
@@ -114,10 +135,13 @@ protected:
     TObjectPtr<UShowSequencer> ShowSequencer;
 
     // ShowSequencer 어셋으로 받아온거라 절대 편집하면 안됨, 편집은 오로지 툴에서만 가능함
-    TSharedPtr<const FShowKey> ShowKey;
+    const FShowKey* ShowKey;
 
     EShowKeyState ShowKeyState = EShowKeyState::ShowKey_Wait;
 
+    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
+    // InitializeAssetLength 에서 초기화 되어야함
+    float Length = FLT_MAX;
     float PassedTime = 0.0f;
 };
 

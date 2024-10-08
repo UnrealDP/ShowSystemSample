@@ -16,59 +16,95 @@
 #include "Animation/AnimSequenceHelpers.h"
 #include "Animation/DebugSkelMeshComponent.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
+#include "RunTime/ShowBase.h"
+
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArguments& InArgs)
 {
 	bSliderBeingDragged = false;
 	ShowSequencerEditorHelper = InArgs._ShowSequencerEditorHelper;
-	OnSetInputViewRange = InArgs._OnSetInputViewRange;
 
-	this->ChildSlot
+	ShowViewInputMax = GetSequenceLength();
+
+	ChildSlot
 		[
 			SNew(SHorizontalBox)
 				.AddMetaData<FTagMetaData>(TEXT("AnimScrub.Scrub"))
+
 				+ SHorizontalBox::Slot()
 				.HAlign(HAlign_Fill)
 				.VAlign(VAlign_Center)
 				.FillWidth(1)
-				.Padding(0.0f)
+				.Padding(FMargin(0.0f, 0.0f))
 				[
-					SAssignNew(ScrubControlPanel, SScrubControlPanel)
-						.IsEnabled(true)//this, &SAnimationScrubPanel::DoesSyncViewport)
-						.Value(this, &SShowSequencerScrubPanel::GetScrubValue)
-						.NumOfKeys(this, &SShowSequencerScrubPanel::GetNumberOfKeys)
-						.SequenceLength(this, &SShowSequencerScrubPanel::GetSequenceLength)
-						.DisplayDrag(this, &SShowSequencerScrubPanel::GetDisplayDrag)
-						.OnValueChanged(this, &SShowSequencerScrubPanel::OnValueChanged)
-						.OnBeginSliderMovement(this, &SShowSequencerScrubPanel::OnBeginSliderMovement)
-						.OnEndSliderMovement(this, &SShowSequencerScrubPanel::OnEndSliderMovement)
-						.OnClickedForwardPlay(this, &SShowSequencerScrubPanel::OnClick_Forward)
-						.OnClickedForwardStep(this, &SShowSequencerScrubPanel::OnClick_Forward_Step)
-						.OnClickedForwardEnd(this, &SShowSequencerScrubPanel::OnClick_Forward_End)
-						.OnClickedBackwardPlay(this, &SShowSequencerScrubPanel::OnClick_Backward)
-						.OnClickedBackwardStep(this, &SShowSequencerScrubPanel::OnClick_Backward_Step)
-						.OnClickedBackwardEnd(this, &SShowSequencerScrubPanel::OnClick_Backward_End)
-						.OnClickedToggleLoop(this, &SShowSequencerScrubPanel::OnClick_ToggleLoop)
-						.OnClickedRecord(this, &SShowSequencerScrubPanel::OnClick_Record)
-						.OnGetLooping(this, &SShowSequencerScrubPanel::IsLoopStatusOn)
-						.OnGetPlaybackMode(this, &SShowSequencerScrubPanel::GetPlaybackMode)
-						.OnGetRecording(this, &SShowSequencerScrubPanel::IsRecording)
-						.ViewInputMin(InArgs._ViewInputMin)
-						.ViewInputMax(InArgs._ViewInputMax)
-						.bDisplayAnimScrubBarEditing(InArgs._bDisplayAnimScrubBarEditing)
-						.OnSetInputViewRange(InArgs._OnSetInputViewRange)
-						.OnCropAnimSequence(this, &SShowSequencerScrubPanel::OnCropAnimSequence)
-						.OnAddAnimSequence(this, &SShowSequencerScrubPanel::OnInsertAnimSequence)
-						.OnAppendAnimSequence(this, &SShowSequencerScrubPanel::OnAppendAnimSequence)
-						.OnReZeroAnimSequence(this, &SShowSequencerScrubPanel::OnReZeroAnimSequence)
-						.bAllowZoom(InArgs._bAllowZoom)
-						.IsRealtimeStreamingMode(this, &SShowSequencerScrubPanel::IsRealtimeStreamingMode)
+					SNew(SBorder)
+						[
+							SAssignNew(ShowScrubWidget, SScrubWidget)
+								.Clipping(EWidgetClipping::ClipToBounds)
+								.Value(this, &SShowSequencerScrubPanel::GetScrubValue)
+								.NumOfKeys(this, &SShowSequencerScrubPanel::GetNumberOfKeys)
+								.SequenceLength(this, &SShowSequencerScrubPanel::GetSequenceLength)
+								.DisplayDrag(&SShowSequencerScrubPanel::GetDisplayDrag)
+								.bDisplayAnimScrubBarEditing(false)
+								.OnValueChanged(this, &SShowSequencerScrubPanel::OnValueChanged)
+								.OnBeginSliderMovement(this, &SShowSequencerScrubPanel::OnBeginSliderMovement)
+								.OnEndSliderMovement(this, &SShowSequencerScrubPanel::OnEndSliderMovement)
+								.ViewInputMin(this, &SShowSequencerScrubPanel::GetViewInputMin)
+								.ViewInputMax(this, &SShowSequencerScrubPanel::GetViewInputMax)
+								.bAllowZoom(InArgs._bAllowZoom)
+								.OnSetInputViewRange(this, &SShowSequencerScrubPanel::OnSetInputViewRange)
+								.DraggableBars(DraggableBars)
+								.OnBarDrag(this, &SShowSequencerScrubPanel::OnScrubBarDrag)
+								.OnBarCommit(this, &SShowSequencerScrubPanel::OnScrubBarCommit)
+						]
 				]
+
+				//+ SHorizontalBox::Slot()
+				//.HAlign(HAlign_Fill)
+				//.VAlign(VAlign_Center)
+				//.FillWidth(1)
+				//.Padding(0.0f)
+				//[
+				//	SAssignNew(ScrubControlPanel, SScrubControlPanel)
+				//		.IsEnabled(true)//this, &SAnimationScrubPanel::DoesSyncViewport)
+				//		.Value(this, &SShowSequencerScrubPanel::GetScrubValue)
+				//		.NumOfKeys(this, &SShowSequencerScrubPanel::GetNumberOfKeys)
+				//		.SequenceLength(this, &SShowSequencerScrubPanel::GetSequenceLength)
+				//		.DisplayDrag(this, &SShowSequencerScrubPanel::GetDisplayDrag)
+				//		.OnValueChanged(this, &SShowSequencerScrubPanel::OnValueChanged)
+				//		.OnBeginSliderMovement(this, &SShowSequencerScrubPanel::OnBeginSliderMovement)
+				//		.OnEndSliderMovement(this, &SShowSequencerScrubPanel::OnEndSliderMovement)
+				//		.OnClickedForwardPlay(this, &SShowSequencerScrubPanel::OnClick_Forward)
+				//		.OnClickedForwardStep(this, &SShowSequencerScrubPanel::OnClick_Forward_Step)
+				//		.OnClickedForwardEnd(this, &SShowSequencerScrubPanel::OnClick_Forward_End)
+				//		.OnClickedBackwardPlay(this, &SShowSequencerScrubPanel::OnClick_Backward)
+				//		.OnClickedBackwardStep(this, &SShowSequencerScrubPanel::OnClick_Backward_Step)
+				//		.OnClickedBackwardEnd(this, &SShowSequencerScrubPanel::OnClick_Backward_End)
+				//		.OnClickedToggleLoop(this, &SShowSequencerScrubPanel::OnClick_ToggleLoop)
+				//		.OnClickedRecord(this, &SShowSequencerScrubPanel::OnClick_Record)
+				//		.OnGetLooping(this, &SShowSequencerScrubPanel::IsLoopStatusOn)
+				//		.OnGetPlaybackMode(this, &SShowSequencerScrubPanel::GetPlaybackMode)
+				//		.OnGetRecording(this, &SShowSequencerScrubPanel::IsRecording)
+				//		.ViewInputMin(0)
+				//		.ViewInputMax(100)
+				//		.bDisplayAnimScrubBarEditing(InArgs._bDisplayAnimScrubBarEditing)
+				//		.bAllowZoom(InArgs._bAllowZoom)
+				//		.IsRealtimeStreamingMode(this, &SShowSequencerScrubPanel::IsRealtimeStreamingMode)
+				//]
 		];
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
+float SShowSequencerScrubPanel::GetViewInputMin() const 
+{ 
+	return ShowViewInputMin; 
+}
+
+float SShowSequencerScrubPanel::GetViewInputMax() const 
+{ 
+	return ShowViewInputMax; 
+}
 
 FReply SShowSequencerScrubPanel::OnClick_Forward_Step()
 {
@@ -187,19 +223,12 @@ bool SShowSequencerScrubPanel::IsRealtimeStreamingMode() const
 
 void SShowSequencerScrubPanel::OnValueChanged(float NewValue)
 {
-	if (UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance())
+	if (!ShowSequencerEditorHelper->EditShowSequencer)
 	{
-		PreviewInstance->SetPosition(NewValue);
+		return;
 	}
-	else
-	{
-		UAnimInstance* Instance;
-		FAnimBlueprintDebugData* DebugData;
-		if (GetAnimBlueprintDebugData(/*out*/ Instance, /*out*/ DebugData))
-		{
-			DebugData->SetSnapshotIndexByTime(Instance, NewValue);
-		}
-	}
+
+	//ShowSequencerEditorHelper->EditShowSequencer->SetPassedTime(NewValue);
 }
 
 // make sure viewport is freshes
@@ -218,67 +247,26 @@ void SShowSequencerScrubPanel::OnEndSliderMovement(float NewValue)
 	bSliderBeingDragged = false;
 }
 
+float SShowSequencerScrubPanel::GetScrubValue() const
+{
+	if (!ShowSequencerEditorHelper->EditShowSequencer)
+	{
+		return 0.0f;
+	}
+
+	return ShowSequencerEditorHelper->EditShowSequencer->GetPassedTime();
+}
+
 uint32 SShowSequencerScrubPanel::GetNumberOfKeys() const
 {
-	//if (DoesSyncViewport())
-	//{
-	//	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//	float Length = PreviewInstance->GetLength();
-	//	// if anim sequence, use correct num frames
-	//	int32 NumKeys = (int32)(Length / 0.0333f);
-	//	if (PreviewInstance->GetCurrentAsset())
-	//	{
-	//		if (PreviewInstance->GetCurrentAsset()->IsA(UAnimSequenceBase::StaticClass()))
-	//		{
-	//			NumKeys = CastChecked<UAnimSequenceBase>(PreviewInstance->GetCurrentAsset())->GetNumberOfSampledKeys();
-	//		}
-	//		else if (PreviewInstance->GetCurrentAsset()->IsA(UBlendSpace::StaticClass()))
-	//		{
-	//			// Blendspaces dont display frame notches, so just return 0 here
-	//			NumKeys = 0;
-	//		}
-	//	}
-	//	return NumKeys;
-	//}
-	//else if (LockedSequence)
-	//{
-	//	return LockedSequence->GetNumberOfSampledKeys();
-	//}
-	//else
-	//{
-	//	UAnimInstance* Instance;
-	//	FAnimBlueprintDebugData* DebugData;
-	//	if (GetAnimBlueprintDebugData(/*out*/ Instance, /*out*/ DebugData))
-	//	{
-	//		return DebugData->GetSnapshotLengthInFrames();
-	//	}
-	//}
-
-	return 1;
+	float SequenceLength = GetSequenceLength();
+	int32 NumKeys = (int32)(SequenceLength / 0.0333f);
+	return NumKeys;
 }
 
 float SShowSequencerScrubPanel::GetSequenceLength() const
 {
-	//if (DoesSyncViewport())
-	//{
-	//	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//	return PreviewInstance->GetLength();
-	//}
-	//else if (LockedSequence)
-	//{
-	//	return LockedSequence->GetPlayLength();
-	//}
-	//else
-	//{
-	//	UAnimInstance* Instance;
-	//	FAnimBlueprintDebugData* DebugData;
-	//	if (GetAnimBlueprintDebugData(/*out*/ Instance, /*out*/ DebugData))
-	//	{
-	//		return static_cast<float>(Instance->LifeTimer);
-	//	}
-	//}
-
-	return 0.f;
+	return CrrShowSequenceLength;
 }
 
 bool SShowSequencerScrubPanel::DoesSyncViewport() const
@@ -291,6 +279,33 @@ bool SShowSequencerScrubPanel::DoesSyncViewport() const
 
 void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
+	if (!ShowSequencerEditorHelper->EditShowSequencer)
+	{
+		return;
+	}
+
+	float SequenceLength = 0.0f;
+	TArray<TObjectPtr<UShowBase>>* Shows = ShowSequencerEditorHelper->EditShowSequencer->EditorGetShowKeys();
+	if (Shows)
+	{
+		for (TObjectPtr<UShowBase>& ShowBase : *Shows)
+		{
+			if (!ShowBase)
+			{
+				continue;
+			}
+
+			float StartTime = ShowBase->GetStartTime();
+			float Length = ShowBase->GetLength();
+
+			SequenceLength = FMath::Max(SequenceLength, StartTime + Length);
+		}
+	}
+
+	if (CrrShowSequenceLength != SequenceLength)
+	{
+		ShowViewInputMax = CrrShowSequenceLength = SequenceLength;
+	}
 }
 
 class UAnimSingleNodeInstance* SShowSequencerScrubPanel::GetPreviewInstance() const
@@ -298,228 +313,30 @@ class UAnimSingleNodeInstance* SShowSequencerScrubPanel::GetPreviewInstance() co
 	return nullptr;
 }
 
-float SShowSequencerScrubPanel::GetScrubValue() const
-{
-	//if (DoesSyncViewport())
-	//{
-	//	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//	if (PreviewInstance)
-	//	{
-	//		return PreviewInstance->GetCurrentTime();
-	//	}
-	//}
-	//else
-	//{
-	//	UAnimInstance* Instance;
-	//	FAnimBlueprintDebugData* DebugData;
-	//	if (GetAnimBlueprintDebugData(/*out*/ Instance, /*out*/ DebugData))
-	//	{
-	//		return static_cast<float>(Instance->CurrentLifeTimerScrubPosition);
-	//	}
-	//}
-
-	return 0.f;
-}
-
-void SShowSequencerScrubPanel::ReplaceLockedSequence(UShowSequencer* InShowSequencer)
-{
-}
-
-UAnimInstance* SShowSequencerScrubPanel::GetAnimInstanceWithBlueprint() const
-{
-	/*if (UDebugSkelMeshComponent* DebugComponent = GetPreviewScene()->GetPreviewMeshComponent())
-	{
-		UAnimInstance* Instance = DebugComponent->GetAnimInstance();
-
-		if ((Instance != nullptr) && (Instance->GetClass()->ClassGeneratedBy != nullptr))
-		{
-			return Instance;
-		}
-	}*/
-
-	return nullptr;
-}
-
-bool SShowSequencerScrubPanel::GetAnimBlueprintDebugData(UAnimInstance*& Instance, FAnimBlueprintDebugData*& DebugInfo) const
-{
-	//Instance = GetAnimInstanceWithBlueprint();
-
-	//if (Instance != nullptr)
-	//{
-	//	// Avoid updating the instance if we're replaying the past
-	//	if (UAnimBlueprintGeneratedClass* AnimBlueprintClass = Cast<UAnimBlueprintGeneratedClass>(Instance->GetClass()))
-	//	{
-	//		if (UAnimBlueprint* Blueprint = Cast<UAnimBlueprint>(AnimBlueprintClass->ClassGeneratedBy))
-	//		{
-	//			if (Blueprint->GetObjectBeingDebugged() == Instance)
-	//			{
-	//				DebugInfo = &(AnimBlueprintClass->GetAnimBlueprintDebugData());
-	//				return true;
-	//			}
-	//		}
-	//	}
-	//}
-
-	return false;
-}
-
-void SShowSequencerScrubPanel::OnCropAnimSequence(bool bFromStart, float CurrentTime)
-{
-	//UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//if (PreviewInstance)
-	//{
-	//	float Length = PreviewInstance->GetLength();
-	//	if (PreviewInstance->GetCurrentAsset())
-	//	{
-	//		UAnimSequence* AnimSequence = Cast<UAnimSequence>(PreviewInstance->GetCurrentAsset());
-	//		if (AnimSequence)
-	//		{
-	//			const FScopedTransaction Transaction(LOCTEXT("CropAnimSequence", "Crop Animation Sequence"));
-
-	//			//Call modify to restore slider position
-	//			PreviewInstance->Modify();
-
-	//			//Call modify to restore anim sequence current state
-	//			AnimSequence->Modify();
-
-
-	//			const float TrimStart = bFromStart ? 0.f : CurrentTime;
-	//			const float TrimEnd = bFromStart ? CurrentTime : AnimSequence->GetPlayLength();
-
-	//			// Trim off the user-selected part of the raw anim data.
-	//			UE::Anim::AnimationData::Trim(AnimSequence, TrimStart, TrimEnd);
-
-	//			//Resetting slider position to the first frame
-	//			PreviewInstance->SetPosition(0.0f, false);
-
-	//			OnSetInputViewRange.ExecuteIfBound(0, AnimSequence->GetPlayLength());
-	//		}
-	//	}
-	//}
-}
-
-void SShowSequencerScrubPanel::OnAppendAnimSequence(bool bFromStart, int32 NumOfFrames)
-{
-	//UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//if (PreviewInstance && PreviewInstance->GetCurrentAsset())
-	//{
-	//	UAnimSequence* AnimSequence = Cast<UAnimSequence>(PreviewInstance->GetCurrentAsset());
-	//	if (AnimSequence)
-	//	{
-	//		const FScopedTransaction Transaction(LOCTEXT("InsertAnimSequence", "Insert Animation Sequence"));
-
-	//		//Call modify to restore slider position
-	//		PreviewInstance->Modify();
-
-	//		//Call modify to restore anim sequence current state
-	//		AnimSequence->Modify();
-
-	//		// Crop the raw anim data.
-	//		int32 StartFrame = (bFromStart) ? 0 : AnimSequence->GetDataModel()->GetNumberOfFrames() - 1;
-	//		int32 EndFrame = StartFrame + NumOfFrames;
-	//		int32 CopyFrame = StartFrame;
-	//		UE::Anim::AnimationData::DuplicateKeys(AnimSequence, StartFrame, NumOfFrames, CopyFrame);
-
-	//		OnSetInputViewRange.ExecuteIfBound(0, AnimSequence->GetPlayLength());
-	//	}
-	//}
-}
-
-void SShowSequencerScrubPanel::OnInsertAnimSequence(bool bBefore, int32 CurrentFrame)
-{
-	//UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//if (PreviewInstance && PreviewInstance->GetCurrentAsset())
-	//{
-	//	UAnimSequence* AnimSequence = Cast<UAnimSequence>(PreviewInstance->GetCurrentAsset());
-	//	if (AnimSequence)
-	//	{
-	//		const FScopedTransaction Transaction(LOCTEXT("InsertAnimSequence", "Insert Animation Sequence"));
-
-	//		//Call modify to restore slider position
-	//		PreviewInstance->Modify();
-
-	//		//Call modify to restore anim sequence current state
-	//		AnimSequence->Modify();
-
-	//		// Duplicate specified key
-	//		const int32 StartFrame = (bBefore) ? CurrentFrame : CurrentFrame + 1;
-	//		UE::Anim::AnimationData::DuplicateKeys(AnimSequence, StartFrame, 1, CurrentFrame);
-
-	//		OnSetInputViewRange.ExecuteIfBound(0, AnimSequence->GetPlayLength());
-	//	}
-	//}
-}
-
-void SShowSequencerScrubPanel::OnReZeroAnimSequence(int32 FrameIndex)
-{
-	//UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	//if (PreviewInstance)
-	//{
-	//	UDebugSkelMeshComponent* PreviewSkelComp = GetPreviewScene()->GetPreviewMeshComponent();
-
-	//	if (PreviewInstance->GetCurrentAsset() && PreviewSkelComp)
-	//	{
-	//		if (UAnimSequence* AnimSequence = Cast<UAnimSequence>(PreviewInstance->GetCurrentAsset()))
-	//		{
-	//			if (const USkeleton* Skeleton = AnimSequence->GetSkeleton())
-	//			{
-	//				const FName RootBoneName = Skeleton->GetReferenceSkeleton().GetBoneName(0);
-
-	//				if (AnimSequence->GetDataModel()->IsValidBoneTrackName(RootBoneName))
-	//				{
-	//					TArray<FVector3f> PosKeys;
-	//					TArray<FQuat4f> RotKeys;
-	//					TArray<FVector3f> ScaleKeys;
-
-	//					TArray<FTransform> BoneTransforms;
-	//					AnimSequence->GetDataModel()->GetBoneTrackTransforms(RootBoneName, BoneTransforms);
-
-	//					PosKeys.SetNum(BoneTransforms.Num());
-	//					RotKeys.SetNum(BoneTransforms.Num());
-	//					ScaleKeys.SetNum(BoneTransforms.Num());
-
-	//					// Find vector that would translate current root bone location onto origin.
-	//					FVector FrameTransform = FVector::ZeroVector;
-	//					if (FrameIndex == INDEX_NONE)
-	//					{
-	//						// Use current transform
-	//						FrameTransform = PreviewSkelComp->GetComponentSpaceTransforms()[0].GetLocation();
-	//					}
-	//					else if (BoneTransforms.IsValidIndex(FrameIndex))
-	//					{
-	//						// Use transform at frame
-	//						FrameTransform = BoneTransforms[FrameIndex].GetLocation();
-	//					}
-
-	//					FVector ApplyTranslation = -1.f * FrameTransform;
-
-	//					// Convert into world space
-	//					const FVector WorldApplyTranslation = PreviewSkelComp->GetComponentTransform().TransformVector(ApplyTranslation);
-	//					ApplyTranslation = PreviewSkelComp->GetComponentTransform().InverseTransformVector(WorldApplyTranslation);
-
-	//					for (int32 KeyIndex = 0; KeyIndex < BoneTransforms.Num(); KeyIndex++)
-	//					{
-	//						PosKeys[KeyIndex] = FVector3f(BoneTransforms[KeyIndex].GetLocation() + ApplyTranslation);
-	//						RotKeys[KeyIndex] = FQuat4f(BoneTransforms[KeyIndex].GetRotation());
-	//						ScaleKeys[KeyIndex] = FVector3f(BoneTransforms[KeyIndex].GetScale3D());
-	//					}
-
-	//					IAnimationDataController& Controller = AnimSequence->GetController();
-	//					Controller.SetBoneTrackKeys(RootBoneName, PosKeys, RotKeys, ScaleKeys);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-}
-
 bool SShowSequencerScrubPanel::GetDisplayDrag() const
 {
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	if (PreviewInstance && PreviewInstance->GetCurrentAsset())
+	if (!ShowSequencerEditorHelper->EditShowSequencer)
 	{
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
+}
+
+void SShowSequencerScrubPanel::OnSetInputViewRange(float NewViewMinInput, float NewViewMaxInput)
+{
+	ShowViewInputMax = NewViewMaxInput - NewViewMinInput;
+
+	Invalidate(EInvalidateWidget::Layout);
+	Invalidate(EInvalidateWidget::Paint);
+
+	UE_LOG(LogTemp, Warning, TEXT("OnSetInputViewRange: %f, %f"), NewViewMinInput, NewViewMaxInput);
+}
+
+void SShowSequencerScrubPanel::OnScrubBarDrag(int32 BarIndex, float NewPosition)
+{
+}
+
+void SShowSequencerScrubPanel::OnScrubBarCommit(int32 BarIndex, float FinalPosition)
+{
 }

@@ -39,7 +39,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
     if (ShowKey)
     {
         const float StartX = ShowKey->StartTime * SecondToWidthRatio.Get();
-        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowKey->Duration * SecondToWidthRatio.Get());
+        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowKey->Length * SecondToWidthRatio.Get());
 
         // 클릭 영역을 저장
         ClickableBox = FBox2D(FVector2D(StartX, 0), FVector2D(StartX + KeyWidth, Height.Get()));

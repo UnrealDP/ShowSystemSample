@@ -159,15 +159,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
         [
             SNew(SShowSequencerScrubPanel)
                 .ShowSequencerEditorHelper(EditorHelper)
-                .ViewInputMin(0.0f)
-                .ViewInputMax(100.0f)
                 .bDisplayAnimScrubBarEditing(true)
-                .OnSetInputViewRange_Lambda([](float Min, float Max)
-                    {})
-                .OnCropAnimSequence_Lambda([](bool Min, float Max)
-                    {})
-                .OnReZeroAnimSequence_Lambda([]()
-                    {})
                 .bAllowZoom(true)
         ];
 }

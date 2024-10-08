@@ -37,13 +37,14 @@ void UShowSequencer::GenerateShowBase()
             continue;
         }
 
-        UShowBase* ShowBase = CreateShowObject(*ShowKey);
+        UShowBase* ShowBase = CreateShowObject(ShowKey);
         RuntimeShowKeys[i] = ShowBase;
     }
 }
 
-UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
+UShowBase* UShowSequencer::CreateShowObject(const FShowKey* InShowKey)
 {
+    checkf(InShowKey, TEXT("UShowSequencer::CreateShowObject: InShowKey is Invalid."));
     checkf(Owner, TEXT("UShowSequencer::CreateShowObject: Owner is Invalid."));
 
     UWorld* World = Owner->GetWorld();
@@ -53,7 +54,7 @@ UShowBase* UShowSequencer::CreateShowObject(const FShowKey& InShowKey)
 	}
 
     UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
-    EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey.KeyType);    
+    EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(InShowKey->KeyType);    
     UShowBase* ShowBase = PoolManager->GetPooledObject<UShowBase>(PoolType);
     ShowBase->InitShowKey(this, InShowKey);
     return ShowBase;
@@ -157,18 +158,23 @@ void UShowSequencer::Tick(float DeltaTime)
 }
 
 #if WITH_EDITOR
-void UShowSequencer::EditorPlay()
-{ 
+void UShowSequencer::EditorInitialize()
+{
+    if (RuntimeShowKeys.IsEmpty())
+    {
+        RuntimeShowKeys.SetNum(ShowKeys.Num());
+    }
+    
     TArray<FObjectPoolTypeSettings> PoolSettings;
     for (int32 i = 0; i < ShowKeys.Num(); ++i)
     {
-        if (RuntimeShowKeys.Num() <= i || RuntimeShowKeys[i])
+        if (RuntimeShowKeys[i])
         {
             continue;
         }
 
         const FInstancedStruct& Key = ShowKeys[i];
-        checkf(Key.GetScriptStruct() == FShowKey::StaticStruct(), TEXT("UShowSequencer::EditorPlay: not FShowKey."));
+        checkf(Key.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::EditorPlay: not FShowKey."));
 
         const FShowKey* ShowKey = Key.GetPtr<FShowKey>();
         if (!ShowKey)
@@ -184,9 +190,14 @@ void UShowSequencer::EditorPlay()
         EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowKey[i].KeyType);
         int32 Index = static_cast<int32>(PoolType);
         UShowBase* ShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), PoolSettings[Index].ObjectClass);
+        ShowBase->InitShowKey(this, ShowKey);
         RuntimeShowKeys[i] = ShowBase;
     }
+}
 
+void UShowSequencer::EditorPlay()
+{ 
+    EditorInitialize();
     Play(); 
 }
 

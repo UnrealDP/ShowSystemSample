@@ -4,14 +4,34 @@
 #include "RunTime/ShowKeys/ShowAnimStatic.h"
 #include "RunTime/Animation/ShowAnimInstance.h"
 
-void UShowAnimStatic::Initialize(const FShowKey& InShowKey) 
+void UShowAnimStatic::Initialize(const FShowKey* InShowKey) 
 {
-    AnimStaticKeyPtr = static_cast<const FShowAnimStaticKey*>(&InShowKey);
-    checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKey is invalid [ %d ]"), static_cast<int>(InShowKey.KeyType));
+    checkf(InShowKey, TEXT("UShowAnimStatic::Initialize InShowKey is invalid"));
+
+    AnimStaticKeyPtr = static_cast<const FShowAnimStaticKey*>(InShowKey);
+    checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKey is invalid [ %d ]"), static_cast<int>(InShowKey->KeyType));
+
+    if (!AnimStaticKeyPtr->AnimSequenceClass)
+    {
+		ShowKeyState = EShowKeyState::ShowKey_End;
+		return; 
+    }
 
     // AnimSequenceClass로부터 UAnimSequenceBase 인스턴스 생성
     AnimSequenceBase = AnimStaticKeyPtr->AnimSequenceClass->GetDefaultObject<UAnimSequenceBase>();
     checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
+
+    Length = InitializeAssetLength();
+}
+
+float UShowAnimStatic::InitializeAssetLength()
+{
+    if (!AnimSequenceBase)
+	{
+		return 0.0f;
+	}
+
+	return AnimSequenceBase->GetPlayLength();
 }
 
 void UShowAnimStatic::Dispose()

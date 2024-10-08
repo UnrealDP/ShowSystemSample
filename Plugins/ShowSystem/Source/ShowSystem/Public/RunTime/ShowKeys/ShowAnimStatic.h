@@ -29,7 +29,8 @@ class SHOWSYSTEM_API UShowAnimStatic : public UShowBase
 	GENERATED_BODY()
 	
 protected:
-    virtual void Initialize(const FShowKey& InShowKey) override;
+    virtual void Initialize(const FShowKey* InShowKey) override;
+    virtual float InitializeAssetLength() override;
     virtual void Dispose() override;
     virtual void Play() override;
     virtual void Stop() override {};

@@ -10,6 +10,10 @@
 #include "SScrubWidget.h"
 #include "ITransportControl.h"
 
+class FShowSequencerEditorHelper;
+class UShowSequencer;
+class SScrubControlPanel;
+
 /**
  * 
  */
@@ -19,16 +23,9 @@ public:
 	SLATE_BEGIN_ARGS(SShowSequencerScrubPanel)
 		{}
 		/** If you'd like to lock to one asset for this scrub control, give this**/
-		SLATE_ARGUMENT(TSharedPtr<class FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
+		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
 		/** View Input range **/
-		SLATE_ATTRIBUTE(float, ViewInputMin)
-		SLATE_ATTRIBUTE(float, ViewInputMax)
 		SLATE_ARGUMENT(bool, bDisplayAnimScrubBarEditing)
-		SLATE_EVENT(FOnSetInputViewRange, OnSetInputViewRange)
-		/** Called when an anim sequence is cropped before/after a selected frame */
-		SLATE_EVENT(FOnCropAnimSequence, OnCropAnimSequence)
-		/** Called to zero out selected frame's translation from origin */
-		SLATE_EVENT(FSimpleDelegate, OnReZeroAnimSequence)
 		SLATE_ARGUMENT(bool, bAllowZoom)
 	SLATE_END_ARGS()
 
@@ -39,11 +36,9 @@ public:
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 	// End of SWidget interface
 
-	void ReplaceLockedSequence(class UShowSequencer* ShowSequencer);
 protected:
-	FOnSetInputViewRange OnSetInputViewRange;
-
-	bool bSliderBeingDragged;
+	float GetViewInputMin() const;
+	float GetViewInputMax() const;
 
 	// notifiers 
 	virtual FReply OnClick_Forward_Step();
@@ -58,24 +53,14 @@ protected:
 
 	virtual FReply OnClick_Record();
 
-	void AnimChanged(UAnimationAsset* AnimAsset);
-
 	virtual void OnValueChanged(float NewValue);
-
-	/** Function to crop animation sequence before/after selected frame */
-	void OnCropAnimSequence(bool bFromStart, float CurrentTime);
-	void OnAppendAnimSequence(bool bFromStart, int32 NumOfFrames);
-	void OnInsertAnimSequence(bool bBefore, int32 CurrentFrame);
-
-	/**
-	 * Sets the root bone to be at the origin at the specified frame.
-	 * If FrameIndex is INDEX_NONE then the current frame is used.
-	 */
-	void OnReZeroAnimSequence(int32 FrameIndex);
 
 	// make sure viewport is freshes
 	void OnBeginSliderMovement();
 	void OnEndSliderMovement(float NewValue);
+	void OnSetInputViewRange(float NewViewMinInput, float NewViewMaxInput);
+	void OnScrubBarDrag(int32 BarIndex, float NewPosition);
+	void OnScrubBarCommit(int32 BarIndex, float FinalPosition);
 
 	EPlaybackMode::Type GetPlaybackMode() const;
 	bool IsRecording() const;
@@ -85,19 +70,19 @@ protected:
 	float GetScrubValue() const;
 	class UAnimSingleNodeInstance* GetPreviewInstance() const;
 
-	TSharedPtr<class SScrubControlPanel> ScrubControlPanel;
-	TSharedPtr<class FShowSequencerEditorHelper> ShowSequencerEditorHelper;
-
 	/** Do I need to sync with viewport? **/
 	bool DoesSyncViewport() const;
 	uint32 GetNumberOfKeys() const;
 	float GetSequenceLength() const;
 
-	// Returns a UAnimInstance that came from a blueprint, or NULL (even if the UAnimInstance is not null, but it didn't come from a blueprint)
-	UAnimInstance* GetAnimInstanceWithBlueprint() const;
-
-	// Returns the debug data if the current preview is of an anim blueprint that is the selected debug object, or NULL
-	bool GetAnimBlueprintDebugData(UAnimInstance*& Instance, FAnimBlueprintDebugData*& DebugInfo) const;
-
 	bool GetDisplayDrag() const;	
+
+	TSharedPtr<SScrubWidget > ShowScrubWidget = nullptr;
+	bool bSliderBeingDragged = false;
+	TSharedPtr<SScrubControlPanel> ScrubControlPanel = nullptr;
+	TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;
+	TArray<float> DraggableBars;
+	float ShowViewInputMin = 0.0f;
+	float ShowViewInputMax = 0.0f;
+	float CrrShowSequenceLength = 0.0f;
 };

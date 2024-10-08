@@ -7,6 +7,8 @@
 #include "InstancedStruct.h"
 #include "ShowSequencer.generated.h"
 
+class UShowBase;
+struct FShowKey;
 
 UENUM(BlueprintType)
 enum class EShowSequencerState : uint8
@@ -16,7 +18,6 @@ enum class EShowSequencerState : uint8
     ShowSequencer_Pause UMETA(DisplayName = "ShowSequencer Pause"),
     ShowSequencer_End UMETA(DisplayName = "ShowSequencer End"),
 };
-
 
 /**
  * 
@@ -32,6 +33,8 @@ public:
     UShowSequencer();
     virtual void BeginDestroy() override;
 
+    float GetPassedTime() const { return PassedTime; }
+
 private:
     void Play();
     void Stop();
@@ -41,6 +44,7 @@ private:
 
 #if WITH_EDITOR
 public:
+    void EditorInitialize();
     void EditorPlay();
     void EditorStop();
     void EditorPause() { Pause(); }
@@ -48,6 +52,7 @@ public:
     void EditorChangeSpeed(float Speed) { ChangeSpeed(Speed); }
     void EditorClearShowObjects();
     void EditorBeginDestroy();
+    TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
 #endif
 
 public:
@@ -87,7 +92,7 @@ public:
 
 private:
     void GenerateShowBase();
-    class UShowBase* CreateShowObject(const struct FShowKey& InShowKey);
+    class UShowBase* CreateShowObject(const FShowKey* InShowKey);
     void ClearShowObjects();
 
 private:
