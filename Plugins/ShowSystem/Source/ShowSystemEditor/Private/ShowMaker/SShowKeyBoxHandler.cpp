@@ -4,11 +4,17 @@
 #include "ShowMaker/SShowKeyBoxHandler.h"
 #include "SlateOptMacros.h"
 #include "SlateEditorUtils.h"
+#include "SPositiveActionButton.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
+#include "RunTime/ShowKeys/ShowAnimStatic.h"
+#include "InstancedStruct.h"
+
+#define LOCTEXT_NAMESPACE "SShowKeyBoxHandler"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
 {
-    ShowKeys = InArgs._ShowKeys;
+    ShowSequencerEditorHelper = InArgs._ShowSequencerEditorHelper;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
@@ -17,21 +23,86 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     OnClickedKey = InArgs._OnClickedKey;
     OnChangedKey = InArgs._OnChangedKey;
 
-    ShowKeyBoxes.Empty();
-    TSharedPtr<SVerticalBox> VerticalBox;
+    KeyOptions.Add(MakeShared<FString>("Add ShowAnimStatic"));
+    KeyOptions.Add(MakeShared<FString>("Add Key 2"));
+
+    //ShowKeyBoxes.Empty();
 
     ChildSlot
         [
             SAssignNew(VerticalBox, SVerticalBox)
-            +SVerticalBox::Slot()
+            /*+ SVerticalBox::Slot()
                 .AutoHeight()
+                .HAlign(HAlign_Left)
+                .Padding(0.0f, 3.0f)
                 [
-                    CreateMenuBar()
+                    SNew(SPositiveActionButton)
+                        .Text(LOCTEXT("AddButton", "Add"))
+                        .OnGetMenuContent(this, &SShowKeyBoxHandler::CreateAddKeyMenu)
+                        .ToolTipText(LOCTEXT("AddButtonTooltip", "Add Show Key."))
+                        .Icon(FAppStyle::Get().GetBrush("Icons.Plus"))
                 ]
-                SLATE_SPACE_SLOT(0, 5)
+
+                SLATE_VERTICAL_SLOT(0, 5)*/
         ];
 
 
+    /*TArray<FShowKey*> ShowKeys = ShowSequencerEditorHelper->GetShowKeys();
+    for (FShowKey* Key : ShowKeys)
+    {
+        TSharedPtr<SShowKeyBox> NewKeyBox;
+        SAssignNew(NewKeyBox, SShowKeyBox)
+            .ShowKey(Key)
+            .Height(Height)
+            .MinWidth(MinWidth)
+            .SecondToWidthRatio(SecondToWidthRatio)
+            .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
+            .OnChanged(OnChangedKey);
+
+        ShowKeyBoxes.Add(NewKeyBox);
+
+        VerticalBox->AddSlot()
+            .AutoHeight()
+            [
+                NewKeyBox.ToSharedRef()
+            ];
+    }*/
+    RefreshShowKeyWidgets();
+}
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
+
+void SShowKeyBoxHandler::RefreshShowKeyWidgets()
+{
+    if (!ShowSequencerEditorHelper.IsValid() || !VerticalBox.IsValid())
+    {
+        return;
+    }
+
+    // 기존 위젯 제거
+    ShowKeyBoxes.Empty();
+    VerticalBox->ClearChildren();
+
+    // 'Add' 버튼 다시 추가
+    VerticalBox->AddSlot()
+        .AutoHeight()
+        .HAlign(HAlign_Left)
+        .Padding(0.0f, 3.0f)
+        [
+            SNew(SPositiveActionButton)
+                .Text(LOCTEXT("AddButton", "Add"))
+                .OnGetMenuContent(this, &SShowKeyBoxHandler::CreateAddKeyMenu)
+                .ToolTipText(LOCTEXT("AddButtonTooltip", "Add Show Key."))
+                .Icon(FAppStyle::Get().GetBrush("Icons.Plus"))
+        ];
+
+    VerticalBox->AddSlot()
+        .AutoHeight()
+        [
+            SNew(SSpacer).Size(FVector2D(0.0f, 5.0f))
+        ];
+
+    // ShowSequencerEditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
+    TArray<FShowKey*> ShowKeys = ShowSequencerEditorHelper->GetShowKeys();
     for (FShowKey* Key : ShowKeys)
     {
         TSharedPtr<SShowKeyBox> NewKeyBox;
@@ -52,51 +123,60 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
             ];
     }
 }
-END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-TSharedRef<SWidget> SShowKeyBoxHandler::CreateMenuBar()
+TSharedRef<SWidget> SShowKeyBoxHandler::CreateAddKeyMenu()
 {
-    FMenuBarBuilder MenuBarBuilder(nullptr);
-
-    // "Select Skeletal Mesh" 풀다운 메뉴 추가
-    MenuBarBuilder.AddPullDownMenu(
-        FText::FromString("Add Key"),
-        FText::FromString("Add Key"),
-        FNewMenuDelegate::CreateRaw(this, &SShowKeyBoxHandler::GenerateMenu)
-    );
-
-    return MenuBarBuilder.MakeWidget();
+    return SNew(SBorder)
+        .BorderImage(FAppStyle::GetBrush("Menu.Background"))
+        .Padding(2)
+        [
+            SNew(SBox)
+                .HAlign(HAlign_Fill)
+                [
+                    SNew(SListView<TSharedPtr<FString>>)
+                        .ItemHeight(24)
+                        .ListItemsSource(&KeyOptions)
+                        .OnGenerateRow(this, &SShowKeyBoxHandler::GenerateKeyRow)
+                        .OnSelectionChanged(this, &SShowKeyBoxHandler::OnAddKeySelected)
+                ]
+        ];
 }
 
-void SShowKeyBoxHandler::GenerateMenu(FMenuBuilder& MenuBuilder)
+TSharedRef<ITableRow> SShowKeyBoxHandler::GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable)
 {
-    MenuBuilder.AddMenuEntry(
-        FText::FromString("Key Type 1"),
-        FText::FromString("Select Key Type 1"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateSP(this, &SShowKeyBoxHandler::OnKeyTypeSelected, FString("Key Type 1")))
-    );
-
-    MenuBuilder.AddMenuEntry(
-        FText::FromString("Key Type 2"),
-        FText::FromString("Select Key Type 2"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateSP(this, &SShowKeyBoxHandler::OnKeyTypeSelected, FString("Key Type 2")))
-    );
+    return SNew(STableRow<TSharedPtr<FString>>, OwnerTable)
+        .Padding(FMargin(10, 3, 5, 2))
+        [
+            SNew(STextBlock).Text(FText::FromString(*InItem))
+        ];
 }
 
-void SShowKeyBoxHandler::OnKeyTypeSelected(FString SelectedKeyType)
+void SShowKeyBoxHandler::OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESelectInfo::Type SelectInfo)
 {
-    // 선택된 키 타입을 외부로 전달
-    if (OnAddKey.IsBound())
-    {
-        //OnAddKey.Execute(SelectedKeyType);
-    }
+    if (!ShowSequencerEditorHelper.IsValid() || !ShowSequencerEditorHelper->EditShowSequencer)
+	{
+		return;
+	}
 
-    if (MenuWindow.IsValid())
+    if (SelectedItem.IsValid())
     {
-        FSlateApplication::Get().DismissMenu(MenuWindow.ToSharedRef());
-        MenuWindow = nullptr;
+        if (*SelectedItem == "Add ShowAnimStatic")
+        {
+            FInstancedStruct NewKey;
+            NewKey.InitializeAs<FShowAnimStaticKey>();
+            ShowSequencerEditorHelper->EditShowSequencer->EditorAddKey(NewKey);
+            RefreshShowKeyWidgets();
+
+            if (OnAddKey.IsBound())
+            {
+                FShowAnimStaticKey* NewShowKey = NewKey.GetMutablePtr<FShowAnimStaticKey>();
+                OnAddKey.Execute(NewShowKey);
+            }
+        }
+        else if (*SelectedItem == "Add Key 2")
+        {
+            // Add Key 2 선택 시 실행할 코드
+        }
     }
 }
 

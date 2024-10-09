@@ -4,6 +4,8 @@
 
 #include "Toolkits/AssetEditorToolkit.h"
 
+class UShowSequencer;
+
 class FShowSequencerEditorToolkit : public FAssetEditorToolkit
 {
 public:
@@ -28,6 +30,9 @@ public:
 protected:
     void GenerateExtendMenuBar();  // 메뉴바 생성 함수 추가
 
-    class UShowSequencer* ShowSequencer;
+    UShowSequencer* ShowSequencer;
+
+public:
+    TSharedPtr<IDetailsView> DetailsView = nullptr;
 };
 

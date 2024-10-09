@@ -12,6 +12,7 @@ class IStructureDetailsView;
 class FShowSequencerEditorHelper;
 class UShowPlayer;
 class ShowSequencerNotifyHook;
+class FShowSequencerEditorToolkit;
 
 /**
  * 
@@ -20,6 +21,7 @@ class SHOWSYSTEMEDITOR_API SShowMakerWidget : public SCompoundWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SShowMakerWidget) {}
+		SLATE_ARGUMENT(FShowSequencerEditorToolkit*, ToolkitInstance)
 		SLATE_ARGUMENT(UShowSequencer*, EditShowSequencer)
 	SLATE_END_ARGS()
 
@@ -55,6 +57,8 @@ private:
 	void OnSkeletalMeshSelected(const FAssetData& SelectedAsset);
 
 	void SetShowKey(FShowKey* NewShowKey);
+
+	FShowSequencerEditorToolkit* ToolkitInstance = nullptr;
 
 	/** Preview Viewport widget */
 	TSharedPtr<SActorPreviewViewport> PreviewViewport = nullptr;

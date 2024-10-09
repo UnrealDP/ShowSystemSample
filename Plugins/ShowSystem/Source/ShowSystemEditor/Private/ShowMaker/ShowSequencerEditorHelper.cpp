@@ -32,27 +32,6 @@ void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequence
 	EditShowSequencer->SetDontDestroy();
 }
 
-TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
-{
-	if (!EditShowSequencer)
-	{
-		return TArray<FShowKey*>();
-	}
-
-	TArray<FShowKey*> ShowKeyPointers;
-
-	for (FInstancedStruct& Struct : EditShowSequencer->ShowKeys)
-	{
-		if (Struct.IsValid())
-		{
-			FShowKey* ShowKey = Struct.GetMutablePtr<FShowKey>();
-			ShowKeyPointers.Add(ShowKey);
-		}
-	}
-
-	return ShowKeyPointers;
-}
-
 void FShowSequencerEditorHelper::Play()
 {
 	if (EditShowSequencer)
@@ -75,4 +54,25 @@ void FShowSequencerEditorHelper::Play()
 			break;
 		}
 	}
+}
+
+TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
+{
+	if (!EditShowSequencer)
+	{
+		return TArray<FShowKey*>();
+	}
+
+	TArray<FShowKey*> ShowKeyPointers;
+
+	for (FInstancedStruct& Struct : EditShowSequencer->ShowKeys)
+	{
+		if (Struct.IsValid())
+		{
+			FShowKey* ShowKey = Struct.GetMutablePtr<FShowKey>();
+			ShowKeyPointers.Add(ShowKey);
+		}
+	}
+
+	return ShowKeyPointers;
 }

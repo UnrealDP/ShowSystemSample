@@ -7,6 +7,8 @@
 #include "ShowMaker/SShowKeyBox.h"
 #include "Widgets/SCompoundWidget.h"
 
+class FShowSequencerEditorHelper;
+
 DECLARE_DELEGATE_OneParam(FOnShowKeyEvent, FShowKey*);
 
 /**
@@ -16,7 +18,7 @@ class SHOWSYSTEMEDITOR_API SShowKeyBoxHandler : public SCompoundWidget
 {
 public:
     SLATE_BEGIN_ARGS(SShowKeyBoxHandler) {}
-        SLATE_ARGUMENT(TArray<FShowKey*>, ShowKeys)
+        SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
         SLATE_ATTRIBUTE(float, SecondToWidthRatio)
@@ -28,24 +30,27 @@ public:
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
+    void RefreshShowKeyWidgets();
 
-    TSharedRef<SWidget> CreateMenuBar();
-    void GenerateMenu(FMenuBuilder& MenuBuilder);
-
+    TSharedRef<SWidget> CreateAddKeyMenu();
+    TSharedRef<ITableRow> GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
+    void OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESelectInfo::Type SelectInfo);
     void OnKeyClicked(FShowKey* ClickedKey);
-    void OnKeyTypeSelected(FString SelectedKeyType);
 
 private:
-    TArray<FShowKey*> ShowKeys;
+    TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;
     TAttribute<float> Height = 30.0f;
     TAttribute<float> MinWidth = 50.0f;
     TAttribute<float> SecondToWidthRatio = 10.0f;
 
-    FOnShowKeyEvent OnAddKey;
-    FOnShowKeyEvent OnRemoveKey;
-    FOnShowKeyEvent OnClickedKey;
-    FOnShowKeyEvent OnChangedKey;
+    FOnShowKeyEvent OnAddKey = nullptr;
+    FOnShowKeyEvent OnRemoveKey = nullptr;
+    FOnShowKeyEvent OnClickedKey = nullptr;
+    FOnShowKeyEvent OnChangedKey = nullptr;
     
+    TSharedPtr<SVerticalBox> VerticalBox;
     TArray<TSharedPtr<SShowKeyBox>> ShowKeyBoxes;
     TSharedPtr<IMenu> MenuWindow = nullptr;
+
+    TArray<TSharedPtr<FString>> KeyOptions;
 };

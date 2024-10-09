@@ -15,10 +15,12 @@
 #include "IStructureDetailsView.h"
 #include "SlateEditorUtils.h"
 #include "ShowMaker/ShowSequencerNotifyHook.h"
+#include "ShowSequencerEditorToolkit.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
 {
+    ToolkitInstance = InArgs._ToolkitInstance;
     EditShowSequencer = InArgs._EditShowSequencer;
 
     EditorHelper = MakeShared<FShowSequencerEditorHelper>();
@@ -128,11 +130,21 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                     {
                         ConstructPreviewScenePanel(),
                         SNew(SShowKeyBoxHandler)
-                            .ShowKeys(EditorHelper->GetShowKeys())
+                            .ShowSequencerEditorHelper(EditorHelper)
                             .Height(20.0f)
                             .MinWidth(50.0f)
                             .SecondToWidthRatio(10.0f)
-                            .OnAddKey_Lambda([](FShowKey* Key) {})
+                            .OnAddKey_Lambda([this](FShowKey* Key)
+                                {
+                                    if (NotifyHookInstance)
+                                    {
+                                        NotifyHookInstance->MarkPackageDirty();
+                                        if (ToolkitInstance && ToolkitInstance->DetailsView && EditorHelper->EditShowSequencer)
+                                        {
+                                            ToolkitInstance->DetailsView->ForceRefresh();
+                                        }
+                                    }
+                                })
                             .OnRemoveKey_Lambda([](FShowKey* Key) {})
                             .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
                             .OnChangedKey_Lambda([this](FShowKey* Key) 
@@ -294,7 +306,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
 
     FStructureDetailsViewArgs SkillShowDetailsArgs;
     SkillShowDetailsArgs.bShowObjects = true;
-
+    
     StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
         SkillShowDetailsViewArgs,
         SkillShowDetailsArgs,
@@ -314,7 +326,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
                 ]
         ]
 
-        SLATE_SPACE_SLOT(0, 5)
+        SLATE_VERTICAL_SLOT(0, 5)
 
     + SVerticalBox::Slot()
         .AutoHeight()

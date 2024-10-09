@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InstancedStruct.h"
+#include "ObjectPool/ObjectPoolManager.h"
 #include "ShowSequencer.generated.h"
 
 class UShowBase;
@@ -45,6 +46,7 @@ private:
 #if WITH_EDITOR
 public:
     void EditorInitialize();
+    bool EditorAddKey(FInstancedStruct& Key);
     void EditorPlay();
     void EditorStop();
     void EditorPause() { Pause(); }
@@ -53,6 +55,8 @@ public:
     void EditorClearShowObjects();
     void EditorBeginDestroy();
     TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
+
+    TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 #endif
 
 public:

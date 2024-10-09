@@ -32,6 +32,11 @@ public:
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 
+	TSharedRef<SWidget> CreateCustomTransportControl();
+	FReply HandlePlayPauseButton();
+	FReply HandleReverseButton();
+	FReply HandleStopButton();
+
 	// SWidget interface
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 	// End of SWidget interface
@@ -85,4 +90,5 @@ protected:
 	float ShowViewInputMin = 0.0f;
 	float ShowViewInputMax = FLT_MAX;
 	float CrrShowSequenceLength = 0.0f;
+	EPlaybackMode::Type CurrentPlaybackMode = EPlaybackMode::Stopped;
 };

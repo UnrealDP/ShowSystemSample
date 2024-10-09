@@ -32,6 +32,7 @@ public class ShowSystemEditor : ModuleRules
                 "KismetWidgets",
                 "EditorWidgets",                
                 "AnimGraph",                
+                "ToolWidgets",
             }
 			);
 	}

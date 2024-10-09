@@ -11,7 +11,7 @@ void FShowSequencerEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManag
 
     // 기본 Details 창 탭 등록
     InTabManager->RegisterTabSpawner("DetailsTab", FOnSpawnTab::CreateSP(this, &FShowSequencerEditorToolkit::SpawnDetailsTab))
-        .SetDisplayName(FText::FromString("Details"))
+        .SetDisplayName(FText::FromString("ShowSequencer Details"))
         .SetGroup(WorkspaceMenuCategory.ToSharedRef());
 
     // ShowMaker 탭 등록
@@ -22,11 +22,11 @@ void FShowSequencerEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManag
 
 void FShowSequencerEditorToolkit::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
-    FAssetEditorToolkit::UnregisterTabSpawners(InTabManager);
-
     // 등록된 탭 스포너 해제
     InTabManager->UnregisterTabSpawner("DetailsTab");
     InTabManager->UnregisterTabSpawner("ShowMakerTab");
+
+    FAssetEditorToolkit::UnregisterTabSpawners(InTabManager);
 }
 
 // 기본 Details 탭 생성
@@ -37,7 +37,8 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnDetailsTab(const FSpawnTa
 
     FDetailsViewArgs DetailsViewArgs;
     DetailsViewArgs.bHideSelectionTip = true;  // 선택 팁 숨김
-    TSharedRef<IDetailsView> DetailsView = PropertyModule.CreateDetailView(DetailsViewArgs);
+    TSharedRef<IDetailsView> DetailsViewRef = PropertyModule.CreateDetailView(DetailsViewArgs);
+    DetailsView = DetailsViewRef;
 
     // 편집할 객체 설정 (디테일 창에 표시할 UObject)
     DetailsView->SetObject(GetEditingObject());
@@ -45,7 +46,7 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnDetailsTab(const FSpawnTa
     return SNew(SDockTab)
         .TabRole(ETabRole::PanelTab)
         [
-            DetailsView  // 프로퍼티 편집 가능한 디테일 뷰 제공
+            DetailsViewRef  // 프로퍼티 편집 가능한 디테일 뷰 제공
         ];
 }
 
@@ -57,6 +58,7 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
         .TabRole(ETabRole::PanelTab)
         [
             SNew(SShowMakerWidget)  // 여기서 SShowMakerWidget을 연결하여 표시
+                .ToolkitInstance(this)
                 .EditShowSequencer(ShowSequencer)  // ShowSequencer 전달 (필요 시)
         ];
 }
@@ -69,10 +71,14 @@ void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, cons
     const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("Standalone_ShowSequencerEditor_Layout")
         ->AddArea(
             FTabManager::NewPrimaryArea()
+            ->SetOrientation(Orient_Horizontal)
             ->Split
 			(
 				FTabManager::NewStack()
-				->AddTab("DetailsTab", ETabState::OpenedTab)
+                ->AddTab("DetailsTab", ETabState::OpenedTab)
+                ->AddTab("ShowMakerTab", ETabState::OpenedTab)
+                ->SetForegroundTab(FName("ShowMakerTab")) // 초기 포커스 설정
+                ->SetHideTabWell(false)
 			)
         );
 
@@ -113,29 +119,28 @@ void FShowSequencerEditorToolkit::GenerateExtendMenuBar()
                     FText::FromString("ShowMaker"),
                     FText::FromString("Open ShowMaker Window"),
                     FSlateIcon(),
-                    FUIAction(FExecuteAction::CreateLambda([]() {
+                    FUIAction(FExecuteAction::CreateLambda([InTabManager]() {
                         // ShowMaker 창을 여는 로직
-                        //OpenShowMakerWindow();
-                        }))
-                );
-
-                // Open Details 메뉴 항목 추가
-                const FUIAction OpenDetailsTabAction(
-                    FExecuteAction::CreateLambda([InTabManager]()
+                        // 탭을 다시 열기 위한 로직
+                        if (!InTabManager->FindExistingLiveTab(FName("ShowMakerTab")).IsValid())
                         {
-                            // 탭을 다시 열기 위한 로직
-                            if (!InTabManager->FindExistingLiveTab(FName("DetailsTab")).IsValid())
-                            {
-                                InTabManager->TryInvokeTab(FName("DetailsTab"));
-                            }
-                        })
+                            InTabManager->TryInvokeTab(FName("ShowMakerTab"));
+                        }
+                        }))
                 );
 
                 MenuBuilder.AddMenuEntry(
                     FText::FromString("Open Details Tab"),
                     FText::FromString("Reopen the Details tab for editing."),
                     FSlateIcon(),
-                    OpenDetailsTabAction
+                    FUIAction(FExecuteAction::CreateLambda([InTabManager]() {
+                        // ShowMaker 창을 여는 로직
+                        // 탭을 다시 열기 위한 로직
+                        if (!InTabManager->FindExistingLiveTab(FName("DetailsTab")).IsValid())
+                        {
+                            InTabManager->TryInvokeTab(FName("DetailsTab"));
+                        }
+                        }))
                 );
             }
             MenuBuilder.EndSection();

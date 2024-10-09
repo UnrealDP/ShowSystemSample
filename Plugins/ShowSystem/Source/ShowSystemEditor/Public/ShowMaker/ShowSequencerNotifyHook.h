@@ -41,4 +41,5 @@ public:
 
 private:
     TObjectPtr<UShowSequencer> ShowSequencer = nullptr;
+    TSharedPtr<IStructureDetailsView> StructureDetailsView = nullptr;
 };

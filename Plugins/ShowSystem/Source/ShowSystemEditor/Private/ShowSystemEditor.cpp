@@ -38,21 +38,20 @@ void FShowSystemEditor::StartupModule()
 
 	PropertyModule.NotifyCustomizationModuleChanged();
 
-
-
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner("ShowMakerTab", FOnSpawnTab::CreateRaw(this, &FShowSystemEditor::OnSpawnShowMakerTab))
+	// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
+	/*FGlobalTabmanager::Get()->RegisterNomadTabSpawner("ShowMakerTab", FOnSpawnTab::CreateRaw(this, &FShowSystemEditor::OnSpawnShowMakerTab))
 		.SetDisplayName(FText::FromString("Show Maker"))
-		.SetMenuType(ETabSpawnerMenuType::Enabled);
-
-	//FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
+		.SetMenuType(ETabSpawnerMenuType::Enabled);*/
+		// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
 
 	
 	TSharedRef<IAssetTypeActions> AnimContainerAction = MakeShareable(new FAssetTypeActions_AnimContainer(ShowSystemAssetCategory));
 	AssetTools.RegisterAssetTypeActions(AnimContainerAction);
 	RegisteredAssetTypeActions.Add(AnimContainerAction);
 
-
-	AddMenuExtension();
+	// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
+	//AddMenuExtension();
+	// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
 }
 
 void FShowSystemEditor::ShutdownModule()
@@ -77,52 +76,56 @@ void FShowSystemEditor::ShutdownModule()
 		PropertyModule.UnregisterCustomClassLayout("ShowSequencer");
 	}
 
-	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner("ShowMakerTab");
+	// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
+	//FGlobalTabmanager::Get()->UnregisterNomadTabSpawner("ShowMakerTab");
+	// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
 
 	UE_LOG(ShowSystemEditor, Log, TEXT("ShowSystemEditor module has been unloaded"));
 }
 
-TSharedRef<SDockTab> FShowSystemEditor::OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs)
-{
-	// 탭 매니저를 가져옴
-	TSharedPtr<SWindow> OwnerWindow = SpawnTabArgs.GetOwnerWindow();
-
-	return SNew(SDockTab)
-		.TabRole(ETabRole::NomadTab)
-		[
-			SNew(SShowMakerWidget)
-				.EditShowSequencer(TempShowSequencer)
-		];
-}
-
-TSharedPtr<SDockTab> FShowSystemEditor::OpenShowMakerTab(UShowSequencer* ShowSequencer)
-{
-	TempShowSequencer = ShowSequencer;
-	return FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
-}
-
-void FShowSystemEditor::AddMenuExtension()
-{
-	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("MainFrame.MainMenu.Window");
-
-	// "WindowLayout" 섹션 추가
-	FToolMenuSection& Section = Menu->FindOrAddSection("WindowLayout");
-
-	// "ShowSystem" 이름이 붙은 섹션을 추가 (구분선 역할)
-	FToolMenuSection& ShowSystemSection = Menu->AddSection("ShowSystem", FText::FromString("ShowSystem"));
-
-	// "ShowSystem" 섹션 아래에 "ShowMaker" 메뉴 추가
-	ShowSystemSection.AddMenuEntry(
-		"ShowMaker",
-		FText::FromString("ShowMaker"),
-		FText::FromString("Open ShowMaker Window"),
-		FSlateIcon(),
-		FUIAction(FExecuteAction::CreateLambda([this]() {
-			// ShowMaker 창 여는 로직
-			OpenShowMakerTab(nullptr);
-			}))
-	);
-}
+// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
+//TSharedRef<SDockTab> FShowSystemEditor::OnSpawnShowMakerTab(const FSpawnTabArgs& SpawnTabArgs)
+//{
+//	// 탭 매니저를 가져옴
+//	TSharedPtr<SWindow> OwnerWindow = SpawnTabArgs.GetOwnerWindow();
+//
+//	return SNew(SDockTab)
+//		.TabRole(ETabRole::NomadTab)
+//		[
+//			SNew(SShowMakerWidget)
+//				.EditShowSequencer(TempShowSequencer)
+//		];
+//}
+//
+//TSharedPtr<SDockTab> FShowSystemEditor::OpenShowMakerTab(UShowSequencer* ShowSequencer)
+//{
+//	TempShowSequencer = ShowSequencer;
+//	return FGlobalTabmanager::Get()->TryInvokeTab(FName("ShowMakerTab"));
+//}
+//
+//void FShowSystemEditor::AddMenuExtension()
+//{
+//	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("MainFrame.MainMenu.Window");
+//
+//	// "WindowLayout" 섹션 추가
+//	FToolMenuSection& Section = Menu->FindOrAddSection("WindowLayout");
+//
+//	// "ShowSystem" 이름이 붙은 섹션을 추가 (구분선 역할)
+//	FToolMenuSection& ShowSystemSection = Menu->AddSection("ShowSystem", FText::FromString("ShowSystem"));
+//
+//	// "ShowSystem" 섹션 아래에 "ShowMaker" 메뉴 추가
+//	ShowSystemSection.AddMenuEntry(
+//		"ShowMaker",
+//		FText::FromString("ShowMaker"),
+//		FText::FromString("Open ShowMaker Window"),
+//		FSlateIcon(),
+//		FUIAction(FExecuteAction::CreateLambda([this]() {
+//			// ShowMaker 창 여는 로직
+//			OpenShowMakerTab(nullptr);
+//			}))
+//	);
+//}
+// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제
 
 #undef LOCTEXT_NAMESPACE
 

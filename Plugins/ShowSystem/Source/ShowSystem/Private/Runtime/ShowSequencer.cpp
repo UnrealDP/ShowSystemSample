@@ -3,7 +3,6 @@
 
 #include "RunTime/ShowSequencer.h"
 #include "RunTime/ShowBase.h"
-#include "ObjectPool/ObjectPoolManager.h"
 
 UShowSequencer::UShowSequencer()
 {
@@ -165,7 +164,6 @@ void UShowSequencer::EditorInitialize()
         RuntimeShowKeys.SetNum(ShowKeys.Num());
     }
     
-    TArray<FObjectPoolTypeSettings> PoolSettings;
     for (int32 i = 0; i < ShowKeys.Num(); ++i)
     {
         if (RuntimeShowKeys[i])
@@ -182,17 +180,51 @@ void UShowSequencer::EditorInitialize()
             continue;
         }
 
-        if (PoolSettings.Num() == 0)
+        if (EditorPoolSettings.Num() == 0)
         {
-            UObjectPoolManager::GetPoolSettings(PoolSettings);
+            UObjectPoolManager::GetPoolSettings(EditorPoolSettings);
         }
 
-        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowKey[i].KeyType);
+        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowKey->KeyType);
         int32 Index = static_cast<int32>(PoolType);
-        UShowBase* ShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), PoolSettings[Index].ObjectClass);
+        UShowBase* ShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
         ShowBase->InitShowKey(this, ShowKey);
         RuntimeShowKeys[i] = ShowBase;
     }
+}
+
+bool UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
+{
+    checkf(NewKey.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::EditorInitializeKey: not FShowKey."));
+
+    ShowKeys.Add(MoveTemp(NewKey));
+
+    const FShowKey* NewShowKey = ShowKeys.Last().GetPtr<FShowKey>();
+    if (!NewShowKey)
+    {
+        return false;
+    }
+
+    if (EditorPoolSettings.Num() == 0)
+    {
+        UObjectPoolManager::GetPoolSettings(EditorPoolSettings);
+    }
+
+    EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
+    int32 Index = static_cast<int32>(PoolType);
+    UShowBase* NewShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
+    NewShowBase->InitShowKey(this, NewShowKey);
+    RuntimeShowKeys.Add(NewShowBase);
+
+    MarkPackageDirty();
+    Modify();
+    PostEditChange();
+
+    FProperty* ArrayProperty = FindFieldChecked<FProperty>(UShowSequencer::StaticClass(), GET_MEMBER_NAME_CHECKED(UShowSequencer, ShowKeys));
+    FPropertyChangedEvent PropertyChangedEvent(ArrayProperty);
+    PostEditChangeProperty(PropertyChangedEvent);
+
+    return true;
 }
 
 void UShowSequencer::EditorPlay()

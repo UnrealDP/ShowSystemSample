@@ -2,6 +2,7 @@
 
 
 #include "ShowMaker/SShowSequencerScrubPanel.h"
+#include "EditorWidgetsModule.h"
 #include "SlateOptMacros.h"
 #include "Widgets/SBoxPanel.h"
 #include "Animation/AnimSequenceBase.h"
@@ -17,7 +18,9 @@
 #include "Animation/DebugSkelMeshComponent.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "RunTime/ShowBase.h"
+#include "SlateEditorUtils.h"
 
+#define LOCTEXT_NAMESPACE "SShowSequencerScrubPanel"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArguments& InArgs)
@@ -27,10 +30,46 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 
 	ShowViewInputMax = GetSequenceLength();
 
+	FEditorWidgetsModule& EditorWidgetsModule = FModuleManager::Get().LoadModuleChecked<FEditorWidgetsModule>("EditorWidgets");
+
+	FTransportControlArgs TransportControlArgs;
+	/*TransportControlArgs.OnForwardPlay.BindSP(this, &YourWidgetClass::HandlePlayButton);
+	TransportControlArgs.OnBackwardPlay.BindSP(this, &YourWidgetClass::HandleReverseButton);
+	TransportControlArgs.OnStop.BindSP(this, &YourWidgetClass::HandleStopButton);
+	TransportControlArgs.OnPause.BindSP(this, &YourWidgetClass::HandlePauseButton);*/
+
+	//TransportControlArgs.OnForwardPlay = InArgs._OnClickedForwardPlay;
+	//TransportControlArgs.OnRecord = InArgs._OnClickedRecord;
+	//TransportControlArgs.OnBackwardPlay = InArgs._OnClickedBackwardPlay;
+	//TransportControlArgs.OnForwardStep = InArgs._OnClickedForwardStep;
+	//TransportControlArgs.OnBackwardStep = InArgs._OnClickedBackwardStep;
+	//TransportControlArgs.OnForwardEnd = InArgs._OnClickedForwardEnd;
+	//TransportControlArgs.OnBackwardEnd = InArgs._OnClickedBackwardEnd;
+	//TransportControlArgs.OnToggleLooping = InArgs._OnClickedToggleLoop;
+	//TransportControlArgs.OnGetLooping = InArgs._OnGetLooping;
+	//TransportControlArgs.OnGetPlaybackMode = InArgs._OnGetPlaybackMode;
+	//TransportControlArgs.OnGetRecording = InArgs._OnGetRecording;
+	//TransportControlArgs.OnTickPlayback = InArgs._OnTickPlayback;
+	//TransportControlArgs.WidgetsToCreate = InArgs._TransportControlWidgetsToCreate.Get(TArray<FTransportControlWidget>());
+
 	ChildSlot
 		[
 			SNew(SHorizontalBox)
 				.AddMetaData<FTagMetaData>(TEXT("AnimScrub.Scrub"))
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				[
+					SNew(SBorder)
+						.Padding(0.0f)
+						.BorderImage(FAppStyle::GetBrush("NoBorder"))
+						[
+							CreateCustomTransportControl()
+							//EditorWidgetsModule.CreateTransportControl(TransportControlArgs)
+						]
+				]
+
+				SLATE_HORIZONTAL_SLOT(16.0f, 16.0f)
 
 				+ SHorizontalBox::Slot()
 				.HAlign(HAlign_Fill)
@@ -95,6 +134,108 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 		];
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
+
+TSharedRef<SWidget> SShowSequencerScrubPanel::CreateCustomTransportControl()
+{
+	return SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			// Play/Pause 버튼
+			SNew(SButton)
+				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
+				.OnClicked(this, &SShowSequencerScrubPanel::HandlePlayPauseButton)
+				.Visibility(EVisibility::Visible)
+				.ToolTipText_Lambda([this]() -> FText {
+				return (CurrentPlaybackMode == EPlaybackMode::PlayingForward) ? LOCTEXT("Pause", "Pause") : LOCTEXT("Play", "Play");
+					})
+				.ContentPadding(0.0f)
+				.IsFocusable(true)
+				[
+					SNew(SImage)
+						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+						.Image_Lambda([this]() -> const FSlateBrush* {
+						return (CurrentPlaybackMode == EPlaybackMode::PlayingForward)
+							? FAppStyle::Get().GetBrush("Animation.Pause") // 상태에 따른 아이콘 전환
+							: FAppStyle::Get().GetBrush("Animation.Forward");
+							})
+				]
+		]
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			// Reverse 버튼
+			SNew(SButton)
+				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
+				.OnClicked(this, &SShowSequencerScrubPanel::HandleReverseButton)
+				.Visibility(EVisibility::Visible)
+				.ToolTipText(LOCTEXT("Reverse", "Reverse"))
+				.ContentPadding(0.0f)
+				.IsFocusable(true)
+				[
+					SNew(SImage)
+						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+						.Image(FAppStyle::Get().GetBrush("Animation.Backward"))
+				]
+		]
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			// Stop 버튼
+			SNew(SButton)
+				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
+				.OnClicked(this, &SShowSequencerScrubPanel::HandleStopButton)
+				.Visibility(EVisibility::Visible)
+				.ToolTipText(LOCTEXT("Stop", "Stop"))
+				.ContentPadding(0.0f)
+				.IsFocusable(true)
+				[
+					SNew(SImage)
+						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+						.Image(FAppStyle::Get().GetBrush("Animation.Stop"))
+				]
+		];
+}
+
+FReply SShowSequencerScrubPanel::HandlePlayPauseButton()
+{
+	if (CurrentPlaybackMode == EPlaybackMode::PlayingForward)
+	{
+		CurrentPlaybackMode = EPlaybackMode::Stopped;
+		UE_LOG(LogTemp, Log, TEXT("Paused"));
+		// Pause 로직 추가
+	}
+	else
+	{
+		CurrentPlaybackMode = EPlaybackMode::PlayingForward;
+		UE_LOG(LogTemp, Log, TEXT("Playing"));
+		// Play 로직 추가
+	}
+
+	return FReply::Handled();
+}
+
+FReply SShowSequencerScrubPanel::HandleReverseButton()
+{
+	CurrentPlaybackMode = EPlaybackMode::PlayingReverse;
+	UE_LOG(LogTemp, Log, TEXT("Reversing"));
+	// Reverse 로직 추가
+	return FReply::Handled();
+}
+
+FReply SShowSequencerScrubPanel::HandleStopButton()
+{
+	CurrentPlaybackMode = EPlaybackMode::Stopped;
+	UE_LOG(LogTemp, Log, TEXT("Stopped"));
+	// Stop 로직 추가
+	return FReply::Handled();
+}
 
 float SShowSequencerScrubPanel::GetViewInputMin() const 
 { 
