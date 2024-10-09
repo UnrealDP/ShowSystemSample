@@ -83,6 +83,6 @@ protected:
 	TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;
 	TArray<float> DraggableBars;
 	float ShowViewInputMin = 0.0f;
-	float ShowViewInputMax = 0.0f;
+	float ShowViewInputMax = FLT_MAX;
 	float CrrShowSequenceLength = 0.0f;
 };

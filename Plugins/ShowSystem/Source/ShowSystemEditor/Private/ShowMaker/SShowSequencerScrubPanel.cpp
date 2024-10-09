@@ -302,9 +302,16 @@ void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const dou
 		}
 	}
 
-	if (CrrShowSequenceLength != SequenceLength)
+	if (CrrShowSequenceLength != SequenceLength || ShowViewInputMax == FLT_MAX)
 	{
-		ShowViewInputMax = CrrShowSequenceLength = SequenceLength;
+		float ZoomRate = 1.0f;
+		if (ShowViewInputMax != FLT_MAX)
+		{
+			ZoomRate = ShowViewInputMax / CrrShowSequenceLength;
+		}
+		
+		CrrShowSequenceLength = SequenceLength;
+		ShowViewInputMax = CrrShowSequenceLength * ZoomRate;
 	}
 }
 
@@ -326,11 +333,6 @@ bool SShowSequencerScrubPanel::GetDisplayDrag() const
 void SShowSequencerScrubPanel::OnSetInputViewRange(float NewViewMinInput, float NewViewMaxInput)
 {
 	ShowViewInputMax = NewViewMaxInput - NewViewMinInput;
-
-	Invalidate(EInvalidateWidget::Layout);
-	Invalidate(EInvalidateWidget::Paint);
-
-	UE_LOG(LogTemp, Warning, TEXT("OnSetInputViewRange: %f, %f"), NewViewMinInput, NewViewMaxInput);
 }
 
 void SShowSequencerScrubPanel::OnScrubBarDrag(int32 BarIndex, float NewPosition)

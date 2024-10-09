@@ -119,7 +119,6 @@ FReply SShowKeyBox::OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent
 
     FVector2D DragCurrentPosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
     float DragDeltaX = DragCurrentPosition.X - DragStartPosition.X;
-    UE_LOG(LogTemp, Warning, TEXT("DragDeltaX: %f"), DragDeltaX);
 
     float DeltaTime = DragDeltaX / SecondToWidthRatio.Get();
     float StartTime = ShowKey->StartTime + DeltaTime;
