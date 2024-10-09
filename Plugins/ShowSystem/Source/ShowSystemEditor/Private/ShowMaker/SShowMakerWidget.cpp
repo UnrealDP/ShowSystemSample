@@ -2,20 +2,19 @@
 
 
 #include "ShowMaker/SShowMakerWidget.h"
-#include "ShowMaker/SShowSequencerScrubPanel.h"
 #include "ActorPreviewViewport.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
 #include "Misc/PathsUtil.h"
 #include "RunTime/ShowPlayer.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
-#include "ShowMaker/SShowKeyBoxHandler.h"
 #include "SVerticalResizableSplitter.h"
 #include "SHorizontalResizableSplitter.h"
 #include "IStructureDetailsView.h"
 #include "SlateEditorUtils.h"
 #include "ShowMaker/ShowSequencerNotifyHook.h"
 #include "ShowSequencerEditorToolkit.h"
+#include "ShowMaker/SShowSequencerEditor.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
@@ -129,8 +128,8 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                 (
                     {
                         ConstructPreviewScenePanel(),
-                        SNew(SShowKeyBoxHandler)
-                            .ShowSequencerEditorHelper(EditorHelper)
+                        SNew(SShowSequencerEditor)
+                            .EditorHelper(EditorHelper)
                             .Height(20.0f)
                             .MinWidth(50.0f)
                             .SecondToWidthRatio(10.0f)
@@ -147,7 +146,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                                 })
                             .OnRemoveKey_Lambda([](FShowKey* Key) {})
                             .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
-                            .OnChangedKey_Lambda([this](FShowKey* Key) 
+                            .OnChangedKey_Lambda([this](FShowKey* Key)
                                 {
                                     if (NotifyHookInstance)
                                     {
@@ -163,16 +162,6 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                         0.3f
                     }
                 )
-        ]
-
-        + SVerticalBox::Slot()
-        .Padding(2.0f)
-        .AutoHeight()
-        [
-            SNew(SShowSequencerScrubPanel)
-                .ShowSequencerEditorHelper(EditorHelper)
-                .bDisplayAnimScrubBarEditing(true)
-                .bAllowZoom(true)
         ];
 }
 

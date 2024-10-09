@@ -6,8 +6,9 @@
 #include "SlateEditorUtils.h"
 #include "SPositiveActionButton.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
-#include "RunTime/ShowKeys/ShowAnimStatic.h"
 #include "InstancedStruct.h"
+
+#include "RunTime/ShowKeys/ShowAnimStatic.h"
 
 #define LOCTEXT_NAMESPACE "SShowKeyBoxHandler"
 
@@ -26,47 +27,11 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     KeyOptions.Add(MakeShared<FString>("Add ShowAnimStatic"));
     KeyOptions.Add(MakeShared<FString>("Add Key 2"));
 
-    //ShowKeyBoxes.Empty();
-
     ChildSlot
         [
             SAssignNew(VerticalBox, SVerticalBox)
-            /*+ SVerticalBox::Slot()
-                .AutoHeight()
-                .HAlign(HAlign_Left)
-                .Padding(0.0f, 3.0f)
-                [
-                    SNew(SPositiveActionButton)
-                        .Text(LOCTEXT("AddButton", "Add"))
-                        .OnGetMenuContent(this, &SShowKeyBoxHandler::CreateAddKeyMenu)
-                        .ToolTipText(LOCTEXT("AddButtonTooltip", "Add Show Key."))
-                        .Icon(FAppStyle::Get().GetBrush("Icons.Plus"))
-                ]
-
-                SLATE_VERTICAL_SLOT(0, 5)*/
         ];
 
-
-    /*TArray<FShowKey*> ShowKeys = ShowSequencerEditorHelper->GetShowKeys();
-    for (FShowKey* Key : ShowKeys)
-    {
-        TSharedPtr<SShowKeyBox> NewKeyBox;
-        SAssignNew(NewKeyBox, SShowKeyBox)
-            .ShowKey(Key)
-            .Height(Height)
-            .MinWidth(MinWidth)
-            .SecondToWidthRatio(SecondToWidthRatio)
-            .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
-            .OnChanged(OnChangedKey);
-
-        ShowKeyBoxes.Add(NewKeyBox);
-
-        VerticalBox->AddSlot()
-            .AutoHeight()
-            [
-                NewKeyBox.ToSharedRef()
-            ];
-    }*/
     RefreshShowKeyWidgets();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
@@ -160,22 +125,23 @@ void SShowKeyBoxHandler::OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESel
 
     if (SelectedItem.IsValid())
     {
+        FShowKey* NewKey = nullptr;
         if (*SelectedItem == "Add ShowAnimStatic")
         {
-            FInstancedStruct NewKey;
-            NewKey.InitializeAs<FShowAnimStaticKey>();
-            ShowSequencerEditorHelper->EditShowSequencer->EditorAddKey(NewKey);
-            RefreshShowKeyWidgets();
-
-            if (OnAddKey.IsBound())
-            {
-                FShowAnimStaticKey* NewShowKey = NewKey.GetMutablePtr<FShowAnimStaticKey>();
-                OnAddKey.Execute(NewShowKey);
-            }
+            NewKey = ShowSequencerEditorHelper->AddKey<FShowAnimStaticKey>();
         }
         else if (*SelectedItem == "Add Key 2")
         {
             // Add Key 2 선택 시 실행할 코드
+        }
+
+        if (NewKey)
+        {
+            if (OnAddKey.IsBound())
+            {
+                RefreshShowKeyWidgets();
+                OnAddKey.Execute(NewKey);
+            }
         }
     }
 }

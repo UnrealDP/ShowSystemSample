@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "RunTime/ShowSequencer.h"
-
-struct FShowKey;
+#include "RunTime/ShowBase.h"
 
 /**
  * 
@@ -19,6 +18,15 @@ public:
 	void SetShowSequencerEditor(UShowSequencer* Sequencer);
 
 	TArray<FShowKey*> GetShowKeys();
+
+	template<typename T, typename = std::enable_if_t<std::is_base_of<FShowKey, T>::value>>
+	FShowKey* AddKey()
+	{
+		FInstancedStruct NewKey;
+		NewKey.InitializeAs<T>();
+		FShowKey* NewShowKey = EditShowSequencer->EditorAddKey(NewKey);
+		return NewShowKey;
+	}
 
 	void Play();
 

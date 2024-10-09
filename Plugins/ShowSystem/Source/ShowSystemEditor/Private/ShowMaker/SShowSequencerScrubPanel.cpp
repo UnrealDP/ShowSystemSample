@@ -30,28 +30,6 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 
 	ShowViewInputMax = GetSequenceLength();
 
-	FEditorWidgetsModule& EditorWidgetsModule = FModuleManager::Get().LoadModuleChecked<FEditorWidgetsModule>("EditorWidgets");
-
-	FTransportControlArgs TransportControlArgs;
-	/*TransportControlArgs.OnForwardPlay.BindSP(this, &YourWidgetClass::HandlePlayButton);
-	TransportControlArgs.OnBackwardPlay.BindSP(this, &YourWidgetClass::HandleReverseButton);
-	TransportControlArgs.OnStop.BindSP(this, &YourWidgetClass::HandleStopButton);
-	TransportControlArgs.OnPause.BindSP(this, &YourWidgetClass::HandlePauseButton);*/
-
-	//TransportControlArgs.OnForwardPlay = InArgs._OnClickedForwardPlay;
-	//TransportControlArgs.OnRecord = InArgs._OnClickedRecord;
-	//TransportControlArgs.OnBackwardPlay = InArgs._OnClickedBackwardPlay;
-	//TransportControlArgs.OnForwardStep = InArgs._OnClickedForwardStep;
-	//TransportControlArgs.OnBackwardStep = InArgs._OnClickedBackwardStep;
-	//TransportControlArgs.OnForwardEnd = InArgs._OnClickedForwardEnd;
-	//TransportControlArgs.OnBackwardEnd = InArgs._OnClickedBackwardEnd;
-	//TransportControlArgs.OnToggleLooping = InArgs._OnClickedToggleLoop;
-	//TransportControlArgs.OnGetLooping = InArgs._OnGetLooping;
-	//TransportControlArgs.OnGetPlaybackMode = InArgs._OnGetPlaybackMode;
-	//TransportControlArgs.OnGetRecording = InArgs._OnGetRecording;
-	//TransportControlArgs.OnTickPlayback = InArgs._OnTickPlayback;
-	//TransportControlArgs.WidgetsToCreate = InArgs._TransportControlWidgetsToCreate.Get(TArray<FTransportControlWidget>());
-
 	ChildSlot
 		[
 			SNew(SHorizontalBox)
@@ -65,7 +43,6 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 						.BorderImage(FAppStyle::GetBrush("NoBorder"))
 						[
 							CreateCustomTransportControl()
-							//EditorWidgetsModule.CreateTransportControl(TransportControlArgs)
 						]
 				]
 
@@ -98,39 +75,6 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 								.OnBarCommit(this, &SShowSequencerScrubPanel::OnScrubBarCommit)
 						]
 				]
-
-				//+ SHorizontalBox::Slot()
-				//.HAlign(HAlign_Fill)
-				//.VAlign(VAlign_Center)
-				//.FillWidth(1)
-				//.Padding(0.0f)
-				//[
-				//	SAssignNew(ScrubControlPanel, SScrubControlPanel)
-				//		.IsEnabled(true)//this, &SAnimationScrubPanel::DoesSyncViewport)
-				//		.Value(this, &SShowSequencerScrubPanel::GetScrubValue)
-				//		.NumOfKeys(this, &SShowSequencerScrubPanel::GetNumberOfKeys)
-				//		.SequenceLength(this, &SShowSequencerScrubPanel::GetSequenceLength)
-				//		.DisplayDrag(this, &SShowSequencerScrubPanel::GetDisplayDrag)
-				//		.OnValueChanged(this, &SShowSequencerScrubPanel::OnValueChanged)
-				//		.OnBeginSliderMovement(this, &SShowSequencerScrubPanel::OnBeginSliderMovement)
-				//		.OnEndSliderMovement(this, &SShowSequencerScrubPanel::OnEndSliderMovement)
-				//		.OnClickedForwardPlay(this, &SShowSequencerScrubPanel::OnClick_Forward)
-				//		.OnClickedForwardStep(this, &SShowSequencerScrubPanel::OnClick_Forward_Step)
-				//		.OnClickedForwardEnd(this, &SShowSequencerScrubPanel::OnClick_Forward_End)
-				//		.OnClickedBackwardPlay(this, &SShowSequencerScrubPanel::OnClick_Backward)
-				//		.OnClickedBackwardStep(this, &SShowSequencerScrubPanel::OnClick_Backward_Step)
-				//		.OnClickedBackwardEnd(this, &SShowSequencerScrubPanel::OnClick_Backward_End)
-				//		.OnClickedToggleLoop(this, &SShowSequencerScrubPanel::OnClick_ToggleLoop)
-				//		.OnClickedRecord(this, &SShowSequencerScrubPanel::OnClick_Record)
-				//		.OnGetLooping(this, &SShowSequencerScrubPanel::IsLoopStatusOn)
-				//		.OnGetPlaybackMode(this, &SShowSequencerScrubPanel::GetPlaybackMode)
-				//		.OnGetRecording(this, &SShowSequencerScrubPanel::IsRecording)
-				//		.ViewInputMin(0)
-				//		.ViewInputMax(100)
-				//		.bDisplayAnimScrubBarEditing(InArgs._bDisplayAnimScrubBarEditing)
-				//		.bAllowZoom(InArgs._bAllowZoom)
-				//		.IsRealtimeStreamingMode(this, &SShowSequencerScrubPanel::IsRealtimeStreamingMode)
-				//]
 		];
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
@@ -247,121 +191,6 @@ float SShowSequencerScrubPanel::GetViewInputMax() const
 	return ShowViewInputMax; 
 }
 
-FReply SShowSequencerScrubPanel::OnClick_Forward_Step()
-{
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_Forward_End()
-{
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	if (PreviewInstance)
-	{
-		PreviewInstance->SetPlaying(false);
-		PreviewInstance->SetPosition(PreviewInstance->GetLength(), false);
-	}
-
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_Backward_Step()
-{
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_Backward_End()
-{
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	if (PreviewInstance)
-	{
-		PreviewInstance->SetPlaying(false);
-		PreviewInstance->SetPosition(0.f, false);
-	}
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_Forward()
-{
-	if (ShowSequencerEditorHelper)
-	{
-		ShowSequencerEditorHelper->Play();
-	}
-
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_Backward()
-{
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	if (PreviewInstance)
-	{
-		bool bIsReverse = PreviewInstance->IsReverse();
-		bool bIsPlaying = PreviewInstance->IsPlaying();
-		// if currently playing forward, just simply turn on reverse
-		if (!bIsReverse && bIsPlaying)
-		{
-			PreviewInstance->SetReverse(true);
-		}
-		else if (bIsPlaying)
-		{
-			PreviewInstance->SetPlaying(false);
-		}
-		else
-		{
-			//if we're at the beginning of the animation, jump back to the end before playing
-			if (GetScrubValue() <= 0.0f)
-			{
-				PreviewInstance->SetPosition(GetSequenceLength(), false);
-			}
-
-			PreviewInstance->SetPlaying(true);
-			PreviewInstance->SetReverse(true);
-		}
-	}
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_ToggleLoop()
-{
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	if (PreviewInstance)
-	{
-		bool bIsLooping = PreviewInstance->IsLooping();
-		PreviewInstance->SetLooping(!bIsLooping);
-	}
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::OnClick_Record()
-{
-	//StaticCastSharedRef<FAnimationEditorPreviewScene>(GetPreviewScene())->RecordAnimation();
-
-	return FReply::Handled();
-}
-
-bool SShowSequencerScrubPanel::IsLoopStatusOn() const
-{
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	return (PreviewInstance && PreviewInstance->IsLooping());
-}
-
-EPlaybackMode::Type SShowSequencerScrubPanel::GetPlaybackMode() const
-{
-	return EPlaybackMode::Stopped;
-}
-
-bool SShowSequencerScrubPanel::IsRecording() const
-{
-	return false;
-	//return StaticCastSharedRef<FAnimationEditorPreviewScene>(GetPreviewScene())->IsRecording();
-}
-
-bool SShowSequencerScrubPanel::IsRealtimeStreamingMode() const
-{
-	UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-	return (!(PreviewInstance && PreviewInstance->GetCurrentAsset()));
-}
-
 void SShowSequencerScrubPanel::OnValueChanged(float NewValue)
 {
 	if (!ShowSequencerEditorHelper->EditShowSequencer)
@@ -376,11 +205,6 @@ void SShowSequencerScrubPanel::OnValueChanged(float NewValue)
 void SShowSequencerScrubPanel::OnBeginSliderMovement()
 {
 	bSliderBeingDragged = true;
-
-	if (UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance())
-	{
-		PreviewInstance->SetPlaying(false);
-	}
 }
 
 void SShowSequencerScrubPanel::OnEndSliderMovement(float NewValue)
@@ -408,14 +232,6 @@ uint32 SShowSequencerScrubPanel::GetNumberOfKeys() const
 float SShowSequencerScrubPanel::GetSequenceLength() const
 {
 	return CrrShowSequenceLength;
-}
-
-bool SShowSequencerScrubPanel::DoesSyncViewport() const
-{
-	/*UAnimSingleNodeInstance* PreviewInstance = GetPreviewInstance();
-
-	return ((ShowSequncer == nullptr && PreviewInstance) || (ShowSequncer && PreviewInstance && PreviewInstance->GetCurrentAsset() == ShowSequncer));*/
-	return false;
 }
 
 void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
@@ -454,11 +270,6 @@ void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const dou
 		CrrShowSequenceLength = SequenceLength;
 		ShowViewInputMax = CrrShowSequenceLength * ZoomRate;
 	}
-}
-
-class UAnimSingleNodeInstance* SShowSequencerScrubPanel::GetPreviewInstance() const
-{
-	return nullptr;
 }
 
 bool SShowSequencerScrubPanel::GetDisplayDrag() const

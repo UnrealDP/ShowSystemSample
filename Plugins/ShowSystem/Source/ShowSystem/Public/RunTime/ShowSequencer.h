@@ -46,7 +46,7 @@ private:
 #if WITH_EDITOR
 public:
     void EditorInitialize();
-    bool EditorAddKey(FInstancedStruct& Key);
+    FShowKey* EditorAddKey(FInstancedStruct& Key);
     void EditorPlay();
     void EditorStop();
     void EditorPause() { Pause(); }

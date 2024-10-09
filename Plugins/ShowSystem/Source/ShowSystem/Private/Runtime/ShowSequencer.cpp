@@ -193,16 +193,16 @@ void UShowSequencer::EditorInitialize()
     }
 }
 
-bool UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
+FShowKey* UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
 {
     checkf(NewKey.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::EditorInitializeKey: not FShowKey."));
 
     ShowKeys.Add(MoveTemp(NewKey));
 
-    const FShowKey* NewShowKey = ShowKeys.Last().GetPtr<FShowKey>();
+    FShowKey* NewShowKey = ShowKeys.Last().GetMutablePtr<FShowKey>();
     if (!NewShowKey)
     {
-        return false;
+        return nullptr;
     }
 
     if (EditorPoolSettings.Num() == 0)
@@ -217,14 +217,7 @@ bool UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
     RuntimeShowKeys.Add(NewShowBase);
 
     MarkPackageDirty();
-    Modify();
-    PostEditChange();
-
-    FProperty* ArrayProperty = FindFieldChecked<FProperty>(UShowSequencer::StaticClass(), GET_MEMBER_NAME_CHECKED(UShowSequencer, ShowKeys));
-    FPropertyChangedEvent PropertyChangedEvent(ArrayProperty);
-    PostEditChangeProperty(PropertyChangedEvent);
-
-    return true;
+    return NewShowKey;
 }
 
 void UShowSequencer::EditorPlay()

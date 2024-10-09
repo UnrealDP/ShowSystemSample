@@ -2,7 +2,6 @@
 
 
 #include "ShowMaker/ShowSequencerEditorHelper.h"
-#include "RunTime/ShowBase.h"
 
 FShowSequencerEditorHelper::FShowSequencerEditorHelper()
 {
