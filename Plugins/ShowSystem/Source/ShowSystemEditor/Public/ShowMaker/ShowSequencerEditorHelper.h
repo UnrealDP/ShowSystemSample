@@ -6,16 +6,17 @@
 #include "RunTime/ShowSequencer.h"
 #include "RunTime/ShowBase.h"
 
+class FShowSequencerEditorToolkit;
+class SShowMakerWidget;
+
 /**
  * 
  */
 class SHOWSYSTEMEDITOR_API FShowSequencerEditorHelper
 {
 public:
-	FShowSequencerEditorHelper();
+	FShowSequencerEditorHelper(FShowSequencerEditorToolkit* InShowSequencerEditorToolkit, TObjectPtr<UShowSequencer> InEditShowSequencer);
 	~FShowSequencerEditorHelper();
-
-	void SetShowSequencerEditor(UShowSequencer* Sequencer);
 
 	TArray<FShowKey*> GetShowKeys();
 
@@ -29,6 +30,20 @@ public:
 	}
 
 	void Play();
+	void ShowSequencerDetailsViewForceRefresh();
+	void SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget);
 
-	TObjectPtr<UShowSequencer> EditShowSequencer;
+	UClass* GetLastSelectedActorClass();
+	USkeletalMesh* LoadLastSelectedOrDefaultSkeletalMesh();	
+	UClass* GetLastSelectedAnimInstanceClass();
+	
+	void ReplaceActorPreviewWorld(UClass* ActorClass);
+	void ReplaceSkeletalMeshPreviewWorld(USkeletalMesh* SelectedSkeletalMesh);
+	void ReplaceAnimInstancePreviewWorld(UClass* AnimInterfaceClass);
+
+	FShowSequencerEditorToolkit* ShowSequencerEditorToolkit = nullptr;
+	TObjectPtr<UShowSequencer> EditShowSequencer = nullptr;
+	TSharedPtr<SShowMakerWidget> ShowMakerWidget = nullptr;
+	FShowKey* SelectedShowKey = nullptr;
 };
+

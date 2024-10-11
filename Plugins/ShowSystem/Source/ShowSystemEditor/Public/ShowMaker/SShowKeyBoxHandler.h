@@ -36,6 +36,7 @@ public:
     TSharedRef<ITableRow> GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
     void OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESelectInfo::Type SelectInfo);
     void OnKeyClicked(FShowKey* ClickedKey);
+    bool IsShowKeySelected(FShowKey* ShowKey);
 
 private:
     TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;

@@ -5,6 +5,7 @@
 #include "Toolkits/AssetEditorToolkit.h"
 
 class UShowSequencer;
+class FShowSequencerEditorHelper;
 
 class FShowSequencerEditorToolkit : public FAssetEditorToolkit
 {
@@ -28,11 +29,21 @@ public:
     TSharedRef<SDockTab> SpawnShowMakerTab(const FSpawnTabArgs& Args);
 
 protected:
-    void GenerateExtendMenuBar();  // 메뉴바 생성 함수 추가
+    void GenerateToolbarButtons();
+    void GenerateExtendMenuBar();
+    void AddToolbarButtons(FToolBarBuilder& ToolbarBuilder);
 
-    UShowSequencer* ShowSequencer;
+    void OpenActorPicker();
+    void OnSelectedActor(const FAssetData& SelectedAsset);
+
+    void OpenSkeletalMeshPicker();
+    void OnSelectedSkeletalMesh(const FAssetData& SelectedAsset);
+
+    void OpenAnimPicker();
+    void OnSelectedAnim(const FAssetData& SelectedAsset);
 
 public:
     TSharedPtr<IDetailsView> DetailsView = nullptr;
+    TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 };
 

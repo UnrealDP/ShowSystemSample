@@ -4,6 +4,9 @@
 #include "ShowSequencerEditorToolkit.h"
 #include "RunTime/ShowSequencer.h"
 #include "ShowMaker/SShowMakerWidget.h"
+#include "ContentBrowserModule.h"
+#include "IContentBrowserSingleton.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
 
 void FShowSequencerEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
@@ -53,19 +56,25 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnDetailsTab(const FSpawnTa
 // ShowMaker 탭 생성 함수
 TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawnTabArgs& Args)
 {
-    return SNew(SDockTab)
+    TSharedPtr<SShowMakerWidget> ShowMakerWidget;
+
+    TSharedRef<SDockTab> DockTab = SNew(SDockTab)
         .Label(FText::FromString("ShowMaker"))
         .TabRole(ETabRole::PanelTab)
         [
-            SNew(SShowMakerWidget)  // 여기서 SShowMakerWidget을 연결하여 표시
-                .ToolkitInstance(this)
-                .EditShowSequencer(ShowSequencer)  // ShowSequencer 전달 (필요 시)
+            SAssignNew(ShowMakerWidget, SShowMakerWidget)
+                .EditorHelper(EditorHelper) 
+                .EditShowSequencer(EditorHelper->EditShowSequencer)  // ShowSequencer 전달 (필요 시)
         ];
+
+    EditorHelper->SetShowMakerWidget(ShowMakerWidget);
+
+    return DockTab;
 }
 
 void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequencer* InShowSequencer)
 {
-    ShowSequencer = InShowSequencer;
+    EditorHelper = MakeShared<FShowSequencerEditorHelper>(this, InShowSequencer);
 
     // 기본 에디터 레이아웃 설정
     const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("Standalone_ShowSequencerEditor_Layout")
@@ -83,7 +92,7 @@ void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, cons
         );
 
     TArray<UObject*> SingleObjectArray;
-    SingleObjectArray.Add(ShowSequencer);
+    SingleObjectArray.Add(EditorHelper->EditShowSequencer);
 
     // 에디터 초기화
     InitAssetEditor(
@@ -96,9 +105,211 @@ void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, cons
         SingleObjectArray
     );
 
+    GenerateToolbarButtons();
+
     GenerateExtendMenuBar();  // 메뉴바 생성
 
     RegenerateMenusAndToolbars();
+}
+
+void FShowSequencerEditorToolkit::GenerateToolbarButtons()
+{
+    TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
+    ToolbarExtender->AddToolBarExtension(
+        "Asset",
+        EExtensionHook::After,
+        GetToolkitCommands(),
+        FToolBarExtensionDelegate::CreateSP(this, &FShowSequencerEditorToolkit::AddToolbarButtons)
+    );
+
+    AddToolbarExtender(ToolbarExtender);
+}
+
+void FShowSequencerEditorToolkit::AddToolbarButtons(FToolBarBuilder& ToolbarBuilder)
+{
+    ToolbarBuilder.BeginSection("CustomButtons");
+    {
+        ToolbarBuilder.AddToolBarButton(
+            FUIAction(FExecuteAction::CreateSP(this, &FShowSequencerEditorToolkit::OpenSkeletalMeshPicker)),
+            NAME_None,
+            FText::FromString("SkeletalMesh"),
+            FText::FromString("Select SkeletalMesh")
+        );
+    }
+    {
+        ToolbarBuilder.AddToolBarButton(
+            FUIAction(FExecuteAction::CreateSP(this, &FShowSequencerEditorToolkit::OpenAnimPicker)),
+            NAME_None,
+            FText::FromString("Anim"),
+            FText::FromString("Select Anim")
+        );
+    }
+    {
+        ToolbarBuilder.AddToolBarButton(
+            FUIAction(FExecuteAction::CreateSP(this, &FShowSequencerEditorToolkit::OpenActorPicker)),
+            NAME_None,
+            FText::FromString("Actor"),
+            FText::FromString("Select Actor")
+        );
+    }    
+    ToolbarBuilder.EndSection();
+}
+
+void FShowSequencerEditorToolkit::OpenActorPicker()
+{
+    // 새로운 윈도우 생성
+    TSharedRef<SWindow> ActorPickerWindow = SNew(SWindow)
+        .Title(FText::FromString("Select Actor"))
+        .ClientSize(FVector2D(600, 400));
+
+    // Content Browser 모듈 가져오기
+    FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+
+    // 애셋 선택기 생성 설정
+    FAssetPickerConfig AssetPickerConfig;
+    // 스켈레탈 메쉬만 표시되도록 필터링 설정
+    AssetPickerConfig.Filter.ClassPaths.Add(AActor::StaticClass()->GetClassPathName());
+    AssetPickerConfig.Filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+    AssetPickerConfig.Filter.bRecursiveClasses = true;
+    AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateLambda([](const FAssetData& AssetData) -> bool
+        {
+            if (UBlueprint* Blueprint = Cast<UBlueprint>(AssetData.GetAsset()))
+            {
+                if (Blueprint->GeneratedClass->IsChildOf(AActor::StaticClass()))
+                {
+                    UClass* ActorClass = Blueprint->GeneratedClass;
+                    if (ActorClass)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+
+    AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &FShowSequencerEditorToolkit::OnSelectedActor);
+
+    // 애셋 선택기를 새로운 윈도우에 설정
+    ActorPickerWindow->SetContent(
+        ContentBrowserModule.Get().CreateAssetPicker(AssetPickerConfig)
+    );
+
+    // 윈도우를 띄움
+    FSlateApplication::Get().AddWindow(ActorPickerWindow);
+}
+
+void FShowSequencerEditorToolkit::OnSelectedActor(const FAssetData& SelectedAsset)
+{
+    if (UBlueprint* Blueprint = Cast<UBlueprint>(SelectedAsset.GetAsset()))
+    {
+        if (Blueprint->GeneratedClass->IsChildOf(AActor::StaticClass()))
+        {
+            // 블루프린트가 AActor의 자식 클래스인지 확인
+            UClass* ActorClass = Blueprint->GeneratedClass;
+            if (ActorClass)
+            {
+                EditorHelper->ReplaceActorPreviewWorld(ActorClass);
+            }
+        }
+    }
+}
+
+void FShowSequencerEditorToolkit::OpenSkeletalMeshPicker()
+{
+    // 새로운 윈도우 생성
+    TSharedRef<SWindow> ActorPickerWindow = SNew(SWindow)
+        .Title(FText::FromString("Select SkeletalMesh"))
+        .ClientSize(FVector2D(600, 400));
+
+    // Content Browser 모듈 가져오기
+    FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+
+    // 애셋 선택기 생성 설정
+    FAssetPickerConfig AssetPickerConfig;
+    // 스켈레탈 메쉬만 표시되도록 필터링 설정
+    AssetPickerConfig.Filter.ClassPaths.Add(USkeletalMesh::StaticClass()->GetClassPathName());
+    AssetPickerConfig.Filter.bRecursiveClasses = true;
+    AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateLambda([](const FAssetData& AssetData) -> bool
+        {
+            return !AssetData.GetClass()->IsChildOf(USkeletalMesh::StaticClass());
+        });
+
+    AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &FShowSequencerEditorToolkit::OnSelectedSkeletalMesh);
+
+    // 애셋 선택기를 새로운 윈도우에 설정
+    ActorPickerWindow->SetContent(
+        ContentBrowserModule.Get().CreateAssetPicker(AssetPickerConfig)
+    );
+
+    // 윈도우를 띄움
+    FSlateApplication::Get().AddWindow(ActorPickerWindow);
+}
+
+void FShowSequencerEditorToolkit::OnSelectedSkeletalMesh(const FAssetData& SelectedAsset)
+{
+    USkeletalMesh* SelectedSkeletalMesh = Cast<USkeletalMesh>(SelectedAsset.GetAsset());
+    if (SelectedSkeletalMesh)
+	{
+		EditorHelper->ReplaceSkeletalMeshPreviewWorld(SelectedSkeletalMesh);
+	}
+}
+
+void FShowSequencerEditorToolkit::OpenAnimPicker()
+{
+    // 새로운 윈도우 생성
+    TSharedRef<SWindow> ActorPickerWindow = SNew(SWindow)
+        .Title(FText::FromString("Select Actor"))
+        .ClientSize(FVector2D(600, 400));
+
+    // Content Browser 모듈 가져오기
+    FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+
+    // 애셋 선택기 생성 설정
+    FAssetPickerConfig AssetPickerConfig;
+    AssetPickerConfig.Filter.ClassPaths.Add(UAnimInstance::StaticClass()->GetClassPathName());
+    AssetPickerConfig.Filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+    AssetPickerConfig.Filter.bRecursiveClasses = true;
+    AssetPickerConfig.OnShouldFilterAsset = FOnShouldFilterAsset::CreateLambda([](const FAssetData& AssetData) -> bool
+        {
+            if (UBlueprint* Blueprint = Cast<UBlueprint>(AssetData.GetAsset()))
+            {
+                if (Blueprint->GeneratedClass->IsChildOf(UAnimInstance::StaticClass()))
+                {
+                    UClass* ActorClass = Blueprint->GeneratedClass;
+                    if (ActorClass)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+
+    AssetPickerConfig.OnAssetSelected = FOnAssetSelected::CreateSP(this, &FShowSequencerEditorToolkit::OnSelectedAnim);
+
+    // 애셋 선택기를 새로운 윈도우에 설정
+    ActorPickerWindow->SetContent(
+        ContentBrowserModule.Get().CreateAssetPicker(AssetPickerConfig)
+    );
+
+    // 윈도우를 띄움
+    FSlateApplication::Get().AddWindow(ActorPickerWindow);
+}
+
+void FShowSequencerEditorToolkit::OnSelectedAnim(const FAssetData& SelectedAsset)
+{
+    if (UBlueprint* Blueprint = Cast<UBlueprint>(SelectedAsset.GetAsset()))
+    {
+        if (Blueprint->GeneratedClass->IsChildOf(UAnimInstance::StaticClass()))
+        {
+            // 블루프린트가 UAnimInstance의 자식 클래스인지 확인
+            UClass* AnimInstanceClass = Blueprint->GeneratedClass;
+            if (AnimInstanceClass)
+            {
+                EditorHelper->ReplaceAnimInstancePreviewWorld(AnimInstanceClass);
+            }
+        }
+    }
 }
 
 void FShowSequencerEditorToolkit::GenerateExtendMenuBar()

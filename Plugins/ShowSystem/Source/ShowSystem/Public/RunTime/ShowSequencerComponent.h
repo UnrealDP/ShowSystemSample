@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "ShowSequencerComponent.generated.h"
 
+class UShowSequencer;
 
 UCLASS( BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SHOWSYSTEM_API UShowSequencerComponent : public UActorComponent
@@ -27,22 +28,22 @@ public:
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void PlayShow(class UShowSequencer* InShowSequencer);
+    void PlayShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void StopShow(UShowSequencer* InShowSequencer);
+    void StopShow(UShowSequencer* InShowSequencer) const;
 
     UFUNCTION(BlueprintCallable, Category = "Show")
     void DisposeShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void PauseShow(UShowSequencer* InShowSequencer);
+    void PauseShow(UShowSequencer* InShowSequencer) const;
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void UnPauseShow(UShowSequencer* InShowSequencer);
+    void UnPauseShow(UShowSequencer* InShowSequencer) const;
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void ChangeSpeedShow(UShowSequencer* InShowSequencer, float Speed);
+    void ChangeShowTimeScalse(UShowSequencer* InShowSequencer, float InTimeScale) const;
 
 private:
     bool bIsPlaying = true;

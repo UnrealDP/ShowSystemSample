@@ -26,6 +26,7 @@ public:
 
 	/** Implement this for initialization of instances of the system */
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	void Initialize();
 
 	/** Implement this for deinitialization of instances of the system */
 	virtual void Deinitialize() override;

@@ -3,6 +3,7 @@
 
 #include "RunTime/ShowSequencer.h"
 #include "RunTime/ShowBase.h"
+#include "RunTime/ShowSystem.h"
 
 UShowSequencer::UShowSequencer()
 {
@@ -88,31 +89,84 @@ void UShowSequencer::Play()
 
 void UShowSequencer::Stop()
 {
-    ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+    if (ShowSequencerState == EShowSequencerState::ShowSequencer_End)
+	{
+		return;
+	}
 
-    ClearShowObjects();
+    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    {
+        if (!showBase)
+        {
+            continue;
+        }
+
+        showBase->ExecuteStop();
+    }
+
+    ShowSequencerState = EShowSequencerState::ShowSequencer_End;
 }
 
 void UShowSequencer::Pause()
 {
+    if (ShowSequencerState != EShowSequencerState::ShowSequencer_Playing)
+    {
+        return;
+    }
+
+    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    {
+        if (!showBase)
+        {
+            continue;
+        }
+
+        showBase->ExecutePause();
+    }
+
     ShowSequencerState = EShowSequencerState::ShowSequencer_Pause;
 }
 
 void UShowSequencer::UnPause()
 {
+    if (ShowSequencerState != EShowSequencerState::ShowSequencer_Pause)
+	{
+		return;
+	}
+
+    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    {
+        if (!showBase)
+        {
+            continue;
+        }
+
+        showBase->ExecuteUnPause();
+    }
+
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
 }
 
-void UShowSequencer::ChangeSpeed(float Speed)
+void UShowSequencer::ChangeTimeScale(float InTimeScale)
 {
-    // 모든 키에 대해 속도 변경
+    TimeScale = InTimeScale;
+
+    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    {
+        if (!showBase)
+        {
+            continue;
+        }
+
+        showBase->OnUpdateSequenceTimeScale();
+    }
 }
 
 void UShowSequencer::Tick(float DeltaTime)
 {
     if (ShowSequencerState == EShowSequencerState::ShowSequencer_Playing)
     {
-        PassedTime += DeltaTime;
+        PassedTime += (DeltaTime * TimeScale);
 
         bool bIsAllEnd = true;
         for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
@@ -129,9 +183,9 @@ void UShowSequencer::Tick(float DeltaTime)
 
             if (showBase->IsWait())
             {
-                if (showBase->IsPassed(PassedTime))
+                if (showBase->IsPassedStartTime(PassedTime))
                 {
-                    showBase->Play();
+                    showBase->ExecutePlay();
                 }
             }
 			else if (showBase->IsPlaying())

@@ -17,7 +17,7 @@ struct FShowAnimStaticKey : public FShowKey
     }
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-    TSubclassOf<UAnimSequenceBase> AnimSequenceClass;
+    TSoftObjectPtr<UAnimSequenceBase> AnimSequenceAsset;
 };
 
 /**

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "ObjectPool/Pooled.h"
 #include "UObject/NoExportTypes.h"
-#include "RunTime/ShowSystem.h"
+#include "RunTime/EShowKeyType.h"
 #include "RunTime/ShowSequencer.h"
 #include "ShowBase.generated.h"
 
@@ -58,7 +58,13 @@ public:
         ShowSequencer = nullptr;
         ShowKey = nullptr;
 
+        Length = FLT_MAX;
+        PassedTime = 0.0f;
+        KeyTimeScale = 1.0f;
+        CachedTimeScale = 1.0f;
+
         Dispose();
+        ShowKeyState = EShowKeyState::ShowKey_Wait;
     }
 
     void InitShowKey(TObjectPtr<UShowSequencer> InShowSequencer, const FShowKey* InShowKey)
@@ -67,25 +73,88 @@ public:
         checkf(InShowKey, TEXT("UShowBase::InitShowKey: The InShowKey is invalid."));
 
         ShowSequencer = InShowSequencer;
+        CachedTimeScale = ShowSequencer->GetTimeScale();
 
         ShowKey = InShowKey;
-        Initialize(InShowKey);
         Length = InShowKey->Length;
+
+        Initialize(InShowKey);
+        Length = InitializeAssetLength();
+
+        ShowKeyState = EShowKeyState::ShowKey_Wait;
     }
 
-    virtual void Initialize(const FShowKey* InShowKey) PURE_VIRTUAL(UShowBase::Initialize, );
-    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
-    virtual float InitializeAssetLength() PURE_VIRTUAL(UShowBase::InitializeAssetLength, return 0.f;);
-    virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );
-    virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
-    virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
-    virtual void Pause() PURE_VIRTUAL(UShowBase::Pause, );
-    virtual void UnPause() PURE_VIRTUAL(UShowBase::UnPause, );
-    virtual void Tick(float DeltaTime)
+    void Tick(float DeltaTime)
     {
-        PassedTime += DeltaTime;
+        PassedTime += (DeltaTime * CachedTimeScale);
+
+        if (CachedTimeScale > 0)
+        {
+            if (Length <= PassedTime)
+            {
+                ShowKeyState = EShowKeyState::ShowKey_End;
+            }
+        }
+        else
+        {
+            if (PassedTime <= 0.0f)
+            {
+                ShowKeyState = EShowKeyState::ShowKey_End;
+            }
+        }
+        
         Tick(DeltaTime, PassedTime);
     }
+
+    void ExecutePlay()
+    {
+        if (ShowKeyState == EShowKeyState::ShowKey_Playing)
+		{
+			return;
+		}
+		Play();
+		ShowKeyState = EShowKeyState::ShowKey_Playing;
+    }
+    void ExecuteStop()
+    {
+        if (ShowKeyState == EShowKeyState::ShowKey_End)
+        {
+            return;
+        }
+        Stop();
+        ShowKeyState = EShowKeyState::ShowKey_End;
+    }
+    void ExecutePause()
+    {
+		if (ShowKeyState != EShowKeyState::ShowKey_Playing)
+		{
+			return;
+		}
+		Pause();
+		ShowKeyState = EShowKeyState::ShowKey_Pause;
+	}
+    void ExecuteUnPause()
+    {
+        if (ShowKeyState != EShowKeyState::ShowKey_Pause)
+        {
+            return;
+        }
+        UnPause();
+        ShowKeyState = EShowKeyState::ShowKey_Playing;
+    }
+
+    void SetKeyTimeScale(float InKeyTimeScale)
+	{
+        KeyTimeScale = InKeyTimeScale;
+        CachedTimeScale = KeyTimeScale * ShowSequencer->GetTimeScale();
+        ApplyTimeScale(CachedTimeScale);
+	}
+
+    void OnUpdateSequenceTimeScale()
+	{
+        CachedTimeScale = KeyTimeScale * ShowSequencer->GetTimeScale();
+        ApplyTimeScale(CachedTimeScale);
+	}
 
     EShowKeyType GetKeyType() const 
     { 
@@ -97,7 +166,7 @@ public:
     bool IsPlaying() const { return ShowKeyState == EShowKeyState::ShowKey_Playing; }
     bool IsPause() const { return ShowKeyState == EShowKeyState::ShowKey_Pause; }
     bool IsEnd() const { return ShowKeyState == EShowKeyState::ShowKey_End; }
-    bool IsPassed(float InPassedTime) const 
+    bool IsPassedStartTime(float InPassedTime) const 
     { 
         checkf(ShowKey, TEXT("UShowBase::IsPassed: The ShowKey provided is invalid or null."));
         return ShowKey->StartTime >= InPassedTime;
@@ -128,14 +197,23 @@ protected:
         return ShowSequencer->GetOwner();
     }
 
-private:
+    virtual void Initialize(const FShowKey* InShowKey) PURE_VIRTUAL(UShowBase::Initialize, );
+    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
+    // Initialize 된 후에 호출된다
+    virtual float InitializeAssetLength() PURE_VIRTUAL(UShowBase::InitializeAssetLength, return 0.f;);
+    virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );
+    virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
+    virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
+    virtual void Pause() PURE_VIRTUAL(UShowBase::Pause, );
+    virtual void UnPause() PURE_VIRTUAL(UShowBase::UnPause, );
     virtual void Tick(float DeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
+    virtual void ApplyTimeScale(float FinalTimeScale) PURE_VIRTUAL(UShowBase::ApplyTimeScale, );
 
 protected:
     TObjectPtr<UShowSequencer> ShowSequencer;
 
     // ShowSequencer 어셋으로 받아온거라 절대 편집하면 안됨, 편집은 오로지 툴에서만 가능함
-    const FShowKey* ShowKey;
+    const FShowKey* ShowKey = nullptr;
 
     EShowKeyState ShowKeyState = EShowKeyState::ShowKey_Wait;
 
@@ -143,6 +221,8 @@ protected:
     // InitializeAssetLength 에서 초기화 되어야함
     float Length = FLT_MAX;
     float PassedTime = 0.0f;
+    float KeyTimeScale = 1.0f;
+    float CachedTimeScale = 1.0f;
 };
 
     

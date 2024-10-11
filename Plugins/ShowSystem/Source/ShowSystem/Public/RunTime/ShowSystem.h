@@ -3,15 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RunTime/EShowKeyType.h"
 #include "ObjectPool/ObjectPoolType.h"
-
-UENUM(BlueprintType)
-enum class EShowKeyType : uint8
-{
-    ShowKey_Anim UMETA(DisplayName = "Animation Key"),
-    ShowKey_Particle UMETA(DisplayName = "Particle Key"),
-    Max   UMETA(DisplayName = "Max Types")
-};
 
 /**
  * 
@@ -19,17 +12,6 @@ enum class EShowKeyType : uint8
 class SHOWSYSTEM_API ShowSystem
 {
 public:
-    static EObjectPoolType GetShowKeyPoolType(EShowKeyType InShowKeyType)
-    {
-        switch (InShowKeyType)
-        {
-            case EShowKeyType::ShowKey_Anim:
-                return EObjectPoolType::ObjectPool_ShowKeyAnim;
-            case EShowKeyType::ShowKey_Particle:
-                return EObjectPoolType::ObjectPool_ShowKeyAnim;
-            default:
-                checkf(false, TEXT("ShowSystem::GetShowKeyPoolType Invalid EShowKeyType: [ %d ]"), static_cast<int32>(InShowKeyType));
-                return EObjectPoolType::Max;
-        }
-    }
+    static EObjectPoolType GetShowKeyPoolType(EShowKeyType InShowKeyType);
+    static UScriptStruct* GetShowKeyStaticStruct(EShowKeyType InShowKeyType);
 };

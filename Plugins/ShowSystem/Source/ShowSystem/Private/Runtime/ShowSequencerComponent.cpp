@@ -49,7 +49,7 @@ void UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
 	InShowSequencer->Play();
 }
 
-void UShowSequencerComponent::StopShow(UShowSequencer* InShowSequencer)
+void UShowSequencerComponent::StopShow(UShowSequencer* InShowSequencer) const
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::StopShow: InShowSequencer is invalid or null"));
 
@@ -68,23 +68,23 @@ void UShowSequencerComponent::DisposeShow(UShowSequencer* InShowSequencer)
 	ShowSequencers.Remove(InShowSequencer);
 }
 
-void UShowSequencerComponent::PauseShow(UShowSequencer* InShowSequencer)
+void UShowSequencerComponent::PauseShow(UShowSequencer* InShowSequencer) const
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::PauseShow: InShowSequencer is invalid or null."));
 
 	InShowSequencer->Pause();
 }
 
-void UShowSequencerComponent::UnPauseShow(UShowSequencer* InShowSequencer)
+void UShowSequencerComponent::UnPauseShow(UShowSequencer* InShowSequencer) const
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::UnPauseShow: InShowSequencer is invalid or null"));
 
 	InShowSequencer->UnPause();
 }
 
-void UShowSequencerComponent::ChangeSpeedShow(UShowSequencer* InShowSequencer, float Speed)
+void UShowSequencerComponent::ChangeShowTimeScalse(UShowSequencer* InShowSequencer, float InTimeScalse) const
 {
-	checkf(InShowSequencer, TEXT("UShowSequencerComponent::ChangeSpeedShow: InShowSequencer is invalid or null"));
+	checkf(InShowSequencer, TEXT("UShowSequencerComponent::ChangeShowTimeScalse: InShowSequencer is invalid or null"));
 
-	InShowSequencer->ChangeSpeed(Speed);
+	InShowSequencer->ChangeTimeScale(InTimeScalse);
 }

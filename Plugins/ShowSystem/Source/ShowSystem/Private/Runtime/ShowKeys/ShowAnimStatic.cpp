@@ -11,19 +11,18 @@ void UShowAnimStatic::Initialize(const FShowKey* InShowKey)
     AnimStaticKeyPtr = static_cast<const FShowAnimStaticKey*>(InShowKey);
     checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKey is invalid [ %d ]"), static_cast<int>(InShowKey->KeyType));
 
-    if (!AnimStaticKeyPtr->AnimSequenceClass)
+    if (!AnimStaticKeyPtr->AnimSequenceAsset)
     {
 		ShowKeyState = EShowKeyState::ShowKey_End;
 		return; 
     }
 
     // AnimSequenceClass로부터 UAnimSequenceBase 인스턴스 생성
-    AnimSequenceBase = AnimStaticKeyPtr->AnimSequenceClass->GetDefaultObject<UAnimSequenceBase>();
+    AnimSequenceBase = AnimStaticKeyPtr->AnimSequenceAsset.Get();
     checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
-
-    Length = InitializeAssetLength();
 }
 
+// Initialize 된 후에 호출된다
 float UShowAnimStatic::InitializeAssetLength()
 {
     if (!AnimSequenceBase)

@@ -41,7 +41,6 @@ private:
     void Stop();
     void Pause();
     void UnPause();
-    void ChangeSpeed(float Speed);
 
 #if WITH_EDITOR
 public:
@@ -51,7 +50,6 @@ public:
     void EditorStop();
     void EditorPause() { Pause(); }
     void EditorUnPause() { UnPause(); }
-    void EditorChangeSpeed(float Speed) { ChangeSpeed(Speed); }
     void EditorClearShowObjects();
     void EditorBeginDestroy();
     TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
@@ -71,6 +69,8 @@ public:
 
     void SetDontDestroy() { bIsDontDestroy = true; }
     void ReleaseDontDestroy() { bIsDontDestroy = false; }
+
+    float GetTimeScale() const { return TimeScale; }
     // end of setter getter
 
     void Initialize(AActor* InOwner) 
@@ -85,6 +85,11 @@ public:
             ClearShowObjects();
             Owner = nullptr;
         }
+
+        bIsDontDestroy = false;
+        ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
+        PassedTime = 0.0f;
+        TimeScale = 1.0f;
     }
     void Tick(float DeltaTime);
 
@@ -93,6 +98,8 @@ public:
     bool IsPlaying() const { return ShowSequencerState == EShowSequencerState::ShowSequencer_Playing; }
     bool IsPause() const { return ShowSequencerState == EShowSequencerState::ShowSequencer_Pause; }
     bool IsEnd() const { return ShowSequencerState == EShowSequencerState::ShowSequencer_End; }
+
+    void ChangeTimeScale(float InTimeScale);
 
 private:
     void GenerateShowBase();
@@ -105,4 +112,5 @@ private:
     float PassedTime = 0.0f;
     TObjectPtr<AActor> Owner;
     TArray<TObjectPtr<UShowBase>> RuntimeShowKeys;
+    float TimeScale = 1.0f;
 };

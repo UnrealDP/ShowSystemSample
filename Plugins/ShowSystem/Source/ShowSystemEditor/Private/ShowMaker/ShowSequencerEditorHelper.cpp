@@ -2,33 +2,33 @@
 
 
 #include "ShowMaker/ShowSequencerEditorHelper.h"
+#include "ShowSequencerEditorToolkit.h"
+#include "ShowMaker/SShowMakerWidget.h"
+#include "Misc/PathsUtil.h"
+#include "ActorPreviewViewport.h"
 
-FShowSequencerEditorHelper::FShowSequencerEditorHelper()
+FShowSequencerEditorHelper::FShowSequencerEditorHelper(FShowSequencerEditorToolkit* InShowSequencerEditorToolkit, TObjectPtr<UShowSequencer> InEditShowSequencer)
 {
+	checkf(InShowSequencerEditorToolkit, TEXT("FShowSequencerEditorHelper::FShowSequencerEditorHelper ShowSequencerEditorToolkit is nullptr"));
+	checkf(InEditShowSequencer, TEXT("FShowSequencerEditorHelper::FShowSequencerEditorHelper InEditShowSequencer is nullptr"));
+
+	ShowSequencerEditorToolkit = InShowSequencerEditorToolkit;
+
+	EditShowSequencer = InEditShowSequencer;
+	EditShowSequencer->EditorInitialize();
+	EditShowSequencer->SetDontDestroy();
 }
 
 FShowSequencerEditorHelper::~FShowSequencerEditorHelper()
 {
+	EditShowSequencer->ReleaseDontDestroy();
+	EditShowSequencer->EditorBeginDestroy();
 	EditShowSequencer = nullptr;
 }
 
-void FShowSequencerEditorHelper::SetShowSequencerEditor(UShowSequencer* Sequencer)
+void FShowSequencerEditorHelper::SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget)
 {
-	if (!Sequencer)
-	{
-		EditShowSequencer = nullptr;
-		return;
-	}
-
-	if (EditShowSequencer)
-	{
-		EditShowSequencer->Dispose();
-		EditShowSequencer = nullptr;
-	}
-
-	EditShowSequencer = Sequencer;
-	EditShowSequencer->EditorInitialize();
-	EditShowSequencer->SetDontDestroy();
+	ShowMakerWidget = InShowMakerWidget;
 }
 
 void FShowSequencerEditorHelper::Play()
@@ -74,4 +74,138 @@ TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
 	}
 
 	return ShowKeyPointers;
+}
+
+void FShowSequencerEditorHelper::ShowSequencerDetailsViewForceRefresh()
+{
+	if (ShowSequencerEditorToolkit->DetailsView)
+	{
+		ShowSequencerEditorToolkit->DetailsView->ForceRefresh();
+	}
+}
+
+UClass* FShowSequencerEditorHelper::GetLastSelectedActorClass()
+{
+	FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+	if (GConfig)
+	{
+		FString SelectedActorPath;
+		if (GConfig->GetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedActor"), SelectedActorPath, *ConfigFilePath))
+		{
+			UClass* SavedActorClass = FindObject<UClass>(nullptr, *SelectedActorPath);
+			if (SavedActorClass && SavedActorClass->IsChildOf(AActor::StaticClass()))
+			{
+				return SavedActorClass;
+			}
+		}
+	}
+	return nullptr;
+}
+
+USkeletalMesh* FShowSequencerEditorHelper::LoadLastSelectedOrDefaultSkeletalMesh()
+{
+	FString SelectedMeshPath;
+	// 이전에 로드했던 스켈레털 메쉬 있는지 확인
+	// 플러그인 폴더 경로에서 설정 파일 경로를 가져오기
+	FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+	// 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+	if (GConfig)
+	{
+		GConfig->GetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), SelectedMeshPath, *ConfigFilePath);
+	}
+
+	USkeletalMesh* SkeletalMesh = nullptr;
+	if (SelectedMeshPath.IsEmpty())
+	{
+		// 디폴트 어셋 로드
+		SkeletalMesh = LoadObject<USkeletalMesh>(nullptr, TEXT("/Engine/EngineMeshes/SkeletalCube.SkeletalCube"));
+
+		SelectedMeshPath = SkeletalMesh->GetPathName();
+		// 풀 설정 데이터 어셋의 경로를 ini 파일에서 읽어오기
+		if (GConfig)
+		{
+			GConfig->SetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), *SelectedMeshPath, *ConfigFilePath);
+			GConfig->Flush(false, *ConfigFilePath);
+		}
+	}
+	else
+	{
+		SkeletalMesh = LoadObject<USkeletalMesh>(nullptr, *SelectedMeshPath);
+	}
+
+	return SkeletalMesh;
+}
+
+UClass* FShowSequencerEditorHelper::GetLastSelectedAnimInstanceClass()
+{
+	FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+	if (GConfig)
+	{
+		FString SelectedAnimInterfacePath;
+		if (GConfig->GetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedAnim"), SelectedAnimInterfacePath, *ConfigFilePath))
+		{
+			UClass* SavedAnimInstanceClass = FindObject<UClass>(nullptr, *SelectedAnimInterfacePath);
+			if (SavedAnimInstanceClass && SavedAnimInstanceClass->IsChildOf(UAnimInstance::StaticClass()))
+			{
+				return SavedAnimInstanceClass;
+			}
+		}
+	}
+	return nullptr;
+}
+
+void FShowSequencerEditorHelper::ReplaceActorPreviewWorld(UClass* ActorClass)
+{
+	if (ShowMakerWidget.IsValid())
+	{
+		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
+		{
+			ActorPreviewViewport->ReplaceActorPreviewWorld(ActorClass);
+
+			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+			if (GConfig)
+			{
+				GConfig->SetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedActor"), *ActorClass->GetPathName(), *ConfigFilePath);
+				GConfig->Flush(false, *ConfigFilePath);
+			}
+		}
+	}
+}
+
+void FShowSequencerEditorHelper::ReplaceSkeletalMeshPreviewWorld(USkeletalMesh* SelectedSkeletalMesh)
+{
+	if (ShowMakerWidget.IsValid())
+	{
+		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
+		{
+			ActorPreviewViewport->ReplaceSkeletalMesh(SelectedSkeletalMesh);
+
+			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+			if (GConfig)
+			{
+				FString SelectedSkeletalMeshPath = SelectedSkeletalMesh->GetPathName();
+				GConfig->RemoveKey(TEXT("SShowMakerWidget"), TEXT("LastSelectedActor"), *ConfigFilePath);
+				GConfig->SetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedSkeletalMesh"), *SelectedSkeletalMeshPath, *ConfigFilePath);
+				GConfig->Flush(false, *ConfigFilePath);
+			}
+		}
+	}
+}
+
+void FShowSequencerEditorHelper::ReplaceAnimInstancePreviewWorld(UClass* AnimInstanceClass)
+{
+	if (ShowMakerWidget.IsValid())
+	{
+		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
+		{
+			ActorPreviewViewport->ReplaceAnimInstancePreviewWorld(AnimInstanceClass);
+
+			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
+			if (GConfig)
+			{
+				GConfig->SetString(TEXT("SShowMakerWidget"), TEXT("LastSelectedAnim"), *AnimInstanceClass->GetPathName(), *ConfigFilePath);
+				GConfig->Flush(false, *ConfigFilePath);
+			}
+		}
+	}
 }

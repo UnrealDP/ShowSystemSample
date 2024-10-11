@@ -8,6 +8,13 @@
 /** Implement this for initialization of instances of the system */
 void UShowPlayer::Initialize(FSubsystemCollectionBase& Collection)
 {
+    Initialize();
+    Super::Initialize(Collection);
+    UE_LOG(LogTemp, Log, TEXT("UShowPlayer Initialized successfully."));
+}
+
+void UShowPlayer::Initialize()
+{
     if (Initialized)
     {
         UE_LOG(LogTemp, Warning, TEXT("UShowPlayer::Initialize called again, skipping as it is already initialized."));
@@ -17,9 +24,6 @@ void UShowPlayer::Initialize(FSubsystemCollectionBase& Collection)
     {
         Initialized = true;
     };
-
-    Super::Initialize(Collection);
-    UE_LOG(LogTemp, Log, TEXT("UShowPlayer Initialized successfully."));
 }
 
 /** Implement this for deinitialization of instances of the system */

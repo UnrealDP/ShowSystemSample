@@ -77,7 +77,8 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
             .MinWidth(MinWidth)
             .SecondToWidthRatio(SecondToWidthRatio)
             .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
-            .OnChanged(OnChangedKey);
+            .OnChanged(OnChangedKey)
+            .IsShowKeySelected(this, &SShowKeyBoxHandler::IsShowKeySelected);
 
         ShowKeyBoxes.Add(NewKeyBox);
 
@@ -152,6 +153,16 @@ void SShowKeyBoxHandler::OnKeyClicked(FShowKey* ClickedKey)
     // 키 관련 로직 처리
     if (OnClickedKey.IsBound())
 	{
+        ShowSequencerEditorHelper->SelectedShowKey = ClickedKey;
 		OnClickedKey.Execute(ClickedKey);
 	}
+}
+
+bool SShowKeyBoxHandler::IsShowKeySelected(FShowKey* ShowKey)
+{
+    if (ShowSequencerEditorHelper->SelectedShowKey == nullptr)
+    {
+		return false;
+	}
+    return ShowSequencerEditorHelper->SelectedShowKey == ShowKey;
 }

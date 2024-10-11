@@ -13,7 +13,8 @@ void SShowKeyBox::Construct(const FArguments& InArgs)
     MinWidth = InArgs._MinWidth;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnClick = InArgs._OnClick;
-    OnChanged = InArgs._OnChanged;    
+    OnChanged = InArgs._OnChanged;   
+    IsShowKeySelected = InArgs._IsShowKeySelected;
 
     ChildSlot
         [
@@ -44,6 +45,17 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
         // 클릭 영역을 저장
         ClickableBox = FBox2D(FVector2D(StartX, 0), FVector2D(StartX + KeyWidth, Height.Get()));
 
+        FLinearColor BoxColor = FLinearColor::Gray;
+        FLinearColor TextColor = FLinearColor::Black;
+        if (IsShowKeySelected.IsBound())
+        {
+            if (IsShowKeySelected.Execute(ShowKey))
+            {
+                BoxColor = FLinearColor::Blue;
+                TextColor = FLinearColor::Red;
+            }
+        }
+
         // 박스 그리기
         FSlateDrawElement::MakeBox(
             OutDrawElements,
@@ -51,7 +63,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
             AllottedGeometry.ToPaintGeometry(FVector2D(KeyWidth, Height.Get()), FSlateLayoutTransform(FVector2D(StartX, 0))),
             FCoreStyle::Get().GetBrush("WhiteBrush"),
             ESlateDrawEffect::None,
-            FLinearColor::Gray
+            BoxColor
         );
 
         // 텍스트 높이 측정
@@ -67,7 +79,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
             "TEMP_KEY_NAME",
             FCoreStyle::Get().GetFontStyle("Regular"),
             ESlateDrawEffect::None,
-            FLinearColor::Red
+            TextColor
         );
     }
 
