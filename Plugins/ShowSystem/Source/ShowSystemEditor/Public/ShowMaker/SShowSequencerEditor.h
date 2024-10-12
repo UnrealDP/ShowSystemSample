@@ -9,6 +9,7 @@
 class FShowSequencerEditorHelper;
 
 DECLARE_DELEGATE_OneParam(FOnShowKeyEvent, FShowKey*);
+DECLARE_DELEGATE(FOnKeyDownSpace);
 
 /**
  * 
@@ -25,6 +26,7 @@ public:
 		SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
 		SLATE_EVENT(FOnShowKeyEvent, OnClickedKey)
 		SLATE_EVENT(FOnShowKeyEvent, OnChangedKey)
+		SLATE_EVENT(FOnKeyDownSpace, OnKeyDownSpace)		
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -35,4 +37,5 @@ public:
 
 private:
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
+	FOnKeyDownSpace OnKeyDownSpace = nullptr;
 };

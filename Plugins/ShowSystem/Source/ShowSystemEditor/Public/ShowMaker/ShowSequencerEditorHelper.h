@@ -12,11 +12,21 @@ class SShowMakerWidget;
 /**
  * 
  */
-class SHOWSYSTEMEDITOR_API FShowSequencerEditorHelper
+class SHOWSYSTEMEDITOR_API FShowSequencerEditorHelper : public FTickableEditorObject
 {
 public:
 	FShowSequencerEditorHelper(FShowSequencerEditorToolkit* InShowSequencerEditorToolkit, TObjectPtr<UShowSequencer> InEditShowSequencer);
 	~FShowSequencerEditorHelper();
+
+	virtual void Tick(float DeltaTime) override;
+	virtual TStatId GetStatId() const override
+	{
+		RETURN_QUICK_DECLARE_CYCLE_STAT(FShowSequencerEditorHelper, STATGROUP_Tickables);
+	}
+	virtual bool IsTickable() const override
+	{
+		return true;
+	}
 
 	TArray<FShowKey*> GetShowKeys();
 
@@ -29,7 +39,10 @@ public:
 		return NewShowKey;
 	}
 
+	void NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged);
+
 	void Play();
+
 	void ShowSequencerDetailsViewForceRefresh();
 	void SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget);
 

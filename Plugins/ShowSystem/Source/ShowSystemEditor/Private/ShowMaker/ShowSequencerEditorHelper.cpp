@@ -6,6 +6,7 @@
 #include "ShowMaker/SShowMakerWidget.h"
 #include "Misc/PathsUtil.h"
 #include "ActorPreviewViewport.h"
+#include "Runtime/ShowKeys/ShowAnimStatic.h"
 
 FShowSequencerEditorHelper::FShowSequencerEditorHelper(FShowSequencerEditorToolkit* InShowSequencerEditorToolkit, TObjectPtr<UShowSequencer> InEditShowSequencer)
 {
@@ -31,6 +32,50 @@ void FShowSequencerEditorHelper::SetShowMakerWidget(TSharedPtr<SShowMakerWidget>
 	ShowMakerWidget = InShowMakerWidget;
 }
 
+void FShowSequencerEditorHelper::Tick(float DeltaTime)
+{
+	if (EditShowSequencer && EditShowSequencer->GetOwner())
+	{
+		EShowSequencerState ShowSequencerState = EditShowSequencer->GetShowSequencerState();
+		switch (ShowSequencerState)
+		{
+		case EShowSequencerState::ShowSequencer_Wait:
+			break;
+		case EShowSequencerState::ShowSequencer_Playing:
+			EditShowSequencer->Tick(DeltaTime);
+			break;
+		case EShowSequencerState::ShowSequencer_Pause:
+			break;
+		case EShowSequencerState::ShowSequencer_End:
+			EditShowSequencer->EditorReset();
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged)
+{
+	FFieldVariant FieldVariant = PropertyChangedEvent.Property->Owner;
+
+	if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
+	{
+		if (UShowBase* ShowBase = EditShowSequencer->EditorGetShowBase(SelectedShowKey))
+		{
+			FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+			FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+			if (PropertyName.IsEqual("AnimSequenceAsset"))
+			{
+				ShowBase->ExecuteReset();
+			}
+		}
+	}
+
+	EditShowSequencer->MarkPackageDirty();
+}
+
 void FShowSequencerEditorHelper::Play()
 {
 	if (EditShowSequencer)
@@ -42,6 +87,7 @@ void FShowSequencerEditorHelper::Play()
 			EditShowSequencer->EditorPlay();
 			break;
 		case EShowSequencerState::ShowSequencer_Playing:
+			EditShowSequencer->EditorPause();
 			break;
 		case EShowSequencerState::ShowSequencer_Pause:
 			EditShowSequencer->EditorUnPause();
@@ -160,7 +206,8 @@ void FShowSequencerEditorHelper::ReplaceActorPreviewWorld(UClass* ActorClass)
 	{
 		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
 		{
-			ActorPreviewViewport->ReplaceActorPreviewWorld(ActorClass);
+			AActor* Owner = ActorPreviewViewport->ReplaceActorPreviewWorld(ActorClass);
+			EditShowSequencer->SetOwner(Owner);
 
 			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
 			if (GConfig)

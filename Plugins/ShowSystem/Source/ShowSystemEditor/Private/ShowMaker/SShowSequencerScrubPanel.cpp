@@ -16,7 +16,6 @@
 #include "Animation/AnimData/IAnimationDataModel.h"
 #include "Animation/AnimSequenceHelpers.h"
 #include "Animation/DebugSkelMeshComponent.h"
-#include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "RunTime/ShowBase.h"
 #include "SlateEditorUtils.h"
 
@@ -27,6 +26,12 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 {
 	bSliderBeingDragged = false;
 	ShowSequencerEditorHelper = InArgs._ShowSequencerEditorHelper;
+
+	ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
+		{
+			return ShowSequencerEditorHelper->EditShowSequencer->GetShowSequencerState();
+		}));
+
 
 	ShowViewInputMax = GetSequenceLength();
 
@@ -93,7 +98,9 @@ TSharedRef<SWidget> SShowSequencerScrubPanel::CreateCustomTransportControl()
 				.OnClicked(this, &SShowSequencerScrubPanel::HandlePlayPauseButton)
 				.Visibility(EVisibility::Visible)
 				.ToolTipText_Lambda([this]() -> FText {
-				return (CurrentPlaybackMode == EPlaybackMode::PlayingForward) ? LOCTEXT("Pause", "Pause") : LOCTEXT("Play", "Play");
+				return (ShowSequencerState.Get() == EShowSequencerState::ShowSequencer_Playing) 
+					? LOCTEXT("Pause", "Pause") 
+					: LOCTEXT("Play", "Play");
 					})
 				.ContentPadding(0.0f)
 				.IsFocusable(true)
@@ -101,7 +108,7 @@ TSharedRef<SWidget> SShowSequencerScrubPanel::CreateCustomTransportControl()
 					SNew(SImage)
 						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
 						.Image_Lambda([this]() -> const FSlateBrush* {
-						return (CurrentPlaybackMode == EPlaybackMode::PlayingForward)
+						return (ShowSequencerState.Get() == EShowSequencerState::ShowSequencer_Playing)
 							? FAppStyle::Get().GetBrush("Animation.Pause") // 상태에 따른 아이콘 전환
 							: FAppStyle::Get().GetBrush("Animation.Forward");
 							})
@@ -149,35 +156,17 @@ TSharedRef<SWidget> SShowSequencerScrubPanel::CreateCustomTransportControl()
 
 FReply SShowSequencerScrubPanel::HandlePlayPauseButton()
 {
-	if (CurrentPlaybackMode == EPlaybackMode::PlayingForward)
-	{
-		CurrentPlaybackMode = EPlaybackMode::Stopped;
-		UE_LOG(LogTemp, Log, TEXT("Paused"));
-		// Pause 로직 추가
-	}
-	else
-	{
-		CurrentPlaybackMode = EPlaybackMode::PlayingForward;
-		UE_LOG(LogTemp, Log, TEXT("Playing"));
-		// Play 로직 추가
-	}
-
+	ShowSequencerEditorHelper->Play();
 	return FReply::Handled();
 }
 
 FReply SShowSequencerScrubPanel::HandleReverseButton()
 {
-	CurrentPlaybackMode = EPlaybackMode::PlayingReverse;
-	UE_LOG(LogTemp, Log, TEXT("Reversing"));
-	// Reverse 로직 추가
 	return FReply::Handled();
 }
 
 FReply SShowSequencerScrubPanel::HandleStopButton()
 {
-	CurrentPlaybackMode = EPlaybackMode::Stopped;
-	UE_LOG(LogTemp, Log, TEXT("Stopped"));
-	// Stop 로직 추가
 	return FReply::Handled();
 }
 

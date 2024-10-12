@@ -9,9 +9,9 @@
 #include "Widgets/SCompoundWidget.h"
 #include "SScrubWidget.h"
 #include "ITransportControl.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
 
 class FShowSequencerEditorHelper;
-class UShowSequencer;
 class SScrubControlPanel;
 
 /**
@@ -64,5 +64,5 @@ protected:
 	float ShowViewInputMin = 0.0f;
 	float ShowViewInputMax = FLT_MAX;
 	float CrrShowSequenceLength = 0.0f;
-	EPlaybackMode::Type CurrentPlaybackMode = EPlaybackMode::Stopped;
+	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 };

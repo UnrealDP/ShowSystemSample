@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "RunTime/ShowSequencer.h"
+#include "ShowSequencerEditorHelper.h"
 #include "Misc/NotifyHook.h"
 
 /**
@@ -12,34 +12,25 @@
 class SHOWSYSTEMEDITOR_API ShowSequencerNotifyHook : public FNotifyHook
 {
 public:
-    ShowSequencerNotifyHook(TObjectPtr<UShowSequencer> InShowSequencer)
+    ShowSequencerNotifyHook(FShowSequencerEditorHelper* InEditorHelper)
     {
-        ShowSequencer = InShowSequencer;
+        EditorHelper = InEditorHelper;
     }
 
     virtual ~ShowSequencerNotifyHook()
     {
-        if (ShowSequencer)
+        if (EditorHelper)
 		{
-			ShowSequencer = nullptr;
+            EditorHelper = nullptr;
 		}
     }
 
     virtual void NotifyPostChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged) override
     {
         UE_LOG(LogTemp, Log, TEXT("ShowSequencerNotifyHook::NotifyPostChange"));
-        MarkPackageDirty();
-    }
-
-    void MarkPackageDirty()
-    {
-        if (ShowSequencer)
-        {
-            ShowSequencer->MarkPackageDirty();
-        }
+        EditorHelper->NotifyShowKeyChange(PropertyChangedEvent, PropertyThatChanged);
     }
 
 private:
-    TObjectPtr<UShowSequencer> ShowSequencer = nullptr;
-    TSharedPtr<IStructureDetailsView> StructureDetailsView = nullptr;
+    FShowSequencerEditorHelper* EditorHelper = nullptr;
 };

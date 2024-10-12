@@ -46,12 +46,14 @@ private:
 public:
     void EditorInitialize();
     FShowKey* EditorAddKey(FInstancedStruct& Key);
+    void EditorReset();
     void EditorPlay();
     void EditorStop();
     void EditorPause() { Pause(); }
     void EditorUnPause() { UnPause(); }
     void EditorClearShowObjects();
     void EditorBeginDestroy();
+    UShowBase* EditorGetShowBase(FShowKey* ShoeKey);
     TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
 
     TArray<FObjectPoolTypeSettings> EditorPoolSettings;
@@ -73,10 +75,6 @@ public:
     float GetTimeScale() const { return TimeScale; }
     // end of setter getter
 
-    void Initialize(AActor* InOwner) 
-    {
-        Owner = InOwner;
-    }
     void Dispose()
     {
         // Owner 를 null 먼저 하면 ClearShowObjects 에서 checkf(Owner) 에서 에러 발생
@@ -105,7 +103,7 @@ private:
     void GenerateShowBase();
     class UShowBase* CreateShowObject(const FShowKey* InShowKey);
     void ClearShowObjects();
-
+        
 private:
     bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;

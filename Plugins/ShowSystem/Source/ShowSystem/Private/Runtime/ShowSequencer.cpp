@@ -71,10 +71,10 @@ void UShowSequencer::ClearShowObjects()
     }
 
     UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
-    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
-        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(showBase->GetKeyType());
-        PoolManager->ReturnPooledObject(showBase, PoolType);
+        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowBase->GetKeyType());
+        PoolManager->ReturnPooledObject(ShowBase, PoolType);
     }
     RuntimeShowKeys.Empty();
 }
@@ -94,14 +94,14 @@ void UShowSequencer::Stop()
 		return;
 	}
 
-    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
-        if (!showBase)
+        if (!ShowBase)
         {
             continue;
         }
 
-        showBase->ExecuteStop();
+        ShowBase->ExecuteStop();
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_End;
@@ -114,14 +114,14 @@ void UShowSequencer::Pause()
         return;
     }
 
-    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
-        if (!showBase)
+        if (!ShowBase)
         {
             continue;
         }
 
-        showBase->ExecutePause();
+        ShowBase->ExecutePause();
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Pause;
@@ -134,14 +134,14 @@ void UShowSequencer::UnPause()
 		return;
 	}
 
-    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
-        if (!showBase)
+        if (!ShowBase)
         {
             continue;
         }
 
-        showBase->ExecuteUnPause();
+        ShowBase->ExecuteUnPause();
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
@@ -151,14 +151,14 @@ void UShowSequencer::ChangeTimeScale(float InTimeScale)
 {
     TimeScale = InTimeScale;
 
-    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
-        if (!showBase)
+        if (!ShowBase)
         {
             continue;
         }
 
-        showBase->OnUpdateSequenceTimeScale();
+        ShowBase->OnUpdateSequenceTimeScale();
     }
 }
 
@@ -169,28 +169,28 @@ void UShowSequencer::Tick(float DeltaTime)
         PassedTime += (DeltaTime * TimeScale);
 
         bool bIsAllEnd = true;
-        for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+        for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
         {
-            if (!showBase)
+            if (!ShowBase)
             {
                 continue;
             }
 
-            if (bIsAllEnd && !showBase->IsEnd())
+            if (bIsAllEnd && !ShowBase->IsEnd())
             {
                 bIsAllEnd = false;
             }
 
-            if (showBase->IsWait())
+            if (ShowBase->IsWait())
             {
-                if (showBase->IsPassedStartTime(PassedTime))
+                if (ShowBase->IsPassedStartTime(PassedTime))
                 {
-                    showBase->ExecutePlay();
+                    ShowBase->ExecutePlay();
                 }
             }
-			else if (showBase->IsPlaying())
+			else if (ShowBase->IsPlaying())
 			{
-				showBase->Tick(DeltaTime);
+                ShowBase->Tick(DeltaTime);
 			}
         }
         
@@ -213,6 +213,9 @@ void UShowSequencer::Tick(float DeltaTime)
 #if WITH_EDITOR
 void UShowSequencer::EditorInitialize()
 {
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
+    PassedTime = 0.0f;
+
     if (RuntimeShowKeys.IsEmpty())
     {
         RuntimeShowKeys.SetNum(ShowKeys.Num());
@@ -274,8 +277,30 @@ FShowKey* UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
     return NewShowKey;
 }
 
+void UShowSequencer::EditorReset()
+{
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
+    PassedTime = 0.0f;
+
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    {
+        if (!ShowBase)
+        {
+            continue;
+        }
+
+        ShowBase->ExecuteReset();
+    }
+}
+
 void UShowSequencer::EditorPlay()
 { 
+    if (!Owner)
+    {
+        UE_LOG(LogTemp, Error, TEXT("UShowSequencer::EditorPlay: Owner is Invalid."));
+		return;
+	}
+
     EditorInitialize();
     Play(); 
 }
@@ -288,9 +313,9 @@ void UShowSequencer::EditorStop()
 
 void UShowSequencer::EditorClearShowObjects()
 {
-    for (TObjectPtr<UShowBase>& showBase : RuntimeShowKeys)
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
-        showBase = nullptr;
+        ShowBase = nullptr;
     }
     RuntimeShowKeys.Empty();
 }
@@ -299,5 +324,23 @@ void UShowSequencer::EditorBeginDestroy()
 {
     EditorClearShowObjects();
     Owner = nullptr;
+}
+
+UShowBase* UShowSequencer::EditorGetShowBase(FShowKey* ShoeKey)
+{
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    {
+        if (!ShowBase)
+		{
+			continue;
+		}
+
+        if (ShowBase->GetShowKey() == ShoeKey)
+		{
+			return ShowBase;
+		}
+    }
+
+    return nullptr;
 }
 #endif

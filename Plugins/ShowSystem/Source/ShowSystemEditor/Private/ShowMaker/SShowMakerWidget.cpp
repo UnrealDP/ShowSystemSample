@@ -40,11 +40,13 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
 
     if (UClass* LastSelectedActorClass = EditorHelper->GetLastSelectedActorClass())
     {
-        PreviewViewport->SpawnActorInPreviewWorld(LastSelectedActorClass);
+        AActor* Owner = PreviewViewport->SpawnActorInPreviewWorld(LastSelectedActorClass);
+        EditorHelper->EditShowSequencer->SetOwner(Owner);
     }
     else
     {
-        PreviewViewport->SpawnActorInPreviewWorld(AActor::StaticClass());
+        AActor* Owner = PreviewViewport->SpawnActorInPreviewWorld(AActor::StaticClass());
+        EditorHelper->EditShowSequencer->SetOwner(Owner);
 
         USkeletalMesh* LoadedSkeletalMesh = EditorHelper->LoadLastSelectedOrDefaultSkeletalMesh();
         if (LoadedSkeletalMesh)
@@ -91,20 +93,18 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                             .SecondToWidthRatio(10.0f)
                             .OnAddKey_Lambda([this](FShowKey* Key)
                                 {
-                                    if (NotifyHookInstance)
-                                    {
-                                        NotifyHookInstance->MarkPackageDirty();
-                                        EditorHelper->ShowSequencerDetailsViewForceRefresh();
-                                    }
+                                    EditorHelper->EditShowSequencer->MarkPackageDirty();
+                                    EditorHelper->ShowSequencerDetailsViewForceRefresh();
                                 })
                             .OnRemoveKey_Lambda([](FShowKey* Key) {})
                             .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
                             .OnChangedKey_Lambda([this](FShowKey* Key)
                                 {
-                                    if (NotifyHookInstance)
-                                    {
-                                        NotifyHookInstance->MarkPackageDirty();
-                                    }
+                                    EditorHelper->EditShowSequencer->MarkPackageDirty();
+                                })
+                            .OnKeyDownSpace_Lambda([this]()
+                                {
+                                    EditorHelper->Play();
                                 })
                     }
                 )
@@ -135,7 +135,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
     FDetailsViewArgs SkillShowDetailsViewArgs;
     SkillShowDetailsViewArgs.bAllowSearch = true;
     SkillShowDetailsViewArgs.bShowOptions = true;
-    NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper->EditShowSequencer));
+    NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper.Get()));
     SkillShowDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
 
     FStructureDetailsViewArgs SkillShowDetailsArgs;

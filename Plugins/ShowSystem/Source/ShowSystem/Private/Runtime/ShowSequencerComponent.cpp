@@ -45,7 +45,7 @@ void UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
 
 	ShowSequencers.Add(InShowSequencer);
-	InShowSequencer->Initialize(GetOwner());
+	InShowSequencer->SetOwner(GetOwner());
 	InShowSequencer->Play();
 }
 

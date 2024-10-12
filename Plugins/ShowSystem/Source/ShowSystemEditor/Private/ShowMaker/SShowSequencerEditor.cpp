@@ -10,6 +10,7 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerEditor::Construct(const FArguments& InArgs)
 {
     EditorHelper = InArgs._EditorHelper;
+    OnKeyDownSpace = InArgs._OnKeyDownSpace;
 
 	ChildSlot
 	[
@@ -47,10 +48,10 @@ FReply SShowSequencerEditor::OnKeyDown(const FGeometry& MyGeometry, const FKeyEv
 {
     if (InKeyEvent.GetKey() == EKeys::SpaceBar)
     {
-        // 스페이스바가 눌렸을 때 실행할 코드
-        UE_LOG(LogTemp, Log, TEXT("Space bar pressed in SShowMakerWidget!"));
-
-        // 원하는 작업 수행 후 FReply::Handled() 반환
+        if (OnKeyDownSpace.IsBound())
+		{
+			OnKeyDownSpace.Execute();
+		}
         return FReply::Handled();
     }
 

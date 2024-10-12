@@ -4,22 +4,31 @@
 #include "RunTime/ShowKeys/ShowAnimStatic.h"
 #include "RunTime/Animation/ShowAnimInstance.h"
 
-void UShowAnimStatic::Initialize(const FShowKey* InShowKey) 
+void UShowAnimStatic::Initialize() 
 {
-    checkf(InShowKey, TEXT("UShowAnimStatic::Initialize InShowKey is invalid"));
+    checkf(ShowKey, TEXT("UShowAnimStatic::Initialize ShowKey is invalid"));
 
-    AnimStaticKeyPtr = static_cast<const FShowAnimStaticKey*>(InShowKey);
-    checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKey is invalid [ %d ]"), static_cast<int>(InShowKey->KeyType));
+    AnimStaticKeyPtr = static_cast<const FShowAnimStaticKey*>(ShowKey);
+    checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKey is invalid [ %d ]"), static_cast<int>(ShowKey->KeyType));
 
-    if (!AnimStaticKeyPtr->AnimSequenceAsset)
+    if (!AnimSequenceBase)
     {
-		ShowKeyState = EShowKeyState::ShowKey_End;
-		return; 
-    }
+        if (AnimStaticKeyPtr->AnimSequenceAsset.IsNull())
+        {
+            ShowKeyState = EShowKeyState::ShowKey_End;
+            return;
+        }
 
-    // AnimSequenceClass로부터 UAnimSequenceBase 인스턴스 생성
-    AnimSequenceBase = AnimStaticKeyPtr->AnimSequenceAsset.Get();
-    checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
+        if (!AnimStaticKeyPtr->AnimSequenceAsset.IsValid())
+        {
+            // 필요한 경우 로드
+            AnimStaticKeyPtr->AnimSequenceAsset.LoadSynchronous();
+        }
+
+        // AnimSequenceClass로부터 UAnimSequenceBase 인스턴스 생성
+        AnimSequenceBase = AnimStaticKeyPtr->AnimSequenceAsset.Get();
+        checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
+    }
 }
 
 // Initialize 된 후에 호출된다
@@ -64,4 +73,10 @@ void UShowAnimStatic::Play()
     {
         SkeletalMeshComp->PlayAnimation(AnimSequenceBase, AnimStaticKeyPtr->IsLoop);
     }
+}
+
+void UShowAnimStatic::Reset() 
+{
+    AnimSequenceBase = nullptr;
+    Initialize();
 }
