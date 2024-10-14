@@ -22,6 +22,7 @@ public:
 		SLATE_ATTRIBUTE(float, Height)
 		SLATE_ATTRIBUTE(float, MinWidth)
 		SLATE_ATTRIBUTE(float, SecondToWidthRatio)
+		SLATE_ARGUMENT(TAttribute<EShowSequencerState>, ShowSequencerState)
 		SLATE_EVENT(FOnShowKeyEvent, OnAddKey)
 		SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
 		SLATE_EVENT(FOnShowKeyEvent, OnClickedKey)
@@ -31,6 +32,8 @@ public:
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
+	TSharedRef<SWidget> ConstructLeftWidget(const FArguments& InArgs);
+	TSharedRef<SWidget> ConstructRightWidget(const FArguments& InArgs);
 
 	virtual bool SupportsKeyboardFocus() const override { return true; }
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
@@ -38,4 +41,5 @@ public:
 private:
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 	FOnKeyDownSpace OnKeyDownSpace = nullptr;
+	TAttribute<float> ZoomRate = 1.0f;
 };

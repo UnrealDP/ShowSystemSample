@@ -45,7 +45,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Show")
     void ChangeShowTimeScalse(UShowSequencer* InShowSequencer, float InTimeScale) const;
 
+    bool HasShowSequencer(TObjectPtr<UShowSequencer> Sequencer) const
+    {
+        return ShowSequencers.Contains(Sequencer);
+    }
+
 private:
-    bool bIsPlaying = true;
     TArray<TObjectPtr<UShowSequencer>> ShowSequencers; // 연출 시퀀스 트래킹
 };

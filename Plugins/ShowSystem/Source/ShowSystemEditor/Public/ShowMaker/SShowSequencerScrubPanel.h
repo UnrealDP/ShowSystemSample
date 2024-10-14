@@ -7,12 +7,13 @@
 #include "IPersonaPreviewScene.h"
 #include "Input/Reply.h"
 #include "Widgets/SCompoundWidget.h"
-#include "SScrubWidget.h"
-#include "ITransportControl.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
+
+DECLARE_DELEGATE_OneParam(FOnUpdateZoom, float);
 
 class FShowSequencerEditorHelper;
 class SScrubControlPanel;
+class SScrubWidget;
 
 /**
  * 
@@ -24,15 +25,16 @@ public:
 		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
 		SLATE_ARGUMENT(bool, bDisplayAnimScrubBarEditing)
 		SLATE_ARGUMENT(bool, bAllowZoom)
+		SLATE_EVENT(FOnUpdateZoom, OnUpdateZoom)
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 
-	TSharedRef<SWidget> CreateCustomTransportControl();
+	/*TSharedRef<SWidget> CreateCustomTransportControl();
 	FReply HandlePlayPauseButton();
 	FReply HandleReverseButton();
-	FReply HandleStopButton();
+	FReply HandleStopButton();*/
 
 	// SWidget interface
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
@@ -60,9 +62,11 @@ protected:
 	bool bSliderBeingDragged = false;
 	TSharedPtr<SScrubControlPanel> ScrubControlPanel = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;
-	TArray<float> DraggableBars;
+	TArray<float> DraggableBars;	
 	float ShowViewInputMin = 0.0f;
 	float ShowViewInputMax = FLT_MAX;
 	float CrrShowSequenceLength = 0.0f;
+	FOnUpdateZoom OnUpdateZoom = nullptr;
+	float CrrZoomRate;
 	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 };

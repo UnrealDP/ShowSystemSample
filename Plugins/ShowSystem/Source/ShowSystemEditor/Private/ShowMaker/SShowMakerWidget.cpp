@@ -21,6 +21,13 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
 {
     EditorHelper = InArgs._EditorHelper;
+    OnAddKey = InArgs._OnAddKey;
+    OnRemoveKey = InArgs._OnRemoveKey;
+
+    ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
+        {
+            return EditorHelper->EditShowSequencer->GetShowSequencerState();
+        }));
 
     // 기본 UI 레이아웃 구성
     ChildSlot
@@ -41,12 +48,12 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     if (UClass* LastSelectedActorClass = EditorHelper->GetLastSelectedActorClass())
     {
         AActor* Owner = PreviewViewport->SpawnActorInPreviewWorld(LastSelectedActorClass);
-        EditorHelper->EditShowSequencer->SetOwner(Owner);
+        EditorHelper->EditShowSequencer->EditorSetOwner(Owner);
     }
     else
     {
         AActor* Owner = PreviewViewport->SpawnActorInPreviewWorld(AActor::StaticClass());
-        EditorHelper->EditShowSequencer->SetOwner(Owner);
+        EditorHelper->EditShowSequencer->EditorSetOwner(Owner);
 
         USkeletalMesh* LoadedSkeletalMesh = EditorHelper->LoadLastSelectedOrDefaultSkeletalMesh();
         if (LoadedSkeletalMesh)
@@ -90,13 +97,24 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                             .EditorHelper(EditorHelper)
                             .Height(20.0f)
                             .MinWidth(50.0f)
+                            .ShowSequencerState(ShowSequencerState)
                             .SecondToWidthRatio(10.0f)
                             .OnAddKey_Lambda([this](FShowKey* Key)
                                 {
                                     EditorHelper->EditShowSequencer->MarkPackageDirty();
-                                    EditorHelper->ShowSequencerDetailsViewForceRefresh();
+
+                                    if (OnAddKey.IsBound())
+									{
+										OnAddKey.Execute(Key);
+									}
                                 })
-                            .OnRemoveKey_Lambda([](FShowKey* Key) {})
+                            .OnRemoveKey_Lambda([this](FShowKey* Key) 
+                                {
+                                    if (OnRemoveKey.IsBound())
+                                    {
+                                        OnRemoveKey.Execute(Key);
+                                    }
+                                })
                             .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
                             .OnChangedKey_Lambda([this](FShowKey* Key)
                                 {

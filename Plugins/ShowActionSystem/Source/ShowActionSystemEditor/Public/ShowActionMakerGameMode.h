@@ -8,6 +8,7 @@
 
 struct FSkillData;
 struct FSkillShowData;
+class UActionBase;
 
 /**
  * 
@@ -32,7 +33,7 @@ public:
     // Enabling Tick for GameMode
     virtual void Tick(float DeltaSeconds) override;
 
-    void SelectAction(FName InSelectedActionName, FSkillData* InSkillData);
+    UActionBase* SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData);
     void DoAction();    
 
 public:
@@ -45,4 +46,7 @@ private:
 
     FName SelectedActionName;
     FSkillData* SkillData = nullptr;
+    FSkillShowData* SkillShowData = nullptr;
+
+    UActionBase* CrrAction = nullptr;
 };

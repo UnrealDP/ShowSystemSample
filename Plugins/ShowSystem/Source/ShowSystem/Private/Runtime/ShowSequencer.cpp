@@ -5,8 +5,9 @@
 #include "RunTime/ShowBase.h"
 #include "RunTime/ShowSystem.h"
 
-UShowSequencer::UShowSequencer()
+void UShowSequencer::Initialize(AActor* InOwner)
 {
+    Owner = InOwner;
     GenerateShowBase();
 }
 
@@ -29,7 +30,7 @@ void UShowSequencer::GenerateShowBase()
     {
         const FInstancedStruct& Key = ShowKeys[i];
 
-        checkf(Key.GetScriptStruct() == FShowKey::StaticStruct(), TEXT("UShowSequencer::GenerateShowBase: not FShowKey."));
+        checkf(Key.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::GenerateShowBase: not FShowKey."));
 
         const FShowKey* ShowKey = Key.GetPtr<FShowKey>();
         if (!ShowKey)
@@ -270,6 +271,7 @@ FShowKey* UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
     EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
     int32 Index = static_cast<int32>(PoolType);
     UShowBase* NewShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
+    NewShowBase->AddToRoot();
     NewShowBase->InitShowKey(this, NewShowKey);
     RuntimeShowKeys.Add(NewShowBase);
 
@@ -315,6 +317,7 @@ void UShowSequencer::EditorClearShowObjects()
 {
     for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
     {
+        ShowBase->RemoveFromRoot();
         ShowBase = nullptr;
     }
     RuntimeShowKeys.Empty();
@@ -342,5 +345,23 @@ UShowBase* UShowSequencer::EditorGetShowBase(FShowKey* ShoeKey)
     }
 
     return nullptr;
+}
+
+float UShowSequencer::EditorGetTotalLength()
+{
+    float TotalLength = 0.0f;
+    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    {
+        if (!ShowBase)
+        {
+            continue;
+        }
+
+        float StartTime = ShowBase->GetStartTime();
+        float ShowLength = ShowBase->EditorInitializeAssetLength();
+
+        TotalLength = FMath::Max(TotalLength, StartTime + ShowLength);
+    }
+    return TotalLength;
 }
 #endif

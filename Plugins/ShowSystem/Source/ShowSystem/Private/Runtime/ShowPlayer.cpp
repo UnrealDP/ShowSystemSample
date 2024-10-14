@@ -81,3 +81,13 @@ void UShowPlayer::DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
 
     ShowSequencerComponent->DisposeShow(ShowSequencer);
 }
+
+bool UShowPlayer::HasShowSequencer(AActor* Owner, TObjectPtr<UShowSequencer> Sequencer) const
+{
+    checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
+
+    UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
+
+	return ShowSequencerComponent->HasShowSequencer(Sequencer);
+}

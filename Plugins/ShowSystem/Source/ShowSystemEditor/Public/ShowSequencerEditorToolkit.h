@@ -17,6 +17,7 @@ public:
     virtual FString GetWorldCentricTabPrefix() const override { return FString("ShowSequencerEditor"); }
     virtual FLinearColor GetWorldCentricTabColorScale() const override { return FLinearColor::White; }
 
+    virtual bool OnRequestClose() override;
     virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
     virtual void UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
 

@@ -20,6 +20,7 @@ public:
         SLATE_ATTRIBUTE(float, SecondToWidthRatio) // 1초당 width 비율
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
+        SLATE_ATTRIBUTE(float, InWidthRate)
         SLATE_EVENT(FOnShowKeyClicked, OnClick)
         SLATE_EVENT(FOnShowKeyClicked, OnChanged)
         SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
@@ -32,6 +33,7 @@ public:
         FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
 
     FReply OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+    //FReply OnKeyBoxClick(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent);
     FReply OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
     FReply OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)override;
     
@@ -41,7 +43,8 @@ public:
     }
 
 private:
-    mutable FBox2D ClickableBox;
+    bool bIsDragging = false;
+    mutable FSlateRect ClickableBox;
     FVector2D DragStartPosition = FVector2D::ZeroVector;
     
     FShowKey* ShowKey = nullptr;
@@ -51,4 +54,5 @@ private:
     FOnShowKeyClicked OnClick = nullptr;
     FOnShowKeyClicked OnChanged = nullptr;
     FIsShowKeySelected IsShowKeySelected = nullptr;
+    TAttribute<float> InWidthRate;
 };

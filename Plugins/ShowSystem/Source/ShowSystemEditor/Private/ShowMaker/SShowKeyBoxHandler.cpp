@@ -18,6 +18,7 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     ShowSequencerEditorHelper = InArgs._ShowSequencerEditorHelper;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
+    InWidthRate = InArgs._InWidthRate;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnAddKey = InArgs._OnAddKey;
     OnRemoveKey = InArgs._OnRemoveKey;
@@ -51,7 +52,7 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
     VerticalBox->AddSlot()
         .AutoHeight()
         .HAlign(HAlign_Left)
-        .Padding(0.0f, 3.0f)
+        .Padding(3.0f, 3.0f)
         [
             SNew(SPositiveActionButton)
                 .Text(LOCTEXT("AddButton", "Add"))
@@ -75,6 +76,7 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
             .ShowKey(Key)
             .Height(Height)
             .MinWidth(MinWidth)
+            .InWidthRate_Lambda([this]() { return InWidthRate.Get(); })
             .SecondToWidthRatio(SecondToWidthRatio)
             .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
             .OnChanged(OnChangedKey)
@@ -84,6 +86,7 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
 
         VerticalBox->AddSlot()
             .AutoHeight()
+            .HAlign(HAlign_Fill)
             [
                 NewKeyBox.ToSharedRef()
             ];

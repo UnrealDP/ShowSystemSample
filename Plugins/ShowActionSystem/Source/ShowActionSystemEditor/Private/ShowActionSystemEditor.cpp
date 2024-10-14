@@ -5,6 +5,10 @@
 #include "Data/SkillShowData.h"
 #include "ShowActionMakerGameMode.h"
 #include "SSkillDataDetailsWidget.h"
+#include "RunTime/ShowBase.h"
+#include "RunTime/ShowSystem.h"
+#include "SShowActionControllPanels.h"
+#include "ActionBase.h"
 
 DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
 
@@ -13,7 +17,8 @@ DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
 void FShowActionSystemEditor::StartupModule()
 {
     SkillDataTabId = FTabId(TEXT("SkillData Details"));
-    SkillShowDataTabId = FTabId(TEXT("SkillShowData Details"));    
+    SkillShowKeyDetailsTabId = FTabId(TEXT("ShowKey Details"));
+    ShowActionControllPanelsTabId = FTabId(TEXT("Action Controll"));
 
     DataTableManager::Get().InitializeDataTables({ 
         EDataTable::SkillData,
@@ -21,6 +26,15 @@ void FShowActionSystemEditor::StartupModule()
         EDataTable::EffectData,
         });
 
+    RegisterSkillDataTab();
+    RegisterShowKeyDetailsTab();
+    RegisterShowActionControllPanelsTab();
+
+	UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been loaded"));
+}
+
+void FShowActionSystemEditor::RegisterSkillDataTab()
+{
     FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
         SkillDataTabId.TabType,
         FOnSpawnTab::CreateLambda([this](const FSpawnTabArgs& TabArgs) -> TSharedRef<SDockTab>
@@ -34,12 +48,9 @@ void FShowActionSystemEditor::StartupModule()
                         // 데이터 전달
                         SNew(SSkillDataDetailsWidget)
                             .SkillDataTable(LoadedSkillDataTable)
-                            .OnSelectAction([this](FName SelectedActionName, FSkillData* SkillData)
+                            .OnSelectAction_Lambda([this](FName SelectedActionName, FSkillData* SkillData, FSkillShowData* SkillShowData)
                                 {
-                                    if (this->ShowActionMakerGameMode)
-                                    {
-                                        this->ShowActionMakerGameMode->SelectAction(SelectedActionName, SkillData);
-                                    }                                    
+                                    SelectAction(SelectedActionName, SkillData, SkillShowData);
                                 })
                     ];
 
@@ -53,8 +64,66 @@ void FShowActionSystemEditor::StartupModule()
             }))
         .SetDisplayName(NSLOCTEXT("ShowActionSystem", "SkillDataDetailsTab", "Skill Data Details"))
         .SetMenuType(ETabSpawnerMenuType::Hidden);
+}
 
-	UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been loaded"));
+void FShowActionSystemEditor::RegisterShowKeyDetailsTab()
+{
+    FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+    FDetailsViewArgs SkillShowDetailsViewArgs;
+    SkillShowDetailsViewArgs.bAllowSearch = true;
+    SkillShowDetailsViewArgs.bShowOptions = true;
+    //NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper.Get()));
+    //SkillShowDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
+
+    FStructureDetailsViewArgs SkillShowDetailsArgs;
+    SkillShowDetailsArgs.bShowObjects = true;
+
+    StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
+        SkillShowDetailsViewArgs,
+        SkillShowDetailsArgs,
+        nullptr,
+        FText::FromString("Show Key Details")
+    );
+
+    FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
+        SkillShowKeyDetailsTabId.TabType,
+        FOnSpawnTab::CreateLambda([this](const FSpawnTabArgs& TabArgs) -> TSharedRef<SDockTab>
+            {
+                UDataTable* LoadedSkillDataTable = DataTableManager::DataTable(EDataTable::SkillData);
+
+                // 탭 생성
+                TSharedRef<SDockTab> NewTab = SNew(SDockTab)
+                    .TabRole(ETabRole::NomadTab)
+                    [
+                        StructureDetailsView->GetWidget().ToSharedRef()
+                    ];
+
+                return NewTab;
+            }))
+        .SetDisplayName(NSLOCTEXT("ShowActionSystem", "ShowKeyDetailsTab", "ShowKey Details"))
+        .SetMenuType(ETabSpawnerMenuType::Hidden);
+}
+
+void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
+{
+    FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
+        ShowActionControllPanelsTabId.TabType,
+        FOnSpawnTab::CreateLambda([this](const FSpawnTabArgs& TabArgs) -> TSharedRef<SDockTab>
+            {
+                UDataTable* LoadedSkillDataTable = DataTableManager::DataTable(EDataTable::SkillData);
+
+                // 탭 생성
+                TSharedRef<SDockTab> NewTab = SNew(SDockTab)
+                    .TabRole(ETabRole::NomadTab)
+                    [
+                        SAssignNew(ShowActionControllPanels, SShowActionControllPanels)
+                    ];
+
+                return NewTab;
+            }))
+        .SetDisplayName(NSLOCTEXT("ShowActionSystem", "ShowActionControllPanelsTab", "Action Controll"))
+        .SetMenuType(ETabSpawnerMenuType::Hidden);
 }
 
 void FShowActionSystemEditor::ShutdownModule()
@@ -85,17 +154,17 @@ void FShowActionSystemEditor::RegisterMenus()
         FSlateIcon(),
         FUIAction(FExecuteAction::CreateRaw(this, &FShowActionSystemEditor::OpenSkillDataDetails)));
 
-    Section.AddMenuEntry("SkillShowDataDetails",
-        LOCTEXT("SkillShowDataDetailsEntry", "SkillShowData Details"),
-        LOCTEXT("SkillShowDataDetailsEntryTooltip", "Opens the SkillShowData Details"),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateRaw(this, &FShowActionSystemEditor::OpenSkillShowDataDetails)));
-    
     Section.AddMenuEntry("ShowKeyDataDetails",
         LOCTEXT("ShowKeyDetailsEntry", "ShowKey Details"),
         LOCTEXT("ShowKeyDetailsEntryTooltip", "Opens the ShowKey Details"),
         FSlateIcon(),
         FUIAction(FExecuteAction::CreateRaw(this, &FShowActionSystemEditor::OpenShowKeyDetails)));
+
+    Section.AddMenuEntry("ShowActionControllPanels",
+        LOCTEXT("ShowKeyDetailsEntry", "Action Controll"),
+        LOCTEXT("ShowKeyDetailsEntryTooltip", "Opens the ShowActionControllPanels"),
+        FSlateIcon(),
+        FUIAction(FExecuteAction::CreateRaw(this, &FShowActionSystemEditor::OpenShowActionControllPanels)));
 }
 
 void FShowActionSystemEditor::UnRegisterMenus()
@@ -121,9 +190,9 @@ void FShowActionSystemEditor::OpenSkillDataDetails()
     }
 }
 
-void FShowActionSystemEditor::OpenSkillShowDataDetails()
+void FShowActionSystemEditor::OpenShowKeyDetails()
 {
-    TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(SkillShowDataTabId);
+    TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(SkillShowKeyDetailsTabId);
 
     if (ExistingTab.IsValid())
     {
@@ -133,13 +202,13 @@ void FShowActionSystemEditor::OpenSkillShowDataDetails()
     else
     {
         // 탭이 열려 있지 않은 경우 새로 열기
-        FGlobalTabmanager::Get()->TryInvokeTab(SkillShowDataTabId);
+        FGlobalTabmanager::Get()->TryInvokeTab(SkillShowKeyDetailsTabId);
     }
 }
 
-void FShowActionSystemEditor::OpenShowKeyDetails()
+void FShowActionSystemEditor::OpenShowActionControllPanels()
 {
-    TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(SkillDataTabId);
+    TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(ShowActionControllPanelsTabId);
 
     if (ExistingTab.IsValid())
     {
@@ -149,7 +218,46 @@ void FShowActionSystemEditor::OpenShowKeyDetails()
     else
     {
         // 탭이 열려 있지 않은 경우 새로 열기
-        FGlobalTabmanager::Get()->TryInvokeTab(SkillDataTabId);
+        FGlobalTabmanager::Get()->TryInvokeTab(ShowActionControllPanelsTabId);
+    }
+}
+
+void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData)
+{
+    if (ShowActionMakerGameMode)
+    {
+        if (UActionBase* Action = ShowActionMakerGameMode->SelectAction(InSelectedActionName, InSkillData, InSkillShowData))
+        {
+            TObjectPtr<UShowSequencer> OutCastShow;
+            TObjectPtr<UShowSequencer> OutExecShow;
+            TObjectPtr<UShowSequencer> OutFinishShow;
+            Action->EditorLoadAllShow(OutCastShow, OutExecShow, OutFinishShow);
+
+            if (ShowActionControllPanels)
+            {
+                ShowActionControllPanels->SelectAction(Action, OutCastShow, OutExecShow, OutFinishShow);
+            }
+        }
+    }
+}
+
+void FShowActionSystemEditor::SetShowBase(UShowBase* NewShowBase)
+{
+    if (SelectedShowBase == NewShowBase)
+    {
+        return;
+    }
+
+    SelectedShowBase = NewShowBase;
+    if (SelectedShowBase)
+    {
+        UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(SelectedShowBase->GetKeyType());
+        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)SelectedShowBase->GetShowKey()));
+        StructureDetailsView->SetStructureData(StructData);
+    }
+    else
+    {
+        StructureDetailsView = nullptr;
     }
 }
 

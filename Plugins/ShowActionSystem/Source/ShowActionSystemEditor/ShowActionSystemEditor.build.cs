@@ -33,6 +33,7 @@ public class ShowActionSystemEditor : ModuleRules
                 "ShowSystem",
                 "SlateEditorUtils",
                 "ToolMenus",
+                "ShowSystemEditor",
 				// ... add private dependencies that you statically link with here ...	
 			}
             );

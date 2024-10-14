@@ -11,6 +11,8 @@
 #include "DataTableManager.h"
 #include "ShowActionSystemEditor.h"
 #include "ActionSkill.h"
+#include "ShowActionSystemEditor.h"
+#include "RunTime/ShowSequencerComponent.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -30,6 +32,11 @@ void AShowActionMakerGameMode::BeginPlay()
         GetPos(CasterPos, TargetPos, TargetRotator);
 
         Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator);
+        if (!Caster->FindComponentByClass<UShowSequencerComponent>())
+        {
+            UShowSequencerComponent* ShowSequencerComponent = NewObject<UShowSequencerComponent>(Caster, UShowSequencerComponent::StaticClass());
+            ShowSequencerComponent->RegisterComponent();
+        }
         if (!Caster->FindComponentByClass<UActionComponent>())
         {
             UActionComponent* ActionComponent = NewObject<UActionComponent>(Caster, UActionComponent::StaticClass());
@@ -39,6 +46,11 @@ void AShowActionMakerGameMode::BeginPlay()
         AActor* SpawnedTarget = GetWorld()->SpawnActor<AActor>(DefaultActorClass, TargetPos, TargetRotator);
         if (SpawnedTarget)
         {
+            if (!SpawnedTarget->FindComponentByClass<UShowSequencerComponent>())
+            {
+                UShowSequencerComponent* ShowSequencerComponent = NewObject<UShowSequencerComponent>(SpawnedTarget, UShowSequencerComponent::StaticClass());
+                ShowSequencerComponent->RegisterComponent();
+            }
             if (!SpawnedTarget->FindComponentByClass<UActionComponent>())
             {
                 UActionComponent* ActionComponent = NewObject<UActionComponent>(SpawnedTarget, UActionComponent::StaticClass());
@@ -53,11 +65,13 @@ void AShowActionMakerGameMode::BeginPlay()
         UE_LOG(LogTemp, Warning, TEXT("DefaultActorClass is not set!"));
     }
 
-    if (FShowActionSystemEditor* ShowActionSystemEditorModule = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
+    if (FShowActionSystemEditor* ShowActionSystemEditorModulePtr = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
     {
-        ShowActionSystemEditorModule->ShowActionMakerGameMode = this;
-        ShowActionSystemEditorModule->OpenSkillDataDetails();
-        ShowActionSystemEditorModule->RegisterMenus();
+        ShowActionSystemEditorModulePtr->ShowActionMakerGameMode = this;
+        ShowActionSystemEditorModulePtr->OpenSkillDataDetails();
+        ShowActionSystemEditorModulePtr->OpenShowKeyDetails();
+        ShowActionSystemEditorModulePtr->OpenShowActionControllPanels();
+        ShowActionSystemEditorModulePtr->RegisterMenus();
     }
 }
 
@@ -83,10 +97,12 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
     Targets.Empty();
 
-    if (FShowActionSystemEditor* ShowActionSystemEditorModule = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
+    if (FShowActionSystemEditor* ShowActionSystemEditorModulePtr = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
     {
-        ShowActionSystemEditorModule->UnRegisterMenus();
-        ShowActionSystemEditorModule->ShowActionMakerGameMode = nullptr;
+        ShowActionSystemEditorModulePtr->UnRegisterMenus();
+        ShowActionSystemEditorModulePtr->ShowActionMakerGameMode = nullptr;
+
+        //ShowActionSystemEditorModulePtr->CloseShowKeyDetails();
     }
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
@@ -161,16 +177,20 @@ void AShowActionMakerGameMode::SaveActorPositions()
     }
 }
 
-void AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, FSkillData* InSkillData)
+UActionBase* AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData)
 {
-    SkillData = InSkillData;
     SelectedActionName = InSelectedActionName;
+    SkillData = InSkillData;
+    SkillShowData = InSkillShowData;
 
     if (Caster)
     {
         UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
         ActionComponent->InitializeActionPool<UActionSkill, FSkillData, FSkillShowData>({ SelectedActionName });
+        CrrAction = ActionComponent->GetAction(SelectedActionName);
     }
+
+    return CrrAction;
 }
 
 void AShowActionMakerGameMode::DoAction()

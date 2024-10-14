@@ -11,6 +11,7 @@ void SShowKeyBox::Construct(const FArguments& InArgs)
 	ShowKey = InArgs._ShowKey;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
+    InWidthRate = InArgs._InWidthRate;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnClick = InArgs._OnClick;
     OnChanged = InArgs._OnChanged;   
@@ -18,17 +19,22 @@ void SShowKeyBox::Construct(const FArguments& InArgs)
 
     ChildSlot
         [
-            // 마우스 클릭 이벤트를 받기 위한 더미 위젯임
-            SNew(SBox)
-                .HAlign(HAlign_Left)
-                .WidthOverride(0)
-                .HeightOverride(Height.Get())
-                .Visibility(EVisibility::Visible)
+            SNew(SOverlay)
+                + SOverlay::Slot()
+                .Padding(TAttribute<FMargin>::Create(TAttribute<FMargin>::FGetter::CreateLambda([this]() 
+                    {
+                        return FMargin(ClickableBox.Left, 0.0f, 0.0f, 0.0f);
+                    })))
                 [
-                    SNew(SBorder)
-                        .OnMouseButtonDown(this, &SShowKeyBox::OnMouseButtonDown)
-                        .HAlign(HAlign_Left)
-                        .VAlign(VAlign_Fill)
+                    SNew(SBox)
+                        .WidthOverride_Lambda([this]() { return ClickableBox.GetSize().X; })
+                        .HeightOverride_Lambda([this]() { return ClickableBox.GetSize().Y; })
+                        [
+                            SNullWidget::NullWidget
+                            /*SNew(SBorder)
+                                .HAlign(HAlign_Fill)
+                                .VAlign(VAlign_Fill)*/
+                        ]
                 ]
         ];
 }
@@ -40,10 +46,10 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
     if (ShowKey)
     {
         const float StartX = ShowKey->StartTime * SecondToWidthRatio.Get();
-        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowKey->Length * SecondToWidthRatio.Get());
+        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowKey->Length * SecondToWidthRatio.Get()) * InWidthRate.Get();
 
         // 클릭 영역을 저장
-        ClickableBox = FBox2D(FVector2D(StartX, 0), FVector2D(StartX + KeyWidth, Height.Get()));
+        ClickableBox = FSlateRect(StartX, 0, StartX + KeyWidth, Height.Get());
 
         FLinearColor BoxColor = FLinearColor::Gray;
         FLinearColor TextColor = FLinearColor::Black;
@@ -55,7 +61,6 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
                 TextColor = FLinearColor::Red;
             }
         }
-
         // 박스 그리기
         FSlateDrawElement::MakeBox(
             OutDrawElements,
@@ -89,60 +94,55 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
 
 FReply SShowKeyBox::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-    // 클릭 위치를 가져옴
-    FVector2D LocalMousePosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
-    // 저장한 클릭 영역과 비교
-    if (!ClickableBox.IsInside(LocalMousePosition))
-    {
-        return FReply::Handled();
-    }
-
     if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
     {
-        if (OnClick.IsBound() && ShowKey)
+        FVector2D LocalClickPos = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
+
+        if (ClickableBox.ContainsPoint(LocalClickPos))
         {
-            OnClick.Execute(ShowKey); // 클릭 시 키 정보 전달
+            if (OnClick.IsBound() && ShowKey)
+            {
+                OnClick.Execute(ShowKey);
+            }
 
             DragStartPosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
+            bIsDragging = true;
             return FReply::Handled().CaptureMouse(SharedThis(this));
         }
     }
+	return FReply::Unhandled();
+}
 
+FReply SShowKeyBox::OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+    if (bIsDragging)
+    {
+        FVector2D DragCurrentPosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
+        float DragDeltaX = DragCurrentPosition.X - DragStartPosition.X;
+
+        float DeltaTime = DragDeltaX / SecondToWidthRatio.Get();
+        float StartTime = ShowKey->StartTime + DeltaTime;
+        StartTime = FMath::Max(StartTime, 0.0f);
+        ShowKey->StartTime = StartTime;
+
+        DragStartPosition = DragCurrentPosition;
+
+        if (OnChanged.IsBound())
+        {
+            OnChanged.Execute(ShowKey);
+        }
+
+        return FReply::Handled();
+    }
     return FReply::Unhandled();
 }
 
 FReply SShowKeyBox::OnMouseButtonUp(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-    if (HasMouseCapture())
+    if (bIsDragging && MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
     {
-        DragStartPosition = FVector2D::ZeroVector;
+        bIsDragging = false;
         return FReply::Handled().ReleaseMouseCapture();
     }
-
     return FReply::Unhandled();
-}
-
-FReply SShowKeyBox::OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
-{
-    if (DragStartPosition == FVector2D::ZeroVector)
-    {
-		return FReply::Unhandled();
-	}
-
-    FVector2D DragCurrentPosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
-    float DragDeltaX = DragCurrentPosition.X - DragStartPosition.X;
-
-    float DeltaTime = DragDeltaX / SecondToWidthRatio.Get();
-    float StartTime = ShowKey->StartTime + DeltaTime;
-    StartTime = FMath::Max(StartTime, 0.0f);
-    ShowKey->StartTime = StartTime;
-
-    DragStartPosition = DragCurrentPosition;
-
-    if (OnChanged.IsBound())
-	{
-		OnChanged.Execute(ShowKey);
-	}
-
-    return FReply::Handled();
 }

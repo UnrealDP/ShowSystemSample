@@ -31,10 +31,7 @@ class SHOWSYSTEM_API UShowSequencer : public UObject
     friend class UShowSequencerComponent;
 
 public:
-    UShowSequencer();
     virtual void BeginDestroy() override;
-
-    float GetPassedTime() const { return PassedTime; }
 
 private:
     void Play();
@@ -45,6 +42,7 @@ private:
 #if WITH_EDITOR
 public:
     void EditorInitialize();
+    void EditorSetOwner(AActor* InOwner) { Owner = InOwner; }
     FShowKey* EditorAddKey(FInstancedStruct& Key);
     void EditorReset();
     void EditorPlay();
@@ -55,6 +53,7 @@ public:
     void EditorBeginDestroy();
     UShowBase* EditorGetShowBase(FShowKey* ShoeKey);
     TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
+    float EditorGetTotalLength();
 
     TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 #endif
@@ -65,7 +64,6 @@ public:
 
 public:
     // setter getter
-    void SetOwner(AActor* InOwner) { Owner = InOwner; }
     void ClearOwner() { Owner = nullptr; }
     AActor* GetOwner() { return Owner.Get(); }
 
@@ -73,7 +71,10 @@ public:
     void ReleaseDontDestroy() { bIsDontDestroy = false; }
 
     float GetTimeScale() const { return TimeScale; }
+    float GetPassedTime() const { return PassedTime; }
     // end of setter getter
+
+    void Initialize(AActor* InOwner);
 
     void Dispose()
     {

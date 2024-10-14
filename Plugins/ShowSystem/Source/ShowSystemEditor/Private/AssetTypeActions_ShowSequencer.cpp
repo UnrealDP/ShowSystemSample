@@ -34,9 +34,6 @@ void FAssetTypeActions_ShowSequencer::OpenAssetEditor(const TArray<UObject*>& In
         {
             TSharedRef<FShowSequencerEditorToolkit> EditorToolkit(new FShowSequencerEditorToolkit());
             EditorToolkit->InitEditor(EToolkitMode::Standalone, EditWithinLevelEditor, ShowSequencer);
-
-            /*FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
-            ShowSystemEditorModule.OpenShowMakerTab(ShowSequencer);*/
         }
     }
     else

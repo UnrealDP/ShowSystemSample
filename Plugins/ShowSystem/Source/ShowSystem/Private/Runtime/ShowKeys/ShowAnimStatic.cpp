@@ -39,6 +39,11 @@ float UShowAnimStatic::InitializeAssetLength()
 		return 0.0f;
 	}
 
+    if (ShowKey->Length > 0.0f)
+	{
+		return ShowKey->Length;
+	}
+
 	return AnimSequenceBase->GetPlayLength();
 }
 

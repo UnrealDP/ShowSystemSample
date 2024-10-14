@@ -8,6 +8,20 @@
 #include "IContentBrowserSingleton.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 
+bool FShowSequencerEditorToolkit::OnRequestClose() 
+{
+    UnregisterTabSpawners(GetTabManager().ToSharedRef());
+
+    DetailsView.Reset();
+    DetailsView = nullptr;
+
+    EditorHelper->Dispose();
+    EditorHelper.Reset();
+    EditorHelper = nullptr;
+
+    return true; 
+}
+
 void FShowSequencerEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
     FAssetEditorToolkit::RegisterTabSpawners(InTabManager);
@@ -65,6 +79,14 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
             SAssignNew(ShowMakerWidget, SShowMakerWidget)
                 .EditorHelper(EditorHelper) 
                 .EditShowSequencer(EditorHelper->EditShowSequencer)  // ShowSequencer 전달 (필요 시)
+                .OnAddKey_Lambda([this](FShowKey* Key) 
+                    {
+                        DetailsView->ForceRefresh();
+				    })
+                .OnRemoveKey_Lambda([this](FShowKey* Key)
+                    {
+                        DetailsView->ForceRefresh();
+                    })
         ];
 
     EditorHelper->SetShowMakerWidget(ShowMakerWidget);
@@ -74,7 +96,7 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
 
 void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequencer* InShowSequencer)
 {
-    EditorHelper = MakeShared<FShowSequencerEditorHelper>(this, InShowSequencer);
+    EditorHelper = MakeShared<FShowSequencerEditorHelper>(InShowSequencer);
 
     // 기본 에디터 레이아웃 설정
     const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("Standalone_ShowSequencerEditor_Layout")

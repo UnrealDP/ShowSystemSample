@@ -203,6 +203,14 @@ public:
 
     const FShowKey* GetShowKey() const { return ShowKey; }
 
+#if WITH_EDITOR
+    float EditorInitializeAssetLength()
+	{
+		return InitializeAssetLength();
+	}
+#endif
+     
+
 protected:
     AActor* GetOwner() const
     {

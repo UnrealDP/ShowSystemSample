@@ -24,6 +24,36 @@ void UActionBase::OnReturnedToPool()
 	UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 	if (ShowPlayer)
 	{
+
+		// 에디터에서는 UActionBase::EditorLoadAllShow 로 PlayShow 하지 않고 Load를 먼저 해두기 때문에
+#if WITH_EDITOR		
+		if (CastShow)
+		{
+			if (ShowPlayer->HasShowSequencer(Owner, CastShow))
+			{
+				ShowPlayer->DisposeSoloShow(Owner, CastShow);
+				CastShow = nullptr;
+			}
+		}
+
+		if (ExecShow)
+		{
+			if (ShowPlayer->HasShowSequencer(Owner, ExecShow))
+			{
+				ShowPlayer->DisposeSoloShow(Owner, ExecShow);
+				ExecShow = nullptr;
+			}
+		}
+
+		if (FinishShow)
+		{
+			if (ShowPlayer->HasShowSequencer(Owner, FinishShow))
+			{
+				ShowPlayer->DisposeSoloShow(Owner, FinishShow);
+				FinishShow = nullptr;
+			}
+		}
+#else
 		if (CastShow)
 		{
 			ShowPlayer->DisposeSoloShow(Owner, CastShow);
@@ -41,6 +71,7 @@ void UActionBase::OnReturnedToPool()
 			ShowPlayer->DisposeSoloShow(Owner, FinishShow);
 			FinishShow = nullptr;
 		}
+#endif
 	}
 
 	ActionName = nullptr;
@@ -75,28 +106,57 @@ void UActionBase::Tick(float DeltaTime)
 	}
 }
 
-TObjectPtr<UShowSequencer> UActionBase::PlayShow(const FSoftObjectPath& ShowPath)
+#if WITH_EDITOR
+void UActionBase::EditorLoadAllShow(
+	TObjectPtr<UShowSequencer>& OutCastShow, 
+	TObjectPtr<UShowSequencer>& OutExecShow, 
+	TObjectPtr<UShowSequencer>& OutFinishShow)
+{
+	if (ActionBaseShowData)
+	{
+		if (ActionBaseShowData->CastShow.IsValid())
+		{
+			CastShow = LoadShow(ActionBaseShowData->CastShow);
+			OutCastShow = CastShow;
+		}
+		if (ActionBaseShowData->ExecShow.IsValid())
+		{
+			ExecShow = LoadShow(ActionBaseShowData->ExecShow);
+			OutExecShow = ExecShow;
+		}
+		if (ActionBaseShowData->FinishShow.IsValid())
+		{
+			FinishShow = LoadShow(ActionBaseShowData->FinishShow);
+			OutFinishShow = FinishShow;
+		}
+	}
+}
+#endif
+
+TObjectPtr<UShowSequencer> UActionBase::LoadShow(const FSoftObjectPath& ShowPath)
 {
 	checkf(ShowPath.IsValid(), TEXT("UActionBase::PlayShow ShowPath is invalid"));
 
 	if (UShowSequencer* LoadedShowSequencer = Cast<UShowSequencer>(ShowPath.TryLoad()))
 	{
-		UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
-		if (ShowPlayer)
-		{
-			ShowPlayer->PlaySoloShow(Owner, LoadedShowSequencer);
-			return LoadedShowSequencer;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("UActionBase::PlayShow ShowPlayer is invalid"));
-			return nullptr;
-		}
+		LoadedShowSequencer->Initialize(Owner);
+		return LoadedShowSequencer;
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("UActionBase::PlayShow LoadedShowSequencer is invalid [ %s ]"), *ShowPath.ToString());
 		return nullptr;
+	}
+}
+
+void UActionBase::PlayShow(TObjectPtr<UShowSequencer> ShowSequencer)
+{
+	checkf(ShowSequencer, TEXT("UActionBase::PlayShow ShowSequencer is invalid"));
+
+	UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
+	if (ShowPlayer)
+	{
+		ShowPlayer->PlaySoloShow(Owner, ShowSequencer);
 	}
 }
 
@@ -107,7 +167,13 @@ void UActionBase::Casting(TArray<TObjectPtr<AActor>> Targets)
 
 	if (ActionBaseShowData && ActionBaseShowData->CastShow.IsValid())
 	{
-		CastShow = PlayShow(ActionBaseShowData->CastShow);
+		if (!CastShow)
+		{
+			CastShow = LoadShow(ActionBaseShowData->CastShow);
+		}
+		checkf(CastShow, TEXT("UActionBase::Cast CastShow Load Fail"));
+
+		PlayShow(CastShow);
 	}
 
 	if (ActionBaseData->CooldownStart == EActionState::Cast)
@@ -133,13 +199,25 @@ void UActionBase::Exec(TArray<TObjectPtr<AActor>> Targets)
 	{
 		if (ActionBaseShowData && ActionBaseShowData->CastShow.IsValid())
 		{
-			CastShow = PlayShow(ActionBaseShowData->CastShow);
+			if (!CastShow)
+			{
+				CastShow = LoadShow(ActionBaseShowData->CastShow);
+			}
+			checkf(CastShow, TEXT("UActionBase::Exec CastShow Load Fail"));
+
+			PlayShow(CastShow);
 		}
 	}
 
 	if (ActionBaseShowData && ActionBaseShowData->ExecShow.IsValid())
 	{
-		ExecShow = PlayShow(ActionBaseShowData->ExecShow);
+		if (!ExecShow)
+		{
+			ExecShow = LoadShow(ActionBaseShowData->ExecShow);
+		}
+		checkf(ExecShow, TEXT("UActionBase::Exec ExecShow Load Fail"));
+
+		PlayShow(ExecShow);
 	}
 
 	StepPassedTime = 0.0f;
@@ -169,7 +247,13 @@ void UActionBase::Finish(TArray<TObjectPtr<AActor>> Targets)
 
 	if (ActionBaseShowData && ActionBaseShowData->FinishShow.IsValid())
 	{
-		FinishShow = PlayShow(ActionBaseShowData->FinishShow);
+		if (!FinishShow)
+		{
+			FinishShow = LoadShow(ActionBaseShowData->FinishShow);
+		}
+		checkf(FinishShow, TEXT("UActionBase::Finish FinishShow Load Fail"));
+
+		PlayShow(FinishShow);
 	}
 
 	StepPassedTime = 0.0f;

@@ -46,6 +46,8 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(UShowPlayer, STATGROUP_Tickables);
 	}
 
+	bool HasShowSequencer(AActor* Owner, TObjectPtr<UShowSequencer> Sequencer) const;
+
 private:
 	bool Initialized = false;
 	//TSparseArray<TObjectPtr<UShowSequencer>> ShowSequencers;

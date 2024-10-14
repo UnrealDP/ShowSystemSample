@@ -76,8 +76,16 @@ public:
 	// 외부로직으로 액션을 사용할지 여부를 결정하는 필터
 	typedef void (*StepNotiFuncPtr)(const UActionBase*, EActionState);
 
+#if WITH_EDITOR
+	void EditorLoadAllShow(
+		TObjectPtr<UShowSequencer>& OutCastShow,
+		TObjectPtr<UShowSequencer>& OutExecShow,
+		TObjectPtr<UShowSequencer>& OutFinishShow);
+#endif
+
 protected:
-	TObjectPtr<UShowSequencer> PlayShow(const FSoftObjectPath& ShowPath);
+	TObjectPtr<UShowSequencer> LoadShow(const FSoftObjectPath& ShowPath);
+	void PlayShow(TObjectPtr<UShowSequencer> ShowSequencer);
 	
 	EActionState State = EActionState::Wait;
 

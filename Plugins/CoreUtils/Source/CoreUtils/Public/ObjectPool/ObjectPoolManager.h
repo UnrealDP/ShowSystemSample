@@ -25,19 +25,14 @@ public:
     // 그래서 직접 PoolSettings 를 가져오는 함수를 만들어서 에디터에서 사용할 수 있도록 함.
     static void GetPoolSettings(TArray<FObjectPoolTypeSettings>& OutPoolSettings);
 
-    // 풀 설정을 초기화하는 메서드
-    void InitializePoolSettings(FString AssetPath);
-
     // 특정 타입의 객체를 풀에서 가져오는 메서드
     template <typename T>
     T* GetPooledObject(EObjectPoolType ObjectType)
     {
-        EnsurePoolsInitialized(ObjectType);
-
         int32 Index = static_cast<int32>(ObjectType);
 
         // Object 클래스는 ObjectType에 맞게 정의된 클래스 타입이거나 상속 관계여야 함
-        checkf(T::StaticClass()->IsChildOf(PoolSettings[Index].ObjectClass),
+        checkf(PoolSettings[Index].ObjectClass->IsChildOf(T::StaticClass()),
             TEXT("UObjectPoolManager::ExpandPool / T not match ObjectClass."));
 
         UObject* PooledObject;
@@ -95,16 +90,17 @@ private:
         int32 Index = static_cast<int32>(ObjectType);
 
         // Object 클래스는 ObjectType에 맞게 정의된 클래스 타입이거나 상속 관계여야 함
-        checkf(T::StaticClass()->IsChildOf(PoolSettings[Index].ObjectClass),
+        checkf(PoolSettings[Index].ObjectClass->IsChildOf(T::StaticClass()),
             TEXT("UObjectPoolManager::ExpandPool / T not match ObjectClass."));
 
         int32 ReservedObjectCount = PoolSettings[Index].ReservedObjectCount;
 
         for (int32 i = 0; i < ReservedObjectCount; i++)
         {
-            T* NewObjectInstance = NewObject<T>((UObject*)GetTransientPackage(), PoolSettings[Index].ObjectClass);
+            T* NewObjectInstance = NewObject<T>(this, PoolSettings[Index].ObjectClass);
             if (NewObjectInstance)
             {
+                NewObjectInstance->AddToRoot();
                 ObjectPools[Index].Add(NewObjectInstance);
             }
         }

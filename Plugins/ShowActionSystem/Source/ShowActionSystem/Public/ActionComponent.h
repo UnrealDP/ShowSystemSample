@@ -40,6 +40,7 @@ public:
 	UActionBase* DoActionPool(const FName& ActionName, ActionFilterFuncPtr ActionFilter = nullptr);
 
 	const UActionBase* GetMainAction() const { return MainAction; }
+	UActionBase* GetAction(const FName& ActionName) const { return ActionPool.FindRef(ActionName); }
 
 	template<typename TActionObject, typename TActionData, typename TActionShowData>
 	void InitializeActionPool(const TArray<FName>& ActionNames)

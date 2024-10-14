@@ -21,6 +21,7 @@ public:
         SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
+        SLATE_ATTRIBUTE(float, InWidthRate)
         SLATE_ATTRIBUTE(float, SecondToWidthRatio)
         SLATE_EVENT(FOnShowKeyEvent, OnAddKey)
         SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
@@ -54,4 +55,5 @@ private:
     TSharedPtr<IMenu> MenuWindow = nullptr;
 
     TArray<TSharedPtr<FString>> KeyOptions;
+    TAttribute<float> InWidthRate;
 };

@@ -18,6 +18,8 @@
 #include "Animation/DebugSkelMeshComponent.h"
 #include "RunTime/ShowBase.h"
 #include "SlateEditorUtils.h"
+#include "SScrubWidget.h"
+#include "ITransportControl.h"
 
 #define LOCTEXT_NAMESPACE "SShowSequencerScrubPanel"
 
@@ -26,6 +28,7 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 {
 	bSliderBeingDragged = false;
 	ShowSequencerEditorHelper = InArgs._ShowSequencerEditorHelper;
+	OnUpdateZoom = InArgs._OnUpdateZoom;
 
 	ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
 		{
@@ -33,12 +36,12 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 		}));
 
 
-	ShowViewInputMax = GetSequenceLength();
+	//ShowViewInputMax = GetSequenceLength();
 
 	ChildSlot
 		[
 			SNew(SHorizontalBox)
-				.AddMetaData<FTagMetaData>(TEXT("AnimScrub.Scrub"))
+				/*.AddMetaData<FTagMetaData>(TEXT("AnimScrub.Scrub"))
 
 				+ SHorizontalBox::Slot()
 				.AutoWidth()
@@ -51,13 +54,13 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 						]
 				]
 
-				SLATE_HORIZONTAL_SLOT(16.0f, 16.0f)
+				SLATE_HORIZONTAL_SLOT(16.0f, 16.0f)*/
 
 				+ SHorizontalBox::Slot()
 				.HAlign(HAlign_Fill)
 				.VAlign(VAlign_Center)
 				.FillWidth(1)
-				.Padding(FMargin(0.0f, 0.0f))
+				//.Padding(FMargin(0.0f, 0.0f))
 				[
 					SNew(SBorder)
 						[
@@ -84,91 +87,91 @@ void SShowSequencerScrubPanel::Construct(const SShowSequencerScrubPanel::FArgume
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-TSharedRef<SWidget> SShowSequencerScrubPanel::CreateCustomTransportControl()
-{
-	return SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.AutoWidth()
-		.HAlign(HAlign_Center)
-		.VAlign(VAlign_Center)
-		[
-			// Play/Pause 버튼
-			SNew(SButton)
-				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
-				.OnClicked(this, &SShowSequencerScrubPanel::HandlePlayPauseButton)
-				.Visibility(EVisibility::Visible)
-				.ToolTipText_Lambda([this]() -> FText {
-				return (ShowSequencerState.Get() == EShowSequencerState::ShowSequencer_Playing) 
-					? LOCTEXT("Pause", "Pause") 
-					: LOCTEXT("Play", "Play");
-					})
-				.ContentPadding(0.0f)
-				.IsFocusable(true)
-				[
-					SNew(SImage)
-						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
-						.Image_Lambda([this]() -> const FSlateBrush* {
-						return (ShowSequencerState.Get() == EShowSequencerState::ShowSequencer_Playing)
-							? FAppStyle::Get().GetBrush("Animation.Pause") // 상태에 따른 아이콘 전환
-							: FAppStyle::Get().GetBrush("Animation.Forward");
-							})
-				]
-		]
-		+ SHorizontalBox::Slot()
-		.AutoWidth()
-		.HAlign(HAlign_Center)
-		.VAlign(VAlign_Center)
-		[
-			// Reverse 버튼
-			SNew(SButton)
-				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
-				.OnClicked(this, &SShowSequencerScrubPanel::HandleReverseButton)
-				.Visibility(EVisibility::Visible)
-				.ToolTipText(LOCTEXT("Reverse", "Reverse"))
-				.ContentPadding(0.0f)
-				.IsFocusable(true)
-				[
-					SNew(SImage)
-						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
-						.Image(FAppStyle::Get().GetBrush("Animation.Backward"))
-				]
-		]
-		+ SHorizontalBox::Slot()
-		.AutoWidth()
-		.HAlign(HAlign_Center)
-		.VAlign(VAlign_Center)
-		[
-			// Stop 버튼
-			SNew(SButton)
-				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
-				.OnClicked(this, &SShowSequencerScrubPanel::HandleStopButton)
-				.Visibility(EVisibility::Visible)
-				.ToolTipText(LOCTEXT("Stop", "Stop"))
-				.ContentPadding(0.0f)
-				.IsFocusable(true)
-				[
-					SNew(SImage)
-						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
-						.Image(FAppStyle::Get().GetBrush("Animation.Stop"))
-				]
-		];
-}
-
-FReply SShowSequencerScrubPanel::HandlePlayPauseButton()
-{
-	ShowSequencerEditorHelper->Play();
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::HandleReverseButton()
-{
-	return FReply::Handled();
-}
-
-FReply SShowSequencerScrubPanel::HandleStopButton()
-{
-	return FReply::Handled();
-}
+//TSharedRef<SWidget> SShowSequencerScrubPanel::CreateCustomTransportControl()
+//{
+//	return SNew(SHorizontalBox)
+//		+ SHorizontalBox::Slot()
+//		.AutoWidth()
+//		.HAlign(HAlign_Center)
+//		.VAlign(VAlign_Center)
+//		[
+//			// Play/Pause 버튼
+//			SNew(SButton)
+//				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
+//				.OnClicked(this, &SShowSequencerScrubPanel::HandlePlayPauseButton)
+//				.Visibility(EVisibility::Visible)
+//				.ToolTipText_Lambda([this]() -> FText {
+//				return (ShowSequencerState.Get() == EShowSequencerState::ShowSequencer_Playing) 
+//					? LOCTEXT("Pause", "Pause") 
+//					: LOCTEXT("Play", "Play");
+//					})
+//				.ContentPadding(0.0f)
+//				.IsFocusable(true)
+//				[
+//					SNew(SImage)
+//						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+//						.Image_Lambda([this]() -> const FSlateBrush* {
+//						return (ShowSequencerState.Get() == EShowSequencerState::ShowSequencer_Playing)
+//							? FAppStyle::Get().GetBrush("Animation.Pause") // 상태에 따른 아이콘 전환
+//							: FAppStyle::Get().GetBrush("Animation.Forward");
+//							})
+//				]
+//		]
+//		+ SHorizontalBox::Slot()
+//		.AutoWidth()
+//		.HAlign(HAlign_Center)
+//		.VAlign(VAlign_Center)
+//		[
+//			// Reverse 버튼
+//			SNew(SButton)
+//				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
+//				.OnClicked(this, &SShowSequencerScrubPanel::HandleReverseButton)
+//				.Visibility(EVisibility::Visible)
+//				.ToolTipText(LOCTEXT("Reverse", "Reverse"))
+//				.ContentPadding(0.0f)
+//				.IsFocusable(true)
+//				[
+//					SNew(SImage)
+//						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+//						.Image(FAppStyle::Get().GetBrush("Animation.Backward"))
+//				]
+//		]
+//		+ SHorizontalBox::Slot()
+//		.AutoWidth()
+//		.HAlign(HAlign_Center)
+//		.VAlign(VAlign_Center)
+//		[
+//			// Stop 버튼
+//			SNew(SButton)
+//				.ButtonStyle(FAppStyle::Get(), "Animation.PlayControlsButton")
+//				.OnClicked(this, &SShowSequencerScrubPanel::HandleStopButton)
+//				.Visibility(EVisibility::Visible)
+//				.ToolTipText(LOCTEXT("Stop", "Stop"))
+//				.ContentPadding(0.0f)
+//				.IsFocusable(true)
+//				[
+//					SNew(SImage)
+//						.ColorAndOpacity(FSlateColor::UseSubduedForeground())
+//						.Image(FAppStyle::Get().GetBrush("Animation.Stop"))
+//				]
+//		];
+//}
+//
+//FReply SShowSequencerScrubPanel::HandlePlayPauseButton()
+//{
+//	ShowSequencerEditorHelper->Play();
+//	return FReply::Handled();
+//}
+//
+//FReply SShowSequencerScrubPanel::HandleReverseButton()
+//{
+//	return FReply::Handled();
+//}
+//
+//FReply SShowSequencerScrubPanel::HandleStopButton()
+//{
+//	return FReply::Handled();
+//}
 
 float SShowSequencerScrubPanel::GetViewInputMin() const 
 { 
@@ -214,7 +217,8 @@ float SShowSequencerScrubPanel::GetScrubValue() const
 uint32 SShowSequencerScrubPanel::GetNumberOfKeys() const
 {
 	float SequenceLength = GetSequenceLength();
-	int32 NumKeys = (int32)(SequenceLength / 0.0333f);
+	int32 NumKeys = (int32)(SequenceLength);
+	//int32 NumKeys = (int32)(SequenceLength / 0.0333f);
 	return NumKeys;
 }
 
@@ -242,7 +246,7 @@ void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const dou
 			}
 
 			float StartTime = ShowBase->GetStartTime();
-			float Length = ShowBase->GetLength();
+			float Length = ShowBase->EditorInitializeAssetLength();
 
 			SequenceLength = FMath::Max(SequenceLength, StartTime + Length);
 		}
@@ -250,14 +254,22 @@ void SShowSequencerScrubPanel::Tick(const FGeometry& AllottedGeometry, const dou
 
 	if (CrrShowSequenceLength != SequenceLength || ShowViewInputMax == FLT_MAX)
 	{
-		float ZoomRate = 1.0f;
+		float NewZoomRate = 1.0f;
 		if (ShowViewInputMax != FLT_MAX)
 		{
-			ZoomRate = ShowViewInputMax / CrrShowSequenceLength;
+			NewZoomRate = ShowViewInputMax / CrrShowSequenceLength;
+		}
+		if (NewZoomRate != CrrZoomRate)
+		{
+			CrrZoomRate = NewZoomRate;
+			if (OnUpdateZoom.IsBound())
+			{
+				OnUpdateZoom.Execute(CrrZoomRate);
+			}
 		}
 		
 		CrrShowSequenceLength = SequenceLength;
-		ShowViewInputMax = CrrShowSequenceLength * ZoomRate;
+		ShowViewInputMax = CrrShowSequenceLength * CrrZoomRate;
 	}
 }
 
@@ -274,6 +286,20 @@ bool SShowSequencerScrubPanel::GetDisplayDrag() const
 void SShowSequencerScrubPanel::OnSetInputViewRange(float NewViewMinInput, float NewViewMaxInput)
 {
 	ShowViewInputMax = NewViewMaxInput - NewViewMinInput;
+
+	float NewZoomRate = 1.0f;
+	if (ShowViewInputMax != FLT_MAX)
+	{
+		NewZoomRate = ShowViewInputMax / CrrShowSequenceLength;
+	}
+	if (NewZoomRate != CrrZoomRate)
+	{
+		CrrZoomRate = NewZoomRate;
+		if (OnUpdateZoom.IsBound())
+		{
+			OnUpdateZoom.Execute(CrrZoomRate);
+		}
+	}
 }
 
 void SShowSequencerScrubPanel::OnScrubBarDrag(int32 BarIndex, float NewPosition)

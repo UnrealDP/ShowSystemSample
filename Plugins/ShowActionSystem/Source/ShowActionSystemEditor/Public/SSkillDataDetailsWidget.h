@@ -7,9 +7,9 @@
 #include "Widgets/SCompoundWidget.h"
 
 struct FSkillData;
-DECLARE_DELEGATE_TwoParams(FOnComboBoxSelectionChanged, FName, FSkillData*)
+struct FSkillShowData;
 
-typedef TFunction<void(FName, FSkillData*)> FSelectActionFunction;
+DECLARE_DELEGATE_ThreeParams(FSelectActionFunction, FName, FSkillData*, FSkillShowData*)
 
 /**
  * 
@@ -19,7 +19,7 @@ class SHOWACTIONSYSTEMEDITOR_API SSkillDataDetailsWidget : public SCompoundWidge
 public:
 	SLATE_BEGIN_ARGS(SSkillDataDetailsWidget) {}
 		SLATE_ARGUMENT(UDataTable*, SkillDataTable)
-		SLATE_ARGUMENT(FSelectActionFunction, OnSelectAction)
+		SLATE_EVENT(FSelectActionFunction, OnSelectAction)
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */

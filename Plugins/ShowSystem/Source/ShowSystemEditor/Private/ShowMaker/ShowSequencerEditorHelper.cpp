@@ -8,12 +8,9 @@
 #include "ActorPreviewViewport.h"
 #include "Runtime/ShowKeys/ShowAnimStatic.h"
 
-FShowSequencerEditorHelper::FShowSequencerEditorHelper(FShowSequencerEditorToolkit* InShowSequencerEditorToolkit, TObjectPtr<UShowSequencer> InEditShowSequencer)
+FShowSequencerEditorHelper::FShowSequencerEditorHelper(TObjectPtr<UShowSequencer> InEditShowSequencer)
 {
-	checkf(InShowSequencerEditorToolkit, TEXT("FShowSequencerEditorHelper::FShowSequencerEditorHelper ShowSequencerEditorToolkit is nullptr"));
 	checkf(InEditShowSequencer, TEXT("FShowSequencerEditorHelper::FShowSequencerEditorHelper InEditShowSequencer is nullptr"));
-
-	ShowSequencerEditorToolkit = InShowSequencerEditorToolkit;
 
 	EditShowSequencer = InEditShowSequencer;
 	EditShowSequencer->EditorInitialize();
@@ -22,9 +19,21 @@ FShowSequencerEditorHelper::FShowSequencerEditorHelper(FShowSequencerEditorToolk
 
 FShowSequencerEditorHelper::~FShowSequencerEditorHelper()
 {
-	EditShowSequencer->ReleaseDontDestroy();
-	EditShowSequencer->EditorBeginDestroy();
-	EditShowSequencer = nullptr;
+	Dispose();
+}
+
+void FShowSequencerEditorHelper::Dispose()
+{
+	ShowMakerWidget.Reset();
+	ShowMakerWidget = nullptr;
+	SelectedShowKey = nullptr;
+
+	if (EditShowSequencer)
+	{
+		EditShowSequencer->ReleaseDontDestroy();
+		EditShowSequencer->EditorBeginDestroy();
+		EditShowSequencer = nullptr;
+	}
 }
 
 void FShowSequencerEditorHelper::SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget)
@@ -66,9 +75,12 @@ void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent
 			FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 			FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-			if (PropertyName.IsEqual("AnimSequenceAsset"))
+			if (ShowBase->IsA<UShowAnimStatic>())
 			{
-				ShowBase->ExecuteReset();
+				if (PropertyName.IsEqual("AnimSequenceAsset"))
+				{
+					ShowBase->ExecuteReset();
+				}
 			}
 		}
 	}
@@ -120,14 +132,6 @@ TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
 	}
 
 	return ShowKeyPointers;
-}
-
-void FShowSequencerEditorHelper::ShowSequencerDetailsViewForceRefresh()
-{
-	if (ShowSequencerEditorToolkit->DetailsView)
-	{
-		ShowSequencerEditorToolkit->DetailsView->ForceRefresh();
-	}
 }
 
 UClass* FShowSequencerEditorHelper::GetLastSelectedActorClass()
@@ -207,7 +211,7 @@ void FShowSequencerEditorHelper::ReplaceActorPreviewWorld(UClass* ActorClass)
 		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
 		{
 			AActor* Owner = ActorPreviewViewport->ReplaceActorPreviewWorld(ActorClass);
-			EditShowSequencer->SetOwner(Owner);
+			EditShowSequencer->EditorSetOwner(Owner);
 
 			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
 			if (GConfig)

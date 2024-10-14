@@ -111,21 +111,23 @@ void SSkillDataDetailsWidget::OnSkillSelected(TSharedPtr<FString> NewSelection, 
                 // 구조체 데이터
                 TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(FSkillData::StaticStruct(), (uint8*)SkillData));
                 SkillDetailsView->SetStructureData(StructData);
-
-                if (OnSelectAction)
-                {
-                    OnSelectAction(NewSelectionName, SkillData);
-                }
             }
 
+            FSkillShowData* SkillShowData = nullptr;
             if (SkillShowDetailsView.IsValid())
             {
-                if (FSkillShowData* SkillShowData = DataTableManager::Data<FSkillShowData>(NewSelectionName))
+                SkillShowData = DataTableManager::Data<FSkillShowData>(NewSelectionName);
+                if (SkillShowData)
                 {
                     TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(FSkillShowData::StaticStruct(), (uint8*)SkillShowData));
                     SkillShowDetailsView->SetStructureData(StructData);
                 }
             }            
+
+            if (OnSelectAction.IsBound())
+            {
+                OnSelectAction.ExecuteIfBound(NewSelectionName, SkillData, SkillShowData);
+            }
         }
     }
 }
