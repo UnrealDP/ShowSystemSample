@@ -6,6 +6,7 @@
 #include "UObject/NoExportTypes.h"
 #include "InstancedStruct.h"
 #include "ObjectPool/ObjectPoolManager.h"
+#include "ShowSequenceAsset.h"
 #include "ShowSequencer.generated.h"
 
 class UShowBase;
@@ -28,6 +29,9 @@ class SHOWSYSTEM_API UShowSequencer : public UObject
 {
 	GENERATED_BODY()
 
+#if WITH_EDITOR
+    friend class FShowSequencerEditorHelper;
+#endif
     friend class UShowSequencerComponent;
 
 public:
@@ -41,7 +45,7 @@ private:
 
 #if WITH_EDITOR
 public:
-    void EditorInitialize();
+    void EditorInitialize(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
     void EditorSetOwner(AActor* InOwner) { Owner = InOwner; }
     FShowKey* EditorAddKey(FInstancedStruct& Key);
     void EditorReset();
@@ -51,16 +55,11 @@ public:
     void EditorUnPause() { UnPause(); }
     void EditorClearShowObjects();
     void EditorBeginDestroy();
-    UShowBase* EditorGetShowBase(FShowKey* ShoeKey);
     TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
     float EditorGetTotalLength();
 
     TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 #endif
-
-public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
-    TArray<FInstancedStruct> ShowKeys;
 
 public:
     // setter getter
@@ -106,6 +105,8 @@ private:
     void ClearShowObjects();
         
 private:
+    TObjectPtr<UShowSequenceAsset> ShowSequenceAsset;
+
     bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
     float PassedTime = 0.0f;

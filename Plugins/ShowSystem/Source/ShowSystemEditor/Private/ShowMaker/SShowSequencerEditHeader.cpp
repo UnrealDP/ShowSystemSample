@@ -53,28 +53,81 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr
     //SLATE_VERTICAL_SLOT(0.0f, 5.0f)
 
     // ShowSequencerEditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
-    /*for (TObjectPtr<UShowSequencer> ShowSequencer : *InShowSequencersPtr)
+    for (auto& Elem : *ShowSequencerEditorHelperMapPtr) // 포인터를 역참조하여 TMap 순회
     {
-        TSharedPtr<SShowKeyBox> NewKeyBox;
-        SAssignNew(NewKeyBox, SShowKeyBox)
-            .ShowKey(Key)
-            .Height(Height)
-            .MinWidth(MinWidth)
-            .InWidthRate_Lambda([this]() { return InWidthRate.Get(); })
-            .SecondToWidthRatio(SecondToWidthRatio)
-            .OnClick(this, &SShowSequencerEditHeader::OnKeyClicked)
-            .OnChanged(OnChangedKey)
-            .IsShowKeySelected(this, &SShowSequencerEditHeader::IsShowKeySelected);
-
-        ShowKeyBoxes.Add(NewKeyBox);
+        FString Key = Elem.Key;
+        TSharedPtr<FShowSequencerEditorHelper> Value = Elem.Value;
 
         VerticalBox->AddSlot()
-            .AutoHeight()
-            .HAlign(HAlign_Fill)
-            [
-                NewKeyBox.ToSharedRef()
-            ];
-    }*/
+			.AutoHeight()
+			.HAlign(HAlign_Fill)
+			[
+                SNew(SOverlay)
+                    + SOverlay::Slot()
+                    [
+                        SNew(SBorder)
+                            .HAlign(HAlign_Fill)
+                            .VAlign(VAlign_Fill)
+                            .BorderImage(FAppStyle::Get().GetBrush("ToolPanel.GroupBorder"))
+                    ]
+                    + SOverlay::Slot()
+                    [
+                        ConstructShowSequencerHeaderWidget(Value.Get())
+                    ]
+			];
+    }
+}
+
+TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget(FShowSequencerEditorHelper* ShowSequencerEditorHelper)
+{
+    if(!ShowSequencerEditorHelper)
+	{
+		return SNullWidget::NullWidget;
+	}
+
+    TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr = ShowSequencerEditorHelper->RuntimeShowKeysPtr();
+    if (!RuntimeShowKeysPtr)
+    {
+        return SNullWidget::NullWidget;
+    }
+
+    TSharedRef<SVerticalBox> ShowSequencerVerticalBox = SNew(SVerticalBox);
+    for (TObjectPtr<UShowBase>& ShowBase : *RuntimeShowKeysPtr)
+	{
+        ShowSequencerVerticalBox->AddSlot()
+			.AutoHeight()
+			.HAlign(HAlign_Fill)
+			[
+                SNew(SBorder)
+                    .BorderImage(FAppStyle::Get().GetBrush("ToolPanel.GroupBorder"))
+                    .Padding(FMargin(1.0f))
+                    [
+                        SNew(SHorizontalBox)
+                            + SHorizontalBox::Slot()
+                            .AutoWidth()
+                            [
+                                SNew(SButton)
+                                    .ButtonStyle(FAppStyle::Get(), "SimpleButton")
+                                    .ToolTipText(LOCTEXT("RemoveButtonTooltip", "Remove Show Key."))
+                                    .OnClicked_Lambda([this, ShowBase]() -> FReply
+                                        {
+                                            return OnRemoveShowKey(ShowBase);
+                                        })
+                                    [
+                                        SNew(SImage)
+                                            .Image(FAppStyle::Get().GetBrush("Icons.Minus"))
+                                    ]
+                            ]
+                            + SHorizontalBox::Slot()
+                            .AutoWidth()
+                            [
+                                SNew(STextBlock).Text(FText::FromString(ShowBase->GetClass()->GetName()))
+                            ]
+                    ]
+			];
+	}
+
+    return ShowSequencerVerticalBox;
 }
 
 TSharedRef<SWidget> SShowSequencerEditHeader::CreateAddKeyMenu()
@@ -166,22 +219,22 @@ void SShowSequencerEditHeader::OnAddKeySelected(TSharedPtr<FString> SelectedItem
 
     if (SelectedItem.IsValid())
     {
-        FShowKey* NewKey = nullptr;
+        TObjectPtr<UShowBase> NewShowBase = nullptr;
         if (*SelectedItem == "Add ShowAnimStatic")
         {
-            NewKey = SelectedShowSequencerEditorHelper->AddKey<FShowAnimStaticKey>();
+            NewShowBase = SelectedShowSequencerEditorHelper->AddKey<FShowAnimStaticKey>();
         }
         else if (*SelectedItem == "Add Key 2")
         {
             // Add Key 2 선택 시 실행할 코드
         }
 
-        if (NewKey)
+        if (NewShowBase)
         {
+            RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
             if (OnAddShowKeyEvent.IsBound())
             {
-                RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
-                OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewKey);
+                OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewShowBase);
             }
         }
     }
@@ -215,3 +268,27 @@ void SShowSequencerEditHeader::OnAddSequencerKeySelected(TSharedPtr<FString> Sel
         FPopupTransitionEffect(FPopupTransitionEffect::TypeInPopup)
     );
 }
+
+
+FReply SShowSequencerEditHeader::OnRemoveShowKey(TObjectPtr<UShowBase> ShowBase)
+{
+    if (!SelectedShowSequencerEditorHelper)
+    {
+        return FReply::Handled();
+    }
+
+    if (SelectedShowSequencerEditorHelper->RemoveKey(ShowBase))
+    {
+        RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
+
+        if (OnRemoveShowKeyEvent.IsBound())
+        {
+            OnRemoveShowKeyEvent.Execute(SelectedShowSequencerEditorHelper);
+        }
+    }
+
+    return FReply::Handled();
+}
+
+
+#undef LOCTEXT_NAMESPACE

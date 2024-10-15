@@ -18,7 +18,6 @@ public:
 	FShowSequencerEditorHelper(TObjectPtr<UShowSequencer> InEditShowSequencer);
 	~FShowSequencerEditorHelper();
 
-	void Dispose();
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override
 	{
@@ -29,22 +28,29 @@ public:
 		return true;
 	}
 
-	TArray<FShowKey*> GetShowKeys();
+	void SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget);
+	TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr();
+	void SetShowBaseStartTime(UShowBase* InShowBase, float StartTime);
 
 	template<typename T, typename = std::enable_if_t<std::is_base_of<FShowKey, T>::value>>
-	FShowKey* AddKey()
+	TObjectPtr<UShowBase> AddKey()
 	{
 		FInstancedStruct NewKey;
 		NewKey.InitializeAs<T>();
-		FShowKey* NewShowKey = EditShowSequencer->EditorAddKey(NewKey);
-		return NewShowKey;
+		return AddKey(NewKey);
 	}
+	TObjectPtr<UShowBase> AddKey(FInstancedStruct& NewKey);
+	bool RemoveKey(TObjectPtr<UShowBase> RemoveShowBase);
+
+	UScriptStruct* GetShowKeyStaticStruct(UShowBase* ShowBase);
+	FShowKey* GetMutableShowKey(UShowBase* ShowBase);
 
 	void NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged);
 
 	void Play();
 
-	void SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget);
+	bool ValidateRuntimeShowKeys();
+	bool ValidateShowAnimStatic(AActor* Owner, TObjectPtr<UShowBase>& ShowBase);
 
 	UClass* GetLastSelectedActorClass();
 	USkeletalMesh* LoadLastSelectedOrDefaultSkeletalMesh();	
@@ -56,6 +62,6 @@ public:
 
 	TObjectPtr<UShowSequencer> EditShowSequencer = nullptr;
 	TSharedPtr<SShowMakerWidget> ShowMakerWidget = nullptr;
-	FShowKey* SelectedShowKey = nullptr;
+	TObjectPtr<UShowBase> SelectedShowBase = nullptr;
 };
 

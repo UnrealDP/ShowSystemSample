@@ -25,7 +25,7 @@ struct FShowKey
     GENERATED_USTRUCT_BODY()
 
 public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "ShowKey")
     EShowKeyType KeyType = EShowKeyType::Max;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
@@ -33,9 +33,6 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
     float Length = 0.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
-    bool IsLoop = false;
 };
 
 /**
@@ -45,6 +42,11 @@ UCLASS(Abstract)
 class SHOWSYSTEM_API UShowBase : public UObject, public IPooled
 {
 	GENERATED_BODY()
+
+#if WITH_EDITOR
+    friend FShowSequencerEditorHelper;
+#endif
+
 
 public:
     // 객체가 풀에서 꺼내졌을 때 호출됨
@@ -72,6 +74,8 @@ public:
         checkf(InShowSequencer, TEXT("UShowBase::InitShowKey: The InShowSequencer is invalid."));
         checkf(InShowKey, TEXT("UShowBase::InitShowKey: The InShowKey is invalid."));
 
+        ShowKeyState = EShowKeyState::ShowKey_Wait;
+
         ShowSequencer = InShowSequencer;
         CachedTimeScale = ShowSequencer->GetTimeScale();
 
@@ -79,16 +83,15 @@ public:
         Length = InShowKey->Length;
 
         Initialize();
-        Length = InitializeAssetLength();
-
-        ShowKeyState = EShowKeyState::ShowKey_Wait;
+        Length = GetShowLength();
     }
 
-    void Tick(float DeltaTime)
+    void BaseTick(float DeltaTime)
     {
         PassedTime += (DeltaTime * CachedTimeScale);
 
-        if (CachedTimeScale > 0)
+        // 키의 종류에 따라서 시간이 아닌 이벤트 같은거로 처리할 수 있음 (예시: UShowAnimStatic)
+        /*if (CachedTimeScale > 0)
         {
             if (Length <= PassedTime)
             {
@@ -101,7 +104,7 @@ public:
             {
                 ShowKeyState = EShowKeyState::ShowKey_End;
             }
-        }
+        }*/
         
         Tick(DeltaTime, PassedTime);
     }
@@ -112,8 +115,8 @@ public:
 		{
 			return;
 		}
+        ShowKeyState = EShowKeyState::ShowKey_Playing;
 		Play();
-		ShowKeyState = EShowKeyState::ShowKey_Playing;
     }
     void ExecuteStop()
     {
@@ -121,20 +124,18 @@ public:
         {
             return;
         }
-        Stop();
         ShowKeyState = EShowKeyState::ShowKey_End;
+        Stop();
     }
     void ExecuteReset()
     {
-        if (ShowKeyState == EShowKeyState::ShowKey_Wait)
-        {
-            return;
-        }
+        ShowKeyState = EShowKeyState::ShowKey_Wait;
 
         PassedTime = 0.0f;
 
+        Length = ShowKey->Length;
         Reset();
-        ShowKeyState = EShowKeyState::ShowKey_Wait;
+        Length = GetShowLength();
     }
     void ExecutePause()
     {
@@ -142,8 +143,8 @@ public:
 		{
 			return;
 		}
+        ShowKeyState = EShowKeyState::ShowKey_Pause;
 		Pause();
-		ShowKeyState = EShowKeyState::ShowKey_Pause;
 	}
     void ExecuteUnPause()
     {
@@ -151,8 +152,8 @@ public:
         {
             return;
         }
-        UnPause();
         ShowKeyState = EShowKeyState::ShowKey_Playing;
+        UnPause();
     }
 
     void SetKeyTimeScale(float InKeyTimeScale)
@@ -196,7 +197,7 @@ public:
     { 
         if (Length == FLT_MAX)
 		{
-			Length = InitializeAssetLength();
+			Length = GetShowLength();
 		}
         return Length;
     }
@@ -206,10 +207,13 @@ public:
 #if WITH_EDITOR
     float EditorInitializeAssetLength()
 	{
-		return InitializeAssetLength();
+		return GetShowLength();
 	}
 #endif
      
+public:
+    virtual FString GetTitle() PURE_VIRTUAL(UShowBase::GetTitle, return "ShowBase";);
+    virtual float GetShowLength() PURE_VIRTUAL(UShowBase::GetShowLength, return 0.f;);
 
 protected:
     AActor* GetOwner() const
@@ -220,7 +224,6 @@ protected:
     virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
     // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
     // Initialize 된 후에 호출된다
-    virtual float InitializeAssetLength() PURE_VIRTUAL(UShowBase::InitializeAssetLength, return 0.f;);
     virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );
     virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
     virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
@@ -239,7 +242,6 @@ protected:
     EShowKeyState ShowKeyState = EShowKeyState::ShowKey_Wait;
 
     // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
-    // InitializeAssetLength 에서 초기화 되어야함
     float Length = FLT_MAX;
     float PassedTime = 0.0f;
     float KeyTimeScale = 1.0f;

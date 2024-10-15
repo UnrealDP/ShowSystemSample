@@ -7,33 +7,22 @@
 #include "Misc/PathsUtil.h"
 #include "ActorPreviewViewport.h"
 #include "Runtime/ShowKeys/ShowAnimStatic.h"
+#include "Runtime/ShowSystem.h"
+
+#define LOCTEXT_NAMESPACE "FShowSequencerEditorHelper"
 
 FShowSequencerEditorHelper::FShowSequencerEditorHelper(TObjectPtr<UShowSequencer> InEditShowSequencer)
 {
 	checkf(InEditShowSequencer, TEXT("FShowSequencerEditorHelper::FShowSequencerEditorHelper InEditShowSequencer is nullptr"));
-
 	EditShowSequencer = InEditShowSequencer;
-	EditShowSequencer->EditorInitialize();
-	EditShowSequencer->SetDontDestroy();
 }
 
 FShowSequencerEditorHelper::~FShowSequencerEditorHelper()
 {
-	Dispose();
-}
-
-void FShowSequencerEditorHelper::Dispose()
-{
 	ShowMakerWidget.Reset();
 	ShowMakerWidget = nullptr;
-	SelectedShowKey = nullptr;
-
-	if (EditShowSequencer)
-	{
-		EditShowSequencer->ReleaseDontDestroy();
-		EditShowSequencer->EditorBeginDestroy();
-		EditShowSequencer = nullptr;
-	}
+	SelectedShowBase = nullptr;
+	EditShowSequencer = nullptr;
 }
 
 void FShowSequencerEditorHelper::SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget)
@@ -70,29 +59,32 @@ void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent
 
 	if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
 	{
-		if (UShowBase* ShowBase = EditShowSequencer->EditorGetShowBase(SelectedShowKey))
+		if (SelectedShowBase)
 		{
 			FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 			FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-			if (ShowBase->IsA<UShowAnimStatic>())
+			if (SelectedShowBase->IsA<UShowAnimStatic>())
 			{
 				if (PropertyName.IsEqual("AnimSequenceAsset"))
 				{
-					ShowBase->ExecuteReset();
+					SelectedShowBase->ExecuteReset();
 				}
 			}
 		}
 	}
 
-	EditShowSequencer->MarkPackageDirty();
+	EditShowSequencer->ShowSequenceAsset->MarkPackageDirty();
 }
 
 void FShowSequencerEditorHelper::Play()
 {
-	if (EditShowSequencer)
+	EditShowSequencer->EditorReset();
+
+	if (EditShowSequencer && ValidateRuntimeShowKeys())
 	{
 		EShowSequencerState showSequencerState = EditShowSequencer->GetShowSequencerState();
+		
 		switch (showSequencerState)
 		{
 		case EShowSequencerState::ShowSequencer_Wait:
@@ -113,25 +105,22 @@ void FShowSequencerEditorHelper::Play()
 	}
 }
 
-TArray<FShowKey*> FShowSequencerEditorHelper::GetShowKeys()
+TArray<TObjectPtr<UShowBase>>* FShowSequencerEditorHelper::RuntimeShowKeysPtr()
 {
-	if (!EditShowSequencer)
-	{
-		return TArray<FShowKey*>();
-	}
+	return &EditShowSequencer->RuntimeShowKeys;
+}
 
-	TArray<FShowKey*> ShowKeyPointers;
-
-	for (FInstancedStruct& Struct : EditShowSequencer->ShowKeys)
+void FShowSequencerEditorHelper::SetShowBaseStartTime(UShowBase* InShowBase, float StartTime)
+{
+	for (TObjectPtr<UShowBase>& ShowBase : EditShowSequencer->RuntimeShowKeys)
 	{
-		if (Struct.IsValid())
+		if (ShowBase.Get() == InShowBase)
 		{
-			FShowKey* ShowKey = Struct.GetMutablePtr<FShowKey>();
-			ShowKeyPointers.Add(ShowKey);
+			FShowKey* MutableShowKey = const_cast<FShowKey*>(ShowBase->ShowKey);
+			MutableShowKey->StartTime = StartTime;
+			break;
 		}
 	}
-
-	return ShowKeyPointers;
 }
 
 UClass* FShowSequencerEditorHelper::GetLastSelectedActorClass()
@@ -260,3 +249,123 @@ void FShowSequencerEditorHelper::ReplaceAnimInstancePreviewWorld(UClass* AnimIns
 		}
 	}
 }
+
+TObjectPtr<UShowBase> FShowSequencerEditorHelper::AddKey(FInstancedStruct& NewKey)
+{
+	checkf(NewKey.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("FShowSequencerEditorHelper::EditorAddKey: not FShowKey."));
+
+	EditShowSequencer->ShowSequenceAsset->ShowKeys.Add(MoveTemp(NewKey));
+
+	FShowKey* NewShowKey = EditShowSequencer->ShowSequenceAsset->ShowKeys.Last().GetMutablePtr<FShowKey>();
+	if (!NewShowKey)
+	{
+		return nullptr;
+	}
+
+	if (EditShowSequencer->EditorPoolSettings.Num() == 0)
+	{
+		UObjectPoolManager::GetPoolSettings(EditShowSequencer->EditorPoolSettings);
+	}
+
+	EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
+	int32 Index = static_cast<int32>(PoolType);
+	UShowBase* NewShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditShowSequencer->EditorPoolSettings[Index].ObjectClass);
+	NewShowBase->AddToRoot();
+	NewShowBase->InitShowKey(EditShowSequencer, NewShowKey);
+	EditShowSequencer->RuntimeShowKeys.Add(NewShowBase);
+
+	EditShowSequencer->MarkPackageDirty();
+	return NewShowBase;
+}
+
+bool FShowSequencerEditorHelper::RemoveKey(TObjectPtr<UShowBase> RemoveShowBase)
+{
+	if (!EditShowSequencer->RuntimeShowKeys.Contains(RemoveShowBase))
+	{
+		return false;
+	}
+
+	EditShowSequencer->RuntimeShowKeys.Remove(RemoveShowBase);
+	SelectedShowBase->Dispose();
+	SelectedShowBase->RemoveFromRoot();
+	EditShowSequencer->MarkPackageDirty();
+	return true;
+}
+
+UScriptStruct* FShowSequencerEditorHelper::GetShowKeyStaticStruct(UShowBase* ShowBase)
+{
+	return ShowSystem::GetShowKeyStaticStruct(ShowBase->ShowKey->KeyType);
+}
+
+FShowKey* FShowSequencerEditorHelper::GetMutableShowKey(UShowBase* ShowBase)
+{
+	return const_cast<FShowKey*>(ShowBase->ShowKey);
+}
+
+
+bool FShowSequencerEditorHelper::ValidateRuntimeShowKeys()
+{
+ 	AActor* Owner = EditShowSequencer->GetOwner();
+	if (!Owner)
+	{
+		FText txt = LOCTEXT("ShowSequencerNoneOwner", "[UShowSequencer] None Owner Actor");
+		FMessageDialog::Open(EAppMsgType::Ok, txt);
+		return false;
+	}
+
+	for (TObjectPtr<UShowBase>& ShowBase : EditShowSequencer->RuntimeShowKeys)
+	{
+		if (!ShowBase)
+		{
+			return false;
+		}
+
+		if (ShowBase->IsA(UShowAnimStatic::StaticClass()))
+		{
+			if (!ValidateShowAnimStatic(Owner, ShowBase))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+bool FShowSequencerEditorHelper::ValidateShowAnimStatic(AActor* Owner, TObjectPtr<UShowBase>& ShowBase)
+{
+	UShowAnimStatic* ShowAnimStatic = Cast<UShowAnimStatic>(ShowBase);
+	if (!ShowAnimStatic->GetAnimSequenceBase())
+	{
+		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] An animation is missing for one or more keys.");
+		FMessageDialog::Open(EAppMsgType::Ok, txt);
+		return false;
+	}
+
+	USkeletalMeshComponent* SkeletalMeshComp = Owner->FindComponentByClass<USkeletalMeshComponent>();
+	if (!SkeletalMeshComp)
+	{
+		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] None SkeletalMeshComp");
+		FMessageDialog::Open(EAppMsgType::Ok, txt);
+		return false;
+	}
+
+	if (!SkeletalMeshComp->AnimClass)
+	{
+		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] None SkeletalMeshComp->AnimClass");
+		FMessageDialog::Open(EAppMsgType::Ok, txt);
+		return false;
+	}
+
+	UAnimInstance* AnimInstance = SkeletalMeshComp->GetAnimInstance();
+	if (!AnimInstance)
+	{
+		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] None AnimInstance");
+		FMessageDialog::Open(EAppMsgType::Ok, txt);
+		return false;
+	}
+
+	return true;
+}
+
+
+#undef LOCTEXT_NAMESPACE

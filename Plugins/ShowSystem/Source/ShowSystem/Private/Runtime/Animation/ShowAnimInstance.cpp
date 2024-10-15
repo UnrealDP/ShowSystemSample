@@ -5,6 +5,7 @@
 #include "Animation/AnimSingleNodeInstanceProxy.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AnimNodes/AnimNode_LayeredBoneBlend.h"
+#include "Runtime/ShowKeys/ShowAnimStatic.h"
 
 void UShowAnimInstance::BeginDestroy()
 {
@@ -43,7 +44,27 @@ void UShowAnimInstance::NativeInitializeAnimation()
     MovementComponent = OwnerActor->FindComponentByClass<UCharacterMovementComponent>();
 }
 
-void UShowAnimInstance::PlayAnimation(UAnimSequenceBase* NewAsset, bool bLooping, float BlendOutTriggerTime, float InTimeToStartMontageAt)
+void UShowAnimInstance::PlayAnimation(const UShowAnimStatic& ShowAnimStatic, float PlayRate)
+{
+    UAnimSequenceBase* AnimSequenceBase = ShowAnimStatic.GetAnimSequenceBase();
+    checkf(AnimSequenceBase, TEXT("UShowAnimInstance::PlayAnimation AnimSequenceBase is invalid"));
+
+    const FShowAnimStaticKey* ShowAnimStaticKey = ShowAnimStatic.GetAnimStaticKey();
+    checkf(ShowAnimStaticKey, TEXT("UShowAnimInstance::PlayAnimation ShowAnimStaticKey is invalid"));
+
+    UAnimMontage* AnimMontage = PlayAnimation(
+        AnimSequenceBase, 
+        ShowAnimStaticKey->LoopCount, 
+        ShowAnimStaticKey->BlendOutTriggerTime, 
+        ShowAnimStaticKey->InTimeToStartMontageAt, 
+        PlayRate);
+
+    if (AnimMontage)
+    {
+    }
+}
+
+UAnimMontage* UShowAnimInstance::PlayAnimation(UAnimSequenceBase* NewAsset, int32 LoopCount, float BlendOutTriggerTime, float InTimeToStartMontageAt, float PlayRate)
 {
     checkf(NewAsset, TEXT("UShowAnimInstance::PlayAnimation NewAsset is invalid"));
     checkf(AnimContainer, TEXT("UShowAnimInstance::PlayAnimation AnimContainer is invalid"));
@@ -72,20 +93,25 @@ void UShowAnimInstance::PlayAnimation(UAnimSequenceBase* NewAsset, bool bLooping
             FoundData->Slot,
             *BlendInSettings,
             *BlendOutSettings,
+            LoopCount,
             BlendOutTriggerTime,
             InTimeToStartMontageAt);
-
-        if (!DynamicMontage)
+        
+        if (DynamicMontage)
         {
-            UE_LOG(LogTemp, Error, TEXT("UShowAnimInstance::PlayAnimation DynamicMontage is null [ %s ]"), *NewAsset->GetFName().ToString());
+            Montage_SetPlayRate(DynamicMontage, PlayRate);
+            UE_LOG(LogTemp, Log, TEXT("UShowAnimInstance::PlayAnimation Play DynamicMontage [ %s ]"), *NewAsset->GetFName().ToString());
         }
         else
         {
-            UE_LOG(LogTemp, Log, TEXT("UShowAnimInstance::PlayAnimation Play DynamicMontage [ %s ]"), *NewAsset->GetFName().ToString());
+            UE_LOG(LogTemp, Error, TEXT("UShowAnimInstance::PlayAnimation DynamicMontage is null [ %s ]"), *NewAsset->GetFName().ToString());
         }
+
+        return DynamicMontage;
     }
     else
     {
         UE_LOG(LogTemp, Error, TEXT("UShowAnimInstance::PlayAnimation AnimData is not found"));
+        return nullptr;
     }
 }

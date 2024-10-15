@@ -21,7 +21,6 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     InWidthRate = InArgs._InWidthRate;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnAddKey = InArgs._OnAddKey;
-    OnRemoveKey = InArgs._OnRemoveKey;
     OnClickedKey = InArgs._OnClickedKey;
     OnChangedKey = InArgs._OnChangedKey;
 
@@ -45,11 +44,10 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
     }
 
     // 기존 위젯 제거
-    ShowKeyBoxes.Empty();
     VerticalBox->ClearChildren();
 
     // 'Add' 버튼 다시 추가
-    VerticalBox->AddSlot()
+    /*VerticalBox->AddSlot()
         .AutoHeight()
         .HAlign(HAlign_Left)
         .Padding(3.0f, 3.0f)
@@ -65,30 +63,33 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
         .AutoHeight()
         [
             SNew(SSpacer).Size(FVector2D(0.0f, 5.0f))
-        ];
+        ];*/
 
     // ShowSequencerEditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
-    TArray<FShowKey*> ShowKeys = ShowSequencerEditorHelper->GetShowKeys();
-    for (FShowKey* Key : ShowKeys)
+    TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr = ShowSequencerEditorHelper->RuntimeShowKeysPtr();
+    for (TObjectPtr<UShowBase>& ShowBase : *RuntimeShowKeysPtr)
     {
-        TSharedPtr<SShowKeyBox> NewKeyBox;
-        SAssignNew(NewKeyBox, SShowKeyBox)
-            .ShowKey(Key)
-            .Height(Height)
-            .MinWidth(MinWidth)
-            .InWidthRate_Lambda([this]() { return InWidthRate.Get(); })
-            .SecondToWidthRatio(SecondToWidthRatio)
-            .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
-            .OnChanged(OnChangedKey)
-            .IsShowKeySelected(this, &SShowKeyBoxHandler::IsShowKeySelected);
-
-        ShowKeyBoxes.Add(NewKeyBox);
-
         VerticalBox->AddSlot()
             .AutoHeight()
             .HAlign(HAlign_Fill)
             [
-                NewKeyBox.ToSharedRef()
+                SNew(SShowKeyBox)
+                    .ShowBase(ShowBase)
+                    .Height(Height)
+                    .MinWidth(MinWidth)
+                    .InWidthRate_Lambda([this]() { return InWidthRate.Get(); })
+                    .SecondToWidthRatio(SecondToWidthRatio)
+                    .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
+                    .OnChangedStartTime_Lambda([this](UShowBase* ShowBase, float StartTime) 
+                        { 
+                            ShowSequencerEditorHelper->SetShowBaseStartTime(ShowBase, StartTime); 
+
+                            if (OnChangedKey.IsBound())
+							{
+								OnChangedKey.Execute(ShowBase);
+							}
+                        })
+                    .IsShowKeySelected(this, &SShowKeyBoxHandler::IsShowKeySelected)
             ];
     }
 }
@@ -129,43 +130,45 @@ void SShowKeyBoxHandler::OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESel
 
     if (SelectedItem.IsValid())
     {
-        FShowKey* NewKey = nullptr;
+        TObjectPtr<UShowBase> NewShowBase = nullptr;
         if (*SelectedItem == "Add ShowAnimStatic")
         {
-            NewKey = ShowSequencerEditorHelper->AddKey<FShowAnimStaticKey>();
+            NewShowBase = ShowSequencerEditorHelper->AddKey<FShowAnimStaticKey>();
         }
         else if (*SelectedItem == "Add Key 2")
         {
             // Add Key 2 선택 시 실행할 코드
         }
 
-        if (NewKey)
+        if (NewShowBase)
         {
             if (OnAddKey.IsBound())
             {
                 RefreshShowKeyWidgets();
-                OnAddKey.Execute(NewKey);
+                OnAddKey.Execute(NewShowBase);
             }
         }
     }
 }
 
 // Key를 클릭했을 때 호출
-void SShowKeyBoxHandler::OnKeyClicked(FShowKey* ClickedKey)
+void SShowKeyBoxHandler::OnKeyClicked(UShowBase* ClickedhowBase)
 {
     // 키 관련 로직 처리
     if (OnClickedKey.IsBound())
 	{
-        ShowSequencerEditorHelper->SelectedShowKey = ClickedKey;
-		OnClickedKey.Execute(ClickedKey);
+        ShowSequencerEditorHelper->SelectedShowBase = ClickedhowBase;
+		OnClickedKey.Execute(ClickedhowBase);
 	}
 }
 
-bool SShowKeyBoxHandler::IsShowKeySelected(FShowKey* ShowKey)
+bool SShowKeyBoxHandler::IsShowKeySelected(UShowBase* ShowBase)
 {
-    if (ShowSequencerEditorHelper->SelectedShowKey == nullptr)
+    if (!ShowSequencerEditorHelper->SelectedShowBase)
     {
 		return false;
 	}
-    return ShowSequencerEditorHelper->SelectedShowKey == ShowKey;
+    return ShowSequencerEditorHelper->SelectedShowBase.Get() == ShowBase;
 }
+
+#undef LOCTEXT_NAMESPACE

@@ -96,27 +96,27 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                         SNew(SShowSequencerEditor)
                             .EditorHelper(EditorHelper)
                             .Height(20.0f)
-                            .MinWidth(50.0f)
+                            .MinWidth(20.0f)
                             .ShowSequencerState(ShowSequencerState)
                             .SecondToWidthRatio(10.0f)
-                            .OnAddKey_Lambda([this](FShowKey* Key)
+                            .OnAddKey_Lambda([this](UShowBase* ShowBase)
                                 {
                                     EditorHelper->EditShowSequencer->MarkPackageDirty();
 
                                     if (OnAddKey.IsBound())
 									{
-										OnAddKey.Execute(Key);
+										OnAddKey.Execute(ShowBase);
 									}
                                 })
-                            .OnRemoveKey_Lambda([this](FShowKey* Key) 
+                            .OnRemoveKey_Lambda([this]()
                                 {
                                     if (OnRemoveKey.IsBound())
                                     {
-                                        OnRemoveKey.Execute(Key);
+                                        OnRemoveKey.Execute();
                                     }
                                 })
                             .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
-                            .OnChangedKey_Lambda([this](FShowKey* Key)
+                            .OnChangedKey_Lambda([this](UShowBase* ShowBase)
                                 {
                                     EditorHelper->EditShowSequencer->MarkPackageDirty();
                                 })
@@ -193,18 +193,19 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
         ];
 }
 
-void SShowMakerWidget::SetShowKey(FShowKey* NewShowKey)
+void SShowMakerWidget::SetShowKey(UShowBase* NewShowBase)
 {
-    if (SelectedShowKey == NewShowKey)
+    if (SelectedShowBase.Get() == NewShowBase)
     {
         return;
     }
 
-    SelectedShowKey = NewShowKey;
-    if (SelectedShowKey)
+    SelectedShowBase = NewShowBase;
+    if (SelectedShowBase)
     {
-        UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(SelectedShowKey->KeyType);
-        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)SelectedShowKey));
+        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(SelectedShowBase);
+        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(SelectedShowBase);
+        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
         StructureDetailsView->SetStructureData(StructData);
     }
     else

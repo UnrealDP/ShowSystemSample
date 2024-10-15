@@ -9,7 +9,7 @@
 
 class FShowSequencerEditorHelper;
 
-DECLARE_DELEGATE_OneParam(FOnShowKeyEvent, FShowKey*);
+DECLARE_DELEGATE_OneParam(FOnShowBaseEvent, UShowBase*);
 
 /**
  * 
@@ -23,10 +23,9 @@ public:
         SLATE_ATTRIBUTE(float, MinWidth)
         SLATE_ATTRIBUTE(float, InWidthRate)
         SLATE_ATTRIBUTE(float, SecondToWidthRatio)
-        SLATE_EVENT(FOnShowKeyEvent, OnAddKey)
-        SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
-        SLATE_EVENT(FOnShowKeyEvent, OnClickedKey)
-        SLATE_EVENT(FOnShowKeyEvent, OnChangedKey)
+        SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
+        SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)
+        SLATE_EVENT(FOnShowBaseEvent, OnChangedKey)
     SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -36,22 +35,20 @@ public:
     TSharedRef<SWidget> CreateAddKeyMenu();
     TSharedRef<ITableRow> GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
     void OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESelectInfo::Type SelectInfo);
-    void OnKeyClicked(FShowKey* ClickedKey);
-    bool IsShowKeySelected(FShowKey* ShowKey);
+    void OnKeyClicked(UShowBase* ClickedhowBase);
+    bool IsShowKeySelected(UShowBase* ShowBase);
 
 private:
     TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;
     TAttribute<float> Height = 30.0f;
-    TAttribute<float> MinWidth = 50.0f;
+    TAttribute<float> MinWidth = 20.0f;
     TAttribute<float> SecondToWidthRatio = 10.0f;
 
-    FOnShowKeyEvent OnAddKey = nullptr;
-    FOnShowKeyEvent OnRemoveKey = nullptr;
-    FOnShowKeyEvent OnClickedKey = nullptr;
-    FOnShowKeyEvent OnChangedKey = nullptr;
+    FOnShowBaseEvent OnAddKey = nullptr;
+    FOnShowBaseEvent OnClickedKey = nullptr;
+    FOnShowBaseEvent OnChangedKey = nullptr;
     
     TSharedPtr<SVerticalBox> VerticalBox;
-    TArray<TSharedPtr<SShowKeyBox>> ShowKeyBoxes;
     TSharedPtr<IMenu> MenuWindow = nullptr;
 
     TArray<TSharedPtr<FString>> KeyOptions;

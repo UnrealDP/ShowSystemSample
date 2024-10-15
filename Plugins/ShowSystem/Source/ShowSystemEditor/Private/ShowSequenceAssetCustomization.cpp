@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ShowSequencerCustomization.h"
-#include "RunTime/ShowSequencer.h"
+#include "ShowSequenceAssetCustomization.h"
+#include "RunTime/ShowSequenceAsset.h"
 #include "RunTime/ShowBase.h"
 #include "DetailLayoutBuilder.h"
 #include "DetailCategoryBuilder.h"
@@ -11,18 +11,18 @@
 #include "IDetailGroup.h"
 #include "RunTime/ShowKeys/ShowAnimStatic.h"
 
-TSharedRef<IDetailCustomization> FShowSequencerCustomization::MakeInstance()
+TSharedRef<IDetailCustomization> FShowSequenceAssetCustomization::MakeInstance()
 {
-    return MakeShareable(new FShowSequencerCustomization);
+    return MakeShareable(new FShowSequenceAssetCustomization);
 }
 
-//void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
+//void FShowSequenceAssetCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 //{
 //    CachedDetailBuilder = &DetailBuilder;
 //
 //    // 카테고리 및 InstancedStruct 속성 핸들 정의
 //    IDetailCategoryBuilder& ShowCategory = DetailBuilder.EditCategory("Show");
-//    TSharedRef<IPropertyHandle> ShowKeysHandle = DetailBuilder.GetProperty("ShowKeys", UShowSequencer::StaticClass());
+//    TSharedRef<IPropertyHandle> ShowKeysHandle = DetailBuilder.GetProperty("ShowKeys", UShowSequenceAsset::StaticClass());
 //
 //    // ShowKeys 배열 핸들로 변환
 //    ShowKeysArrayHandle = ShowKeysHandle->AsArray();
@@ -54,12 +54,12 @@ TSharedRef<IDetailCustomization> FShowSequencerCustomization::MakeInstance()
 //                //    //.ArrayElement(ArrayElement)
 //                //    .BaseStruct(FShowKey::StaticStruct())
 //                //    .bIncludeBaseStruct(false)
-//                //    .OnSelectionChanged(this, &FShowSequencerCustomization::OnStructSelected_New)
+//                //    .OnSelectionChanged(this, &FShowSequenceAssetCustomization::OnStructSelected_New)
 //            ];
 //    }
 //}
 //
-//void FShowSequencerCustomization::OnStructSelected_New(TSharedPtr<IPropertyHandle> ArrayElement, UScriptStruct* NewSelection)
+//void FShowSequenceAssetCustomization::OnStructSelected_New(TSharedPtr<IPropertyHandle> ArrayElement, UScriptStruct* NewSelection)
 //{
 //    if (NewSelection)
 //    {
@@ -74,15 +74,15 @@ TSharedRef<IDetailCustomization> FShowSequencerCustomization::MakeInstance()
 //    }
 //}
 
-void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
+void FShowSequenceAssetCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
     CachedDetailBuilder = &DetailBuilder;
 
-    // UShowSequencer 클래스에서 ShowKeys 프로퍼티를 찾습니다.
+    // UShowSequenceAsset 클래스에서 ShowKeys 프로퍼티를 찾습니다.
     IDetailCategoryBuilder& ShowCategory = DetailBuilder.EditCategory("Show");
 
     // ShowKeys 배열 UI에 대한 핸들 생성
-    TSharedRef<IPropertyHandle> ShowKeysHandleRef = DetailBuilder.GetProperty("ShowKeys", UShowSequencer::StaticClass());
+    TSharedRef<IPropertyHandle> ShowKeysHandleRef = DetailBuilder.GetProperty("ShowKeys", UShowSequenceAsset::StaticClass());
     DetailBuilder.HideProperty(ShowKeysHandleRef);  // 기본 UI 숨김 처리
 
     // ShowKeys 배열 핸들로 변환
@@ -112,7 +112,7 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
                     SNew(SStructComboBoxWidget)
                         .BaseStruct(FShowKey::StaticStruct())
                         .bIncludeBaseStruct(false)
-                        .OnSelectionChanged(this, &FShowSequencerCustomization::OnStructSelected)
+                        .OnSelectionChanged(this, &FShowSequenceAssetCustomization::OnStructSelected)
                 ]
                 + SHorizontalBox::Slot()
                 .FillWidth(0.2f)
@@ -122,7 +122,7 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
                     SNew(SButton)
                         .ButtonStyle(FAppStyle::Get(), "FlatButton")
                         .ContentPadding(2.0f)
-                        .OnClicked(this, &FShowSequencerCustomization::OnAddButtonClicked)
+                        .OnClicked(this, &FShowSequenceAssetCustomization::OnAddButtonClicked)
                         [
                             SNew(SImage)
                                 .Image(FAppStyle::GetBrush("PListEditor.Button_AddToArray"))
@@ -136,7 +136,7 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
                     SNew(SButton)
                         .ButtonStyle(FAppStyle::Get(), "FlatButton")
                         .ContentPadding(2.0f)
-                        .OnClicked(this, &FShowSequencerCustomization::OnEmptyButtonClicked)
+                        .OnClicked(this, &FShowSequenceAssetCustomization::OnEmptyButtonClicked)
                         [
                             SNew(SImage)
                                 .Image(FAppStyle::GetBrush("ContentReference.Clear"))
@@ -194,7 +194,7 @@ void FShowSequencerCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailB
 }
 
 
-void FShowSequencerCustomization::OnStructSelected(UScriptStruct* NewSelection)
+void FShowSequenceAssetCustomization::OnStructSelected(UScriptStruct* NewSelection)
 {
     if (NewSelection)
     {
@@ -204,7 +204,7 @@ void FShowSequencerCustomization::OnStructSelected(UScriptStruct* NewSelection)
     }
 }
 
-FReply FShowSequencerCustomization::OnAddButtonClicked()
+FReply FShowSequenceAssetCustomization::OnAddButtonClicked()
 {
     if (SelectedStruct)
     {
@@ -247,7 +247,7 @@ FReply FShowSequencerCustomization::OnAddButtonClicked()
     return FReply::Handled();
 }
 
-FReply FShowSequencerCustomization::OnEmptyButtonClicked()
+FReply FShowSequenceAssetCustomization::OnEmptyButtonClicked()
 {
     ShowKeysArrayHandle->EmptyArray();
 

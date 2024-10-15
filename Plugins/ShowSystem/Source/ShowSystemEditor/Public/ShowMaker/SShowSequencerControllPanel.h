@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RunTime/ShowSequencer.h"
 #include "Widgets/SCompoundWidget.h"
-#include "ShowMaker/ShowSequencerEditorHelper.h"
 
 DECLARE_DELEGATE(FOnPlay);
 

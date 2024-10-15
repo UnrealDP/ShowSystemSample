@@ -4,19 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
-#include "ShowSequencerFactory.generated.h"
+#include "ShowSequenceAssetFactory.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SHOWSYSTEMEDITOR_API UShowSequencerFactory : public UFactory
+class SHOWSYSTEMEDITOR_API UShowSequenceAssetFactory : public UFactory
 {
 	GENERATED_BODY()
 	
 
 public:
-	UShowSequencerFactory();
+	UShowSequenceAssetFactory();
 
 	// Override this to specify the type of object this factory creates
 	virtual UObject* FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn) override;

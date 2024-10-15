@@ -2,6 +2,7 @@
 
 
 #include "ShowSequencerEditorToolkit.h"
+#include "RunTime/ShowSequenceAsset.h"
 #include "RunTime/ShowSequencer.h"
 #include "ShowMaker/SShowMakerWidget.h"
 #include "ContentBrowserModule.h"
@@ -15,7 +16,11 @@ bool FShowSequencerEditorToolkit::OnRequestClose()
     DetailsView.Reset();
     DetailsView = nullptr;
 
-    EditorHelper->Dispose();
+    ShowSequencer->ReleaseDontDestroy();
+    ShowSequencer->EditorBeginDestroy();
+    ShowSequencer->RemoveFromRoot();
+    ShowSequencer = nullptr;
+
     EditorHelper.Reset();
     EditorHelper = nullptr;
 
@@ -28,7 +33,7 @@ void FShowSequencerEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManag
 
     // 기본 Details 창 탭 등록
     InTabManager->RegisterTabSpawner("DetailsTab", FOnSpawnTab::CreateSP(this, &FShowSequencerEditorToolkit::SpawnDetailsTab))
-        .SetDisplayName(FText::FromString("ShowSequencer Details"))
+        .SetDisplayName(FText::FromString("ShowSequence Asset Details"))
         .SetGroup(WorkspaceMenuCategory.ToSharedRef());
 
     // ShowMaker 탭 등록
@@ -58,7 +63,8 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnDetailsTab(const FSpawnTa
     DetailsView = DetailsViewRef;
 
     // 편집할 객체 설정 (디테일 창에 표시할 UObject)
-    DetailsView->SetObject(GetEditingObject());
+    UObject* EditingObject = GetEditingObject();
+    DetailsView->SetObject(EditingObject);
 
     return SNew(SDockTab)
         .TabRole(ETabRole::PanelTab)
@@ -79,11 +85,11 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
             SAssignNew(ShowMakerWidget, SShowMakerWidget)
                 .EditorHelper(EditorHelper) 
                 .EditShowSequencer(EditorHelper->EditShowSequencer)  // ShowSequencer 전달 (필요 시)
-                .OnAddKey_Lambda([this](FShowKey* Key) 
+                .OnAddKey_Lambda([this](UShowBase* ShowBase) 
                     {
                         DetailsView->ForceRefresh();
 				    })
-                .OnRemoveKey_Lambda([this](FShowKey* Key)
+                .OnRemoveKey_Lambda([this]()
                     {
                         DetailsView->ForceRefresh();
                     })
@@ -94,9 +100,14 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
     return DockTab;
 }
 
-void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequencer* InShowSequencer)
+void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequenceAsset* InShowSequenceAsset)
 {
-    EditorHelper = MakeShared<FShowSequencerEditorHelper>(InShowSequencer);
+    ShowSequencer = NewObject<UShowSequencer>(GetTransientPackage(), UShowSequencer::StaticClass());
+    ShowSequencer->AddToRoot();
+    ShowSequencer->EditorInitialize(InShowSequenceAsset);
+    ShowSequencer->SetDontDestroy();
+
+    EditorHelper = MakeShared<FShowSequencerEditorHelper>(ShowSequencer);
 
     // 기본 에디터 레이아웃 설정
     const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("Standalone_ShowSequencerEditor_Layout")
@@ -114,7 +125,7 @@ void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, cons
         );
 
     TArray<UObject*> SingleObjectArray;
-    SingleObjectArray.Add(EditorHelper->EditShowSequencer);
+    SingleObjectArray.Add(InShowSequenceAsset);
 
     // 에디터 초기화
     InitAssetEditor(

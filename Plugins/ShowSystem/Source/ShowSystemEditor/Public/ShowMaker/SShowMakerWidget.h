@@ -6,7 +6,8 @@
 #include "RunTime/ShowSequencer.h"
 #include "Widgets/SCompoundWidget.h"
 
-DECLARE_DELEGATE_OneParam(FOnShowKeyEvent, FShowKey*);
+DECLARE_DELEGATE_OneParam(FOnShowBaseEvent, UShowBase*);
+DECLARE_DELEGATE(FOnShowRemoveEvent);
 
 class SActorPreviewViewport;
 class SShowSequencerScrubPanel;
@@ -24,8 +25,8 @@ public:
 	SLATE_BEGIN_ARGS(SShowMakerWidget) {}
 		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, EditorHelper)
 		SLATE_ARGUMENT(UShowSequencer*, EditShowSequencer)
-		SLATE_EVENT(FOnShowKeyEvent, OnAddKey)
-		SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
+		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
+		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -35,7 +36,7 @@ public:
 	SActorPreviewViewport* GetPreviewViewportPtr() const { return PreviewViewport.Get(); }
 
 private:
-	void SetShowKey(FShowKey* NewShowKey);
+	void SetShowKey(UShowBase* NewShowBase);
 
 private:
 	TSharedRef<SWidget> ConstructMainBody();
@@ -46,11 +47,11 @@ private:
 	TSharedPtr<SActorPreviewViewport> PreviewViewport = nullptr;
 	TSharedPtr<IStructureDetailsView> StructureDetailsView = nullptr;
 
-	FShowKey* SelectedShowKey = nullptr;
+	TObjectPtr<UShowBase> SelectedShowBase = nullptr;
 	TSharedPtr<ShowSequencerNotifyHook> NotifyHookInstance = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 
-	FOnShowKeyEvent OnAddKey = nullptr;
-	FOnShowKeyEvent OnRemoveKey = nullptr;
+	FOnShowBaseEvent OnAddKey = nullptr;
+	FOnShowRemoveEvent OnRemoveKey = nullptr;
 };

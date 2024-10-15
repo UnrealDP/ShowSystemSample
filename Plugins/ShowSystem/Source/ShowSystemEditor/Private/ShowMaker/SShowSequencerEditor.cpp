@@ -7,12 +7,18 @@
 #include "ShowMaker/SShowSequencerScrubPanel.h"
 #include "SHorizontalResizableSplitter.h"
 #include "ShowMaker/SShowSequencerControllPanel.h"
+#include "ShowMaker/SShowSequencerEditHeader.h"
+#include "ShowMaker/SShowSequencerScrubBoard.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerEditor::Construct(const FArguments& InArgs)
 {
     EditorHelper = InArgs._EditorHelper;
     OnKeyDownSpace = InArgs._OnKeyDownSpace;
+    OnAddKey = InArgs._OnAddKey;
+    OnRemoveKey = InArgs._OnRemoveKey;
+
+    ShowSequencerEditorHelperMap.Add("Show", EditorHelper);
 
 	ChildSlot
 	[
@@ -39,15 +45,42 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& InArgs)
 {
+    ShowSequencerEditHeader = SNew(SShowSequencerEditHeader)
+        .Height(30)
+        .Width(100)
+        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase)
+            {
+                if (OnAddKey.IsBound())
+                {
+                    OnAddKey.Execute(ShowBase);
+                }
+                if (ShowKeyBoxHandler)
+                {
+                    ShowKeyBoxHandler->RefreshShowKeyWidgets();
+                }
+                ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+            })
+        .OnRemoveShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
+            {
+                if (OnRemoveKey.IsBound())
+                {
+                    OnRemoveKey.Execute();
+                }
+                if (ShowKeyBoxHandler)
+                {
+                    ShowKeyBoxHandler->RefreshShowKeyWidgets();
+                }
+                ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+            });
+
+    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+
     return SNew(SVerticalBox)
         + SVerticalBox::Slot()
         .Padding(2.0f)
         .FillHeight(1.0f)
         [
-            SNew(SBox)
-                [
-                    SNew(SButton)
-                ]
+            ShowSequencerEditHeader.ToSharedRef()
         ]
 
         + SVerticalBox::Slot()
@@ -65,35 +98,35 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
 
 TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments& InArgs)
 {
-    return SNew(SVerticalBox)
-        + SVerticalBox::Slot()
-        .Padding(2.0f)
-        .FillHeight(1.0f)
+    return SNew(SOverlay)
+        + SOverlay::Slot()
         [
-            SNew(SShowKeyBoxHandler)
-                .ShowSequencerEditorHelper(EditorHelper)
-                .Height(InArgs._Height)
-                .MinWidth(InArgs._MinWidth)
-                .InWidthRate_Lambda([this]() { return 1.0f / ZoomRate.Get(); })
-                .SecondToWidthRatio(InArgs._SecondToWidthRatio)
-                .OnAddKey(InArgs._OnAddKey)
-                .OnRemoveKey(InArgs._OnRemoveKey)
-                .OnClickedKey(InArgs._OnClickedKey)
-                .OnChangedKey(InArgs._OnChangedKey)
-        ]
-
-        + SVerticalBox::Slot()
-        .Padding(2.0f)
-        .AutoHeight()
-        [
-            SNew(SShowSequencerScrubPanel)
-                .ShowSequencerEditorHelper(EditorHelper)
-                .bDisplayAnimScrubBarEditing(true)
-                .bAllowZoom(true)
-                .OnUpdateZoom_Lambda([this](float InZoomRate)
-                    { 
-                        ZoomRate.Set(InZoomRate);
+            SNew(SShowSequencerScrubBoard)
+                .Height(30.0f)
+                .TotalValue_Lambda([this]() { return EditorHelper->EditShowSequencer->EditorGetTotalLength(); })
+                .CrrValue_Lambda([this]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
+                .OnValueChanged_Lambda([this](float InValue)
+                    {
+                        //EditorHelper->ScrubToSeconds(InValue);
                     })
+        ]
+        + SOverlay::Slot()
+        [
+            SNew(SBox)
+                .Padding(FMargin(0, 30, 0, 0))
+                .HAlign(HAlign_Left)
+                .VAlign(VAlign_Top)
+                [
+                    SAssignNew(ShowKeyBoxHandler, SShowKeyBoxHandler)
+                        .ShowSequencerEditorHelper(EditorHelper)
+                        .Height(InArgs._Height)
+                        .MinWidth(InArgs._MinWidth)
+                        .InWidthRate_Lambda([this]() { return 1.0f / ZoomRate.Get(); })
+                        .SecondToWidthRatio(InArgs._SecondToWidthRatio)
+                        .OnAddKey(InArgs._OnAddKey)
+                        .OnClickedKey(InArgs._OnClickedKey)
+                        .OnChangedKey(InArgs._OnChangedKey)
+                ]
         ];
 }
 

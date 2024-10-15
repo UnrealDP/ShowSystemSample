@@ -6,9 +6,12 @@
 #include "RunTime/ShowBase.h"
 #include "Widgets/SCompoundWidget.h"
 
+class SShowKeyBoxHandler;
 class FShowSequencerEditorHelper;
+class SShowSequencerEditHeader;
 
-DECLARE_DELEGATE_OneParam(FOnShowKeyEvent, FShowKey*);
+DECLARE_DELEGATE_OneParam(FOnShowBaseEvent, UShowBase*);
+DECLARE_DELEGATE(FOnShowRemoveEvent);
 DECLARE_DELEGATE(FOnKeyDownSpace);
 
 /**
@@ -23,10 +26,10 @@ public:
 		SLATE_ATTRIBUTE(float, MinWidth)
 		SLATE_ATTRIBUTE(float, SecondToWidthRatio)
 		SLATE_ARGUMENT(TAttribute<EShowSequencerState>, ShowSequencerState)
-		SLATE_EVENT(FOnShowKeyEvent, OnAddKey)
-		SLATE_EVENT(FOnShowKeyEvent, OnRemoveKey)
-		SLATE_EVENT(FOnShowKeyEvent, OnClickedKey)
-		SLATE_EVENT(FOnShowKeyEvent, OnChangedKey)
+		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
+		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
+		SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)
+		SLATE_EVENT(FOnShowBaseEvent, OnChangedKey)
 		SLATE_EVENT(FOnKeyDownSpace, OnKeyDownSpace)		
 	SLATE_END_ARGS()
 
@@ -39,7 +42,13 @@ public:
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
+	FOnShowBaseEvent OnAddKey;
+	FOnShowRemoveEvent OnRemoveKey;
+	
+	TSharedPtr<SShowKeyBoxHandler> ShowKeyBoxHandler = nullptr;
+	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 	FOnKeyDownSpace OnKeyDownSpace = nullptr;
 	TAttribute<float> ZoomRate = 1.0f;
+	TMap<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperMap;
 };

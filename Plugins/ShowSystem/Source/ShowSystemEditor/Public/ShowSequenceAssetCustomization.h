@@ -8,7 +8,7 @@
 /**
  * 
  */
-class FShowSequencerCustomization : public IDetailCustomization
+class FShowSequenceAssetCustomization : public IDetailCustomization
 {
 public:
     static TSharedRef<IDetailCustomization> MakeInstance();

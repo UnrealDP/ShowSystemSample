@@ -1,39 +1,40 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AssetTypeActions_ShowSequencer.h"
+#include "AssetTypeActions_ShowSequenceAsset.h"
+#include "RunTime/ShowSequenceAsset.h"
 #include "ShowSequencerEditorToolkit.h"
 #include "ShowSystemEditor.h"
 
-FText FAssetTypeActions_ShowSequencer::GetName() const
+FText FAssetTypeActions_ShowSequenceAsset::GetName() const
 {
-	return NSLOCTEXT("AssetTypeActions", "AssetTypeActions_ShowSequencer", "Show Sequencer");
+	return NSLOCTEXT("AssetTypeActions", "FAssetTypeActions_ShowSequenceAsset", "ShowSequence Asset");
 }
  
-FColor FAssetTypeActions_ShowSequencer::GetTypeColor() const
+FColor FAssetTypeActions_ShowSequenceAsset::GetTypeColor() const
 {
 	return FColor::Red;  // Customize asset color in the editor
 }
 
-UClass* FAssetTypeActions_ShowSequencer::GetSupportedClass() const
+UClass* FAssetTypeActions_ShowSequenceAsset::GetSupportedClass() const
 {
-	return UShowSequencer::StaticClass();
+	return UShowSequenceAsset::StaticClass();
 }
 
-uint32 FAssetTypeActions_ShowSequencer::GetCategories()
+uint32 FAssetTypeActions_ShowSequenceAsset::GetCategories()
 {
 	return ShowSystemAssetCategory;  // Define the category in which this asset appears
 }
 
 // 애셋 더블클릭 시 커스텀 에디터 열기
-void FAssetTypeActions_ShowSequencer::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<IToolkitHost> EditWithinLevelEditor)
+void FAssetTypeActions_ShowSequenceAsset::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<IToolkitHost> EditWithinLevelEditor)
 {
     if (InObjects.Num() == 1)  // 단일 객체만 처리
     {
-        if (UShowSequencer* ShowSequencer = Cast<UShowSequencer>(InObjects[0]))
+        if (UShowSequenceAsset* ShowSequenceAsset = Cast<UShowSequenceAsset>(InObjects[0]))
         {
             TSharedRef<FShowSequencerEditorToolkit> EditorToolkit(new FShowSequencerEditorToolkit());
-            EditorToolkit->InitEditor(EToolkitMode::Standalone, EditWithinLevelEditor, ShowSequencer);
+            EditorToolkit->InitEditor(EToolkitMode::Standalone, EditWithinLevelEditor, ShowSequenceAsset);
         }
     }
     else

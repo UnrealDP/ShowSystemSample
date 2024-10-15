@@ -16,8 +16,17 @@ struct FShowAnimStaticKey : public FShowKey
         KeyType = EShowKeyType::ShowKey_Anim;
     }
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Show")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimStaticKey")
     TSoftObjectPtr<UAnimSequenceBase> AnimSequenceAsset;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimStaticKey")
+    float BlendOutTriggerTime = -1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimStaticKey")
+    float InTimeToStartMontageAt = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimStaticKey")
+    int32 LoopCount = 1;
 };
 
 /**
@@ -27,10 +36,20 @@ UCLASS()
 class SHOWSYSTEM_API UShowAnimStatic : public UShowBase
 {
 	GENERATED_BODY()
+
+public:
+    const FShowAnimStaticKey* GetAnimStaticKey() const { return AnimStaticKeyPtr; }
+    UAnimSequenceBase* GetAnimSequenceBase() const { return AnimSequenceBase; }
 	
+    UFUNCTION()
+    void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+public:
+    virtual FString GetTitle() override;
+    virtual float GetShowLength() override;
+
 protected:
     virtual void Initialize() override;
-    virtual float InitializeAssetLength() override;
     virtual void Dispose() override;
     virtual void Play() override;
     virtual void Stop() override {};
@@ -39,13 +58,14 @@ protected:
     virtual void UnPause() override {};
 
 private:
-    virtual void Tick(float DeltaTime, float BasePassedTime) override
-    {
-    }
+    virtual void Tick(float DeltaTime, float BasePassedTime) override;
 
 private:
     const FShowAnimStaticKey* AnimStaticKeyPtr;
 
-    TObjectPtr<USkeletalMeshComponent> SkeletalMeshComp;
-    TObjectPtr<UAnimSequenceBase> AnimSequenceBase;
+    TObjectPtr<UAnimSequenceBase> AnimSequenceBase = nullptr;
+    TObjectPtr<UAnimMontage> AnimMontage = nullptr;
+    float OriginalLength = 0.0f;
+
+    TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 };

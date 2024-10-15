@@ -7,6 +7,8 @@
 #include "RunTime/Animation/AnimContainer.h"
 #include "ShowAnimInstance.generated.h"
 
+class UShowAnimStatic;
+
 /**
  * class FShowAnimInstanceProxy : public FAnimSingleNodeInstanceProxy 프록시 같은건 안만들었다!!
  * 지금은 ShowSystem 테스트 용으로 나중에 확장 구현해야한다
@@ -20,8 +22,9 @@ public:
     virtual void BeginDestroy() override;
     virtual void NativeInitializeAnimation() override;
 
-    void PlayAnimation(UAnimSequenceBase* NewAsset, bool bLooping, float BlendOutTriggerTime = -1.0f, float InTimeToStartMontageAt = 0.0f);
-
+    void PlayAnimation(const UShowAnimStatic& ShowAnimStatic, float PlayRate);
+    UAnimMontage* PlayAnimation(UAnimSequenceBase* NewAsset, int32 LoopCount, float BlendOutTriggerTime = -1.0f, float InTimeToStartMontageAt = 0.0f, float PlayRate = 1.0f);
+    
 public:
     // 애니메이션 정보 (애니메이션 정보만 담고 있음)
     UPROPERTY(EditAnywhere, BlueprintReadWrite)

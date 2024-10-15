@@ -1,8 +1,8 @@
 #include "ShowSystemEditor.h"
-#include "AssetTypeActions_ShowSequencer.h"
+#include "AssetTypeActions_ShowSequenceAsset.h"
 #include "AssetToolsModule.h"
 #include "PropertyEditorModule.h"
-#include "ShowSequencerCustomization.h"
+#include "ShowSequenceAssetCustomization.h"
 #include "ShowMaker/SShowMakerWidget.h"
 #include "Editor.h"
 #include "AssetTypeActions_AnimContainer.h"
@@ -24,7 +24,7 @@ void FShowSystemEditor::StartupModule()
 	EAssetTypeCategories::Type ShowSystemAssetCategory = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("ShowSystem")), FText::FromString("Show System"));
 
 	// ShowSequencer 액션 등록
-	TSharedRef<IAssetTypeActions> ShowSequencerAction = MakeShareable(new FAssetTypeActions_ShowSequencer(ShowSystemAssetCategory));
+	TSharedRef<IAssetTypeActions> ShowSequencerAction = MakeShareable(new FAssetTypeActions_ShowSequenceAsset(ShowSystemAssetCategory));
 	AssetTools.RegisterAssetTypeActions(ShowSequencerAction);
 	RegisteredAssetTypeActions.Add(ShowSequencerAction);
 
@@ -32,9 +32,9 @@ void FShowSystemEditor::StartupModule()
 	// PropertyEditor 모듈을 로드하여 커스터마이저를 등록
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	
-	// UShowSequencer 클래스에 대한 커스터마이징 등록
-	PropertyModule.RegisterCustomClassLayout("ShowSequencer",
-		FOnGetDetailCustomizationInstance::CreateStatic(&FShowSequencerCustomization::MakeInstance));
+	// ShowSequenceAsset 클래스에 대한 커스터마이징 등록
+	PropertyModule.RegisterCustomClassLayout("ShowSequenceAsset",
+		FOnGetDetailCustomizationInstance::CreateStatic(&FShowSequenceAssetCustomization::MakeInstance));
 
 	PropertyModule.NotifyCustomizationModuleChanged();
 
@@ -73,7 +73,7 @@ void FShowSystemEditor::ShutdownModule()
 	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-		PropertyModule.UnregisterCustomClassLayout("ShowSequencer");
+		PropertyModule.UnregisterCustomClassLayout("ShowSequenceAsset");
 	}
 
 	// -> FShowSystemEditor Module 의 전역 ShowMakerTab 기능은 삭제

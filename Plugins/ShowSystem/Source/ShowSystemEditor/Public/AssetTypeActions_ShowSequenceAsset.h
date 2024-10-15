@@ -3,13 +3,12 @@
 #pragma once
 
 #include "AssetTypeActions_Base.h"
-#include "RunTime/ShowSequencer.h"
 
-class FAssetTypeActions_ShowSequencer : public FAssetTypeActions_Base
+class FAssetTypeActions_ShowSequenceAsset : public FAssetTypeActions_Base
 {
 public:
 	// 생성자에서 카테고리를 전달받도록 설정
-	FAssetTypeActions_ShowSequencer(EAssetTypeCategories::Type InAssetCategory)
+	FAssetTypeActions_ShowSequenceAsset(EAssetTypeCategories::Type InAssetCategory)
 		: ShowSystemAssetCategory(InAssetCategory)
 	{
 	}

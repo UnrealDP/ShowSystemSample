@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
-struct FShowKey;
+class UShowBase;
 class FShowSequencerEditorHelper;
 
-DECLARE_DELEGATE_TwoParams(FOnShowKeyEditEvent, TSharedPtr<FShowSequencerEditorHelper>, FShowKey*);
+DECLARE_DELEGATE_TwoParams(FOnShowBaseEditEvent, TSharedPtr<FShowSequencerEditorHelper>, UShowBase*);
+DECLARE_DELEGATE_OneParam(FOnShowSequencerRemoveEvent, TSharedPtr<FShowSequencerEditorHelper>);
 
 /**
  * 
@@ -19,13 +20,14 @@ public:
 	SLATE_BEGIN_ARGS(SShowSequencerEditHeader) {}
 		SLATE_ATTRIBUTE(float, Height)
 		SLATE_ATTRIBUTE(float, Width)
-		SLATE_EVENT(FOnShowKeyEditEvent, OnAddShowKeyEvent)
-		SLATE_EVENT(FOnShowKeyEditEvent, OnRemoveShowKeyEvent)
+		SLATE_EVENT(FOnShowBaseEditEvent, OnAddShowKeyEvent)
+		SLATE_EVENT(FOnShowSequencerRemoveEvent, OnRemoveShowKeyEvent)
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 	void RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperMapPtr);
+	TSharedRef<SWidget> ConstructShowSequencerHeaderWidget(FShowSequencerEditorHelper* ShowSequencerEditorHelper);
 
 	TSharedRef<SWidget> CreateAddKeyMenu();
 	TSharedRef<ITableRow> GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
@@ -34,11 +36,13 @@ public:
 	void OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESelectInfo::Type SelectInfo);
 	void OnAddKeySelected(TSharedPtr<FString> SelectedItem);
 	void OnAddSequencerKeySelected(TSharedPtr<FString> SelectedItem);
+	
+	FReply OnRemoveShowKey(TObjectPtr<UShowBase> ShowBase);
 
 	TAttribute<float> Height = 30.0f;
 	TAttribute<float> Width = 100.0f;
-	FOnShowKeyEditEvent OnAddShowKeyEvent = nullptr;
-	FOnShowKeyEditEvent OnRemoveShowKeyEvent = nullptr;
+	FOnShowBaseEditEvent OnAddShowKeyEvent = nullptr;
+	FOnShowSequencerRemoveEvent OnRemoveShowKeyEvent = nullptr;
 
 	TMap<FString, TSharedPtr<FShowSequencerEditorHelper>>* ShowSequencerEditorHelperMapPtr = nullptr;
 	TArray<TSharedPtr<FString>> KeyOptions;

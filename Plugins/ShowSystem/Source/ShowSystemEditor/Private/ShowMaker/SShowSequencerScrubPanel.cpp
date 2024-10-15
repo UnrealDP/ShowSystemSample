@@ -309,3 +309,5 @@ void SShowSequencerScrubPanel::OnScrubBarDrag(int32 BarIndex, float NewPosition)
 void SShowSequencerScrubPanel::OnScrubBarCommit(int32 BarIndex, float FinalPosition)
 {
 }
+
+#undef LOCTEXT_NAMESPACE

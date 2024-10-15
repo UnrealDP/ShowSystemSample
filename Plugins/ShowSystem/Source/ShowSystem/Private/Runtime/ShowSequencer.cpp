@@ -25,10 +25,10 @@ void UShowSequencer::BeginDestroy()
 
 void UShowSequencer::GenerateShowBase()
 {
-    RuntimeShowKeys.SetNum(ShowKeys.Num());
-    for (int32 i = 0; i < ShowKeys.Num(); ++i)
+    RuntimeShowKeys.SetNum(ShowSequenceAsset->ShowKeys.Num());
+    for (int32 i = 0; i < ShowSequenceAsset->ShowKeys.Num(); ++i)
     {
-        const FInstancedStruct& Key = ShowKeys[i];
+        const FInstancedStruct& Key = ShowSequenceAsset->ShowKeys[i];
 
         checkf(Key.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::GenerateShowBase: not FShowKey."));
 
@@ -177,6 +177,15 @@ void UShowSequencer::Tick(float DeltaTime)
                 continue;
             }
 
+            if (ShowBase->IsEnd())
+            {
+                UE_LOG(LogTemp, Warning, TEXT("UShowSequencer::Tick: TTT"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("UShowSequencer::Tick: FFF"));
+            }
+
             if (bIsAllEnd && !ShowBase->IsEnd())
             {
                 bIsAllEnd = false;
@@ -191,7 +200,7 @@ void UShowSequencer::Tick(float DeltaTime)
             }
 			else if (ShowBase->IsPlaying())
 			{
-                ShowBase->Tick(DeltaTime);
+                ShowBase->BaseTick(DeltaTime);
 			}
         }
         
@@ -212,24 +221,25 @@ void UShowSequencer::Tick(float DeltaTime)
 }
 
 #if WITH_EDITOR
-void UShowSequencer::EditorInitialize()
+void UShowSequencer::EditorInitialize(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
 {
+    ShowSequenceAsset = InShowSequenceAsset;
     ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
     PassedTime = 0.0f;
 
     if (RuntimeShowKeys.IsEmpty())
     {
-        RuntimeShowKeys.SetNum(ShowKeys.Num());
+        RuntimeShowKeys.SetNum(ShowSequenceAsset->ShowKeys.Num());
     }
     
-    for (int32 i = 0; i < ShowKeys.Num(); ++i)
+    for (int32 i = 0; i < ShowSequenceAsset->ShowKeys.Num(); ++i)
     {
         if (RuntimeShowKeys[i])
         {
             continue;
         }
 
-        const FInstancedStruct& Key = ShowKeys[i];
+        const FInstancedStruct& Key = ShowSequenceAsset->ShowKeys[i];
         checkf(Key.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::EditorPlay: not FShowKey."));
 
         const FShowKey* ShowKey = Key.GetPtr<FShowKey>();
@@ -255,9 +265,9 @@ FShowKey* UShowSequencer::EditorAddKey(FInstancedStruct& NewKey)
 {
     checkf(NewKey.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::EditorInitializeKey: not FShowKey."));
 
-    ShowKeys.Add(MoveTemp(NewKey));
+    ShowSequenceAsset->ShowKeys.Add(MoveTemp(NewKey));
 
-    FShowKey* NewShowKey = ShowKeys.Last().GetMutablePtr<FShowKey>();
+    FShowKey* NewShowKey = ShowSequenceAsset->ShowKeys.Last().GetMutablePtr<FShowKey>();
     if (!NewShowKey)
     {
         return nullptr;
@@ -303,7 +313,6 @@ void UShowSequencer::EditorPlay()
 		return;
 	}
 
-    EditorInitialize();
     Play(); 
 }
 
@@ -327,24 +336,6 @@ void UShowSequencer::EditorBeginDestroy()
 {
     EditorClearShowObjects();
     Owner = nullptr;
-}
-
-UShowBase* UShowSequencer::EditorGetShowBase(FShowKey* ShoeKey)
-{
-    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
-    {
-        if (!ShowBase)
-		{
-			continue;
-		}
-
-        if (ShowBase->GetShowKey() == ShoeKey)
-		{
-			return ShowBase;
-		}
-    }
-
-    return nullptr;
 }
 
 float UShowSequencer::EditorGetTotalLength()

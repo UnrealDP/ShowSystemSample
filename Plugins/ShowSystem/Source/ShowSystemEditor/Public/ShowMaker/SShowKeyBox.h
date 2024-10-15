@@ -6,8 +6,9 @@
 #include "RunTime/ShowBase.h"
 #include "Widgets/SCompoundWidget.h"
 
-DECLARE_DELEGATE_OneParam(FOnShowKeyClicked, FShowKey*);
-DECLARE_DELEGATE_RetVal_OneParam(bool, FIsShowKeySelected, FShowKey*);
+DECLARE_DELEGATE_OneParam(FOnShowKeyClicked, UShowBase*);
+DECLARE_DELEGATE_TwoParams(FOnShowKeyChangeStartTime, UShowBase*, float);
+DECLARE_DELEGATE_RetVal_OneParam(bool, FIsShowKeySelected, UShowBase*);
 
 /**
  * 
@@ -16,13 +17,13 @@ class SHOWSYSTEMEDITOR_API SShowKeyBox : public SCompoundWidget
 {
 public:
     SLATE_BEGIN_ARGS(SShowKeyBox) {}
-        SLATE_ARGUMENT(FShowKey*, ShowKey)
+        SLATE_ARGUMENT(TObjectPtr<UShowBase>, ShowBase)
         SLATE_ATTRIBUTE(float, SecondToWidthRatio) // 1초당 width 비율
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
         SLATE_ATTRIBUTE(float, InWidthRate)
         SLATE_EVENT(FOnShowKeyClicked, OnClick)
-        SLATE_EVENT(FOnShowKeyClicked, OnChanged)
+        SLATE_EVENT(FOnShowKeyChangeStartTime, OnChangedStartTime)
         SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
     SLATE_END_ARGS()
 
@@ -47,12 +48,12 @@ private:
     mutable FSlateRect ClickableBox;
     FVector2D DragStartPosition = FVector2D::ZeroVector;
     
-    FShowKey* ShowKey = nullptr;
+    TObjectPtr<UShowBase> ShowBase = nullptr;
     TAttribute<float> Height = 20.0f;
-    TAttribute<float> MinWidth = 50.0f;
+    TAttribute<float> MinWidth = 20.0f;
     TAttribute<float> SecondToWidthRatio = 10.0f;
     FOnShowKeyClicked OnClick = nullptr;
-    FOnShowKeyClicked OnChanged = nullptr;
+    FOnShowKeyChangeStartTime OnChangedStartTime = nullptr;
     FIsShowKeySelected IsShowKeySelected = nullptr;
     TAttribute<float> InWidthRate;
 };

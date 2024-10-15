@@ -6,6 +6,7 @@
 
 class UShowSequencer;
 class FShowSequencerEditorHelper;
+class UShowSequenceAsset;
 
 class FShowSequencerEditorToolkit : public FAssetEditorToolkit
 {
@@ -21,7 +22,7 @@ public:
     virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
     virtual void UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
 
-    void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, class UShowSequencer* ShowSequencer);
+    void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequenceAsset* InShowSequenceAsset);
 
     // 기본 Details 탭 생성
     TSharedRef<SDockTab> SpawnDetailsTab(const FSpawnTabArgs& Args);
@@ -44,6 +45,7 @@ protected:
     void OnSelectedAnim(const FAssetData& SelectedAsset);
 
 public:
+    TObjectPtr<UShowSequencer> ShowSequencer = nullptr;
     TSharedPtr<IDetailsView> DetailsView = nullptr;
     TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 };

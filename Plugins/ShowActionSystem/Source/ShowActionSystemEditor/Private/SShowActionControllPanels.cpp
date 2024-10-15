@@ -61,10 +61,10 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
                     SAssignNew(ShowSequencerEditHeader, SShowSequencerEditHeader)
                         .Height(30)
                         .Width(100)
-                        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, FShowKey* Key) 
+                        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase) 
                             {
                             })
-                        .OnRemoveShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, FShowKey* Key)
+                        .OnRemoveShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
                             {
                             })
                 ]
@@ -163,10 +163,9 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
                         .InWidthRate_Lambda([this]() { return 1.0f; })
                         //.InWidthRate_Lambda([this]() { return 1.0f / ZoomRate.Get(); })
                         .SecondToWidthRatio(10)
-                        .OnAddKey_Lambda([this](FShowKey* Key) {})
-                        .OnRemoveKey_Lambda([this](FShowKey* Key) {})
-                        .OnClickedKey_Lambda([this](FShowKey* Key) {})
-                        .OnChangedKey_Lambda([this](FShowKey* Key) {})
+                        .OnAddKey_Lambda([this](UShowBase* ShowBase) {})
+                        .OnClickedKey_Lambda([this](UShowBase* ShowBase) {})
+                        .OnChangedKey_Lambda([this](UShowBase* ShowBase) {})
                 ]
         ];
 
@@ -214,19 +213,16 @@ void SShowActionControllPanels::SelectAction(
 
     if (CastEditorHelper)
     {
-        CastEditorHelper->Dispose();
         CastEditorHelper.Reset();
         CastEditorHelper = nullptr;
     }
     if (ExecEditorHelper)
     {
-        ExecEditorHelper->Dispose();
         ExecEditorHelper.Reset();
         ExecEditorHelper = nullptr;
     }
     if (FinishEditorHelper)
     {
-        FinishEditorHelper->Dispose();
         FinishEditorHelper.Reset();
         FinishEditorHelper = nullptr;
     }
