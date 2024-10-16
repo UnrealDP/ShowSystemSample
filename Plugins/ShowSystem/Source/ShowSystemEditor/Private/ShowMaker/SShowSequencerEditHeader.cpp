@@ -6,6 +6,8 @@
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "SlateEditorUtils.h"
 #include "SPositiveActionButton.h"
+#include "RunTime/ShowSystem.h"
+#include "RunTime/EShowKeyType.h"
 
 #include "RunTime/ShowKeys/ShowAnimStatic.h"
 
@@ -19,8 +21,39 @@ void SShowSequencerEditHeader::Construct(const FArguments& InArgs)
     OnAddShowKeyEvent = InArgs._OnAddShowKeyEvent;
     OnRemoveShowKeyEvent = InArgs._OnRemoveShowKeyEvent;
     
-    KeyOptions.Add(MakeShared<FString>("Add ShowAnimStatic"));
-    KeyOptions.Add(MakeShared<FString>("Add Key 2"));
+    if (const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EShowKeyType"), true))
+    {
+        // 마지막 인덱스는 언리얼에서 추가하는 _MAX 값이므로 제외
+        int32 NumEnums = EnumPtr->NumEnums() - 1;
+        for (int32 i = 0; i < NumEnums; ++i)
+        {
+            int32 EnumValue = EnumPtr->GetValueByIndex(i);
+            EShowKeyType KeyType = static_cast<EShowKeyType>(EnumValue);
+
+            if (KeyType == EShowKeyType::Max)
+            {
+                continue;
+            }
+
+            UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(KeyType);
+            if (!ScriptStruct)
+            {
+				continue;
+			}
+
+            FString StructName = ScriptStruct->GetName();
+            bool bContains = KeyOptions.ContainsByPredicate([StructName](const TSharedPtr<FString>& Option)
+                {
+                    return Option.IsValid() && Option->Equals(StructName);
+                });
+            if (bContains)
+            {
+				continue;
+			}
+
+            KeyOptions.Add(MakeShared<FString>(StructName));
+        }
+    }
 
     ChildSlot
         [
@@ -72,13 +105,13 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr
                     ]
                     + SOverlay::Slot()
                     [
-                        ConstructShowSequencerHeaderWidget(Value.Get())
+                        ConstructShowSequencerHeaderWidget(Value)
                     ]
 			];
     }
 }
 
-TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget(FShowSequencerEditorHelper* ShowSequencerEditorHelper)
+TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper)
 {
     if(!ShowSequencerEditorHelper)
 	{
@@ -107,11 +140,13 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
                             .AutoWidth()
                             [
                                 SNew(SButton)
+                                    .HAlign(HAlign_Center)
+                                    .VAlign(VAlign_Center)
                                     .ButtonStyle(FAppStyle::Get(), "SimpleButton")
                                     .ToolTipText(LOCTEXT("RemoveButtonTooltip", "Remove Show Key."))
-                                    .OnClicked_Lambda([this, ShowBase]() -> FReply
+                                    .OnClicked_Lambda([this, ShowSequencerEditorHelper, ShowBase]() -> FReply
                                         {
-                                            return OnRemoveShowKey(ShowBase);
+                                            return OnRemoveShowKey(ShowSequencerEditorHelper, ShowBase);
                                         })
                                     [
                                         SNew(SImage)
@@ -219,22 +254,19 @@ void SShowSequencerEditHeader::OnAddKeySelected(TSharedPtr<FString> SelectedItem
 
     if (SelectedItem.IsValid())
     {
-        TObjectPtr<UShowBase> NewShowBase = nullptr;
-        if (*SelectedItem == "Add ShowAnimStatic")
+        UScriptStruct* FoundStruct = FindObject<UScriptStruct>(ANY_PACKAGE, **SelectedItem, true);
+        if (FoundStruct)
         {
-            NewShowBase = SelectedShowSequencerEditorHelper->AddKey<FShowAnimStaticKey>();
-        }
-        else if (*SelectedItem == "Add Key 2")
-        {
-            // Add Key 2 선택 시 실행할 코드
-        }
+            FInstancedStruct NewKey(FoundStruct);
+            TObjectPtr<UShowBase> NewShowBase = SelectedShowSequencerEditorHelper->AddKey(NewKey);
 
-        if (NewShowBase)
-        {
-            RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
-            if (OnAddShowKeyEvent.IsBound())
+            if (NewShowBase)
             {
-                OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewShowBase);
+                //RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
+                if (OnAddShowKeyEvent.IsBound())
+                {
+                    OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewShowBase);
+                }
             }
         }
     }
@@ -270,20 +302,20 @@ void SShowSequencerEditHeader::OnAddSequencerKeySelected(TSharedPtr<FString> Sel
 }
 
 
-FReply SShowSequencerEditHeader::OnRemoveShowKey(TObjectPtr<UShowBase> ShowBase)
+FReply SShowSequencerEditHeader::OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, TObjectPtr<UShowBase> ShowBase)
 {
-    if (!SelectedShowSequencerEditorHelper)
+    if (!ShowSequencerEditorHelper)
     {
         return FReply::Handled();
     }
 
-    if (SelectedShowSequencerEditorHelper->RemoveKey(ShowBase))
+    if (ShowSequencerEditorHelper->RemoveKey(ShowBase))
     {
-        RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
+        //RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
 
         if (OnRemoveShowKeyEvent.IsBound())
         {
-            OnRemoveShowKeyEvent.Execute(SelectedShowSequencerEditorHelper);
+            OnRemoveShowKeyEvent.Execute(ShowSequencerEditorHelper);
         }
     }
 

@@ -56,7 +56,7 @@ public:
     void EditorClearShowObjects();
     void EditorBeginDestroy();
     TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
-    float EditorGetTotalLength();
+    float GetWidgetLengthAlignedToInterval(float Interval);
 
     TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 #endif

@@ -11,7 +11,6 @@ void SShowKeyBox::Construct(const FArguments& InArgs)
     ShowBase = InArgs._ShowBase;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
-    InWidthRate = InArgs._InWidthRate;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnClick = InArgs._OnClick;
     OnChangedStartTime = InArgs._OnChangedStartTime;
@@ -31,9 +30,6 @@ void SShowKeyBox::Construct(const FArguments& InArgs)
                         .HeightOverride_Lambda([this]() { return ClickableBox.GetSize().Y; })
                         [
                             SNullWidget::NullWidget
-                            /*SNew(SBorder)
-                                .HAlign(HAlign_Fill)
-                                .VAlign(VAlign_Fill)*/
                         ]
                 ]
         ];
@@ -46,7 +42,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
     if (ShowBase)
     {
         const float StartX = ShowBase->GetStartTime() * SecondToWidthRatio.Get();
-        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowBase->GetShowLength() * SecondToWidthRatio.Get()) * InWidthRate.Get();
+        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowBase->GetShowLength() * SecondToWidthRatio.Get());
 
         // 클릭 영역을 저장
         ClickableBox = FSlateRect(StartX, 0, StartX + KeyWidth, Height.Get());

@@ -21,7 +21,6 @@ public:
         SLATE_ATTRIBUTE(float, SecondToWidthRatio) // 1초당 width 비율
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
-        SLATE_ATTRIBUTE(float, InWidthRate)
         SLATE_EVENT(FOnShowKeyClicked, OnClick)
         SLATE_EVENT(FOnShowKeyChangeStartTime, OnChangedStartTime)
         SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
@@ -55,5 +54,4 @@ private:
     FOnShowKeyClicked OnClick = nullptr;
     FOnShowKeyChangeStartTime OnChangedStartTime = nullptr;
     FIsShowKeySelected IsShowKeySelected = nullptr;
-    TAttribute<float> InWidthRate;
 };

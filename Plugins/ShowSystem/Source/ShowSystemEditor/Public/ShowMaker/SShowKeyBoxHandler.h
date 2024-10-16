@@ -18,12 +18,9 @@ class SHOWSYSTEMEDITOR_API SShowKeyBoxHandler : public SCompoundWidget
 {
 public:
     SLATE_BEGIN_ARGS(SShowKeyBoxHandler) {}
-        SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, ShowSequencerEditorHelper)
+        SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, EditorHelper)
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
-        SLATE_ATTRIBUTE(float, InWidthRate)
-        SLATE_ATTRIBUTE(float, SecondToWidthRatio)
-        SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
         SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)
         SLATE_EVENT(FOnShowBaseEvent, OnChangedKey)
     SLATE_END_ARGS()
@@ -32,25 +29,21 @@ public:
 	void Construct(const FArguments& InArgs);
     void RefreshShowKeyWidgets();
 
-    TSharedRef<SWidget> CreateAddKeyMenu();
-    TSharedRef<ITableRow> GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
-    void OnAddKeySelected(TSharedPtr<FString> SelectedItem, ESelectInfo::Type SelectInfo);
     void OnKeyClicked(UShowBase* ClickedhowBase);
     bool IsShowKeySelected(UShowBase* ShowBase);
+    float GetSecondToWidthRatio();
+
+    virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
 private:
-    TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper = nullptr;
+    TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
     TAttribute<float> Height = 30.0f;
     TAttribute<float> MinWidth = 20.0f;
-    TAttribute<float> SecondToWidthRatio = 10.0f;
 
-    FOnShowBaseEvent OnAddKey = nullptr;
     FOnShowBaseEvent OnClickedKey = nullptr;
     FOnShowBaseEvent OnChangedKey = nullptr;
     
     TSharedPtr<SVerticalBox> VerticalBox;
     TSharedPtr<IMenu> MenuWindow = nullptr;
-
-    TArray<TSharedPtr<FString>> KeyOptions;
-    TAttribute<float> InWidthRate;
+    float WidgetWidth = 0.0f;
 };

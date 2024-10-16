@@ -32,15 +32,9 @@ public:
 	TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr();
 	void SetShowBaseStartTime(UShowBase* InShowBase, float StartTime);
 
-	template<typename T, typename = std::enable_if_t<std::is_base_of<FShowKey, T>::value>>
-	TObjectPtr<UShowBase> AddKey()
-	{
-		FInstancedStruct NewKey;
-		NewKey.InitializeAs<T>();
-		return AddKey(NewKey);
-	}
 	TObjectPtr<UShowBase> AddKey(FInstancedStruct& NewKey);
 	bool RemoveKey(TObjectPtr<UShowBase> RemoveShowBase);
+	int32 FindShowKeyIndex(const FShowKey* ShowKey) const;
 
 	UScriptStruct* GetShowKeyStaticStruct(UShowBase* ShowBase);
 	FShowKey* GetMutableShowKey(UShowBase* ShowBase);
@@ -49,6 +43,7 @@ public:
 
 	void Play();
 
+	TObjectPtr<UShowBase> CheckGetSelectedShowBase();
 	bool ValidateRuntimeShowKeys();
 	bool ValidateShowAnimStatic(AActor* Owner, TObjectPtr<UShowBase>& ShowBase);
 

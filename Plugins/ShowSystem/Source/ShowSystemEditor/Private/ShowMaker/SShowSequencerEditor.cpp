@@ -54,11 +54,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
                 {
                     OnAddKey.Execute(ShowBase);
                 }
-                if (ShowKeyBoxHandler)
-                {
-                    ShowKeyBoxHandler->RefreshShowKeyWidgets();
-                }
-                ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+                IsUpdateKey = true;
             })
         .OnRemoveShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
             {
@@ -66,11 +62,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
                 {
                     OnRemoveKey.Execute();
                 }
-                if (ShowKeyBoxHandler)
-                {
-                    ShowKeyBoxHandler->RefreshShowKeyWidgets();
-                }
-                ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+                IsUpdateKey = true;
             });
 
     ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
@@ -103,7 +95,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments&
         [
             SNew(SShowSequencerScrubBoard)
                 .Height(30.0f)
-                .TotalValue_Lambda([this]() { return EditorHelper->EditShowSequencer->EditorGetTotalLength(); })
+                .TotalValue_Lambda([this]() { return EditorHelper->EditShowSequencer->GetWidgetLengthAlignedToInterval(2.0f); })
                 .CrrValue_Lambda([this]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
                 .OnValueChanged_Lambda([this](float InValue)
                     {
@@ -114,16 +106,13 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments&
         [
             SNew(SBox)
                 .Padding(FMargin(0, 30, 0, 0))
-                .HAlign(HAlign_Left)
+                .HAlign(HAlign_Fill)
                 .VAlign(VAlign_Top)
                 [
                     SAssignNew(ShowKeyBoxHandler, SShowKeyBoxHandler)
-                        .ShowSequencerEditorHelper(EditorHelper)
+                        .EditorHelper(EditorHelper)
                         .Height(InArgs._Height)
                         .MinWidth(InArgs._MinWidth)
-                        .InWidthRate_Lambda([this]() { return 1.0f / ZoomRate.Get(); })
-                        .SecondToWidthRatio(InArgs._SecondToWidthRatio)
-                        .OnAddKey(InArgs._OnAddKey)
                         .OnClickedKey(InArgs._OnClickedKey)
                         .OnChangedKey(InArgs._OnChangedKey)
                 ]
@@ -143,4 +132,21 @@ FReply SShowSequencerEditor::OnKeyDown(const FGeometry& MyGeometry, const FKeyEv
 
     // 스페이스바가 아닌 경우 부모 클래스 처리로 전달
     return SCompoundWidget::OnKeyDown(MyGeometry, InKeyEvent);
+}
+
+void SShowSequencerEditor::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
+{
+    // Tick 함수 내에서 매 프레임 처리할 작업 수행
+    if (IsUpdateKey)
+    {
+        if (ShowKeyBoxHandler)
+        {
+            ShowKeyBoxHandler->RefreshShowKeyWidgets();
+        }
+        if (ShowSequencerEditHeader)
+        {
+            ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+        }
+        IsUpdateKey = false;
+    }
 }

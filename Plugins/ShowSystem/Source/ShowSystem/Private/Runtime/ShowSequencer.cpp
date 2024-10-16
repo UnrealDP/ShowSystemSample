@@ -338,7 +338,7 @@ void UShowSequencer::EditorBeginDestroy()
     Owner = nullptr;
 }
 
-float UShowSequencer::EditorGetTotalLength()
+float UShowSequencer::GetWidgetLengthAlignedToInterval(float Interval)
 {
     float TotalLength = 0.0f;
     for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
@@ -353,6 +353,13 @@ float UShowSequencer::EditorGetTotalLength()
 
         TotalLength = FMath::Max(TotalLength, StartTime + ShowLength);
     }
-    return TotalLength;
+
+    if (TotalLength <= 0)
+    {
+        return Interval;
+    }
+    
+    int32 RoundedTotalLength = (FMath::FloorToInt((TotalLength - 0.001f) / Interval) + 1) * Interval;
+    return static_cast<float>(RoundedTotalLength);
 }
 #endif

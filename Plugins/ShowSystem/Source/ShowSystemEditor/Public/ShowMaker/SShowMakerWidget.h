@@ -25,7 +25,7 @@ public:
 	SLATE_BEGIN_ARGS(SShowMakerWidget) {}
 		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, EditorHelper)
 		SLATE_ARGUMENT(UShowSequencer*, EditShowSequencer)
-		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
+		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)		
 		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
 	SLATE_END_ARGS()
 
@@ -35,8 +35,7 @@ public:
 	UWorld* GetPreviewWorld() const;
 	SActorPreviewViewport* GetPreviewViewportPtr() const { return PreviewViewport.Get(); }
 
-private:
-	void SetShowKey(UShowBase* NewShowBase);
+	void UpdateShowKeyDetails();
 
 private:
 	TSharedRef<SWidget> ConstructMainBody();
@@ -47,7 +46,6 @@ private:
 	TSharedPtr<SActorPreviewViewport> PreviewViewport = nullptr;
 	TSharedPtr<IStructureDetailsView> StructureDetailsView = nullptr;
 
-	TObjectPtr<UShowBase> SelectedShowBase = nullptr;
 	TSharedPtr<ShowSequencerNotifyHook> NotifyHookInstance = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;

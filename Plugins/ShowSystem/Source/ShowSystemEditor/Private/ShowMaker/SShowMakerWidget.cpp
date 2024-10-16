@@ -98,7 +98,6 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                             .Height(20.0f)
                             .MinWidth(20.0f)
                             .ShowSequencerState(ShowSequencerState)
-                            .SecondToWidthRatio(10.0f)
                             .OnAddKey_Lambda([this](UShowBase* ShowBase)
                                 {
                                     EditorHelper->EditShowSequencer->MarkPackageDirty();
@@ -110,12 +109,26 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                                 })
                             .OnRemoveKey_Lambda([this]()
                                 {
+                                    TObjectPtr<UShowBase> CheckSelectedShowBase = EditorHelper->CheckGetSelectedShowBase();
+                                    if (CheckSelectedShowBase != EditorHelper->SelectedShowBase)
+                                    {
+                                        EditorHelper->SelectedShowBase = CheckSelectedShowBase;
+                                        UpdateShowKeyDetails();
+                                    }
+                                    
                                     if (OnRemoveKey.IsBound())
                                     {
                                         OnRemoveKey.Execute();
                                     }
                                 })
-                            .OnClickedKey(this, &SShowMakerWidget::SetShowKey)
+                            .OnClickedKey_Lambda([this](UShowBase* ShowBase)
+								{
+                                    if (EditorHelper->SelectedShowBase != ShowBase)
+                                    {
+                                        EditorHelper->SelectedShowBase = ShowBase;
+                                        UpdateShowKeyDetails();
+                                    }
+								})
                             .OnChangedKey_Lambda([this](UShowBase* ShowBase)
                                 {
                                     EditorHelper->EditShowSequencer->MarkPackageDirty();
@@ -193,23 +206,17 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
         ];
 }
 
-void SShowMakerWidget::SetShowKey(UShowBase* NewShowBase)
+void SShowMakerWidget::UpdateShowKeyDetails()
 {
-    if (SelectedShowBase.Get() == NewShowBase)
+    if (EditorHelper->SelectedShowBase)
     {
-        return;
-    }
-
-    SelectedShowBase = NewShowBase;
-    if (SelectedShowBase)
-    {
-        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(SelectedShowBase);
-        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(SelectedShowBase);
+        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBase);
+        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBase);
         TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
         StructureDetailsView->SetStructureData(StructData);
     }
     else
     {
-        StructureDetailsView = nullptr;
+        StructureDetailsView->SetStructureData(nullptr);
     }
 }

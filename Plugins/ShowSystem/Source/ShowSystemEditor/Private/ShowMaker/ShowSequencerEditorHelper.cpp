@@ -218,7 +218,19 @@ void FShowSequencerEditorHelper::ReplaceSkeletalMeshPreviewWorld(USkeletalMesh* 
 	{
 		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
 		{
-			ActorPreviewViewport->ReplaceSkeletalMesh(SelectedSkeletalMesh);
+			AActor* PreviewActor = ActorPreviewViewport->GetActor();
+			UClass* PreviewActorClass = PreviewActor->GetClass();
+			if (PreviewActorClass != AActor::StaticClass() || PreviewActorClass->ClassGeneratedBy != nullptr)
+			{
+				AActor* Owner = ActorPreviewViewport->ReplaceActorPreviewWorld(AActor::StaticClass());
+				EditShowSequencer->EditorSetOwner(Owner);
+
+				ActorPreviewViewport->SetSkeletalMesh(SelectedSkeletalMesh);
+			}
+			else
+			{
+				ActorPreviewViewport->ReplaceSkeletalMesh(SelectedSkeletalMesh);
+			}
 
 			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
 			if (GConfig)
@@ -274,7 +286,7 @@ TObjectPtr<UShowBase> FShowSequencerEditorHelper::AddKey(FInstancedStruct& NewKe
 	NewShowBase->InitShowKey(EditShowSequencer, NewShowKey);
 	EditShowSequencer->RuntimeShowKeys.Add(NewShowBase);
 
-	EditShowSequencer->MarkPackageDirty();
+	EditShowSequencer->ShowSequenceAsset->MarkPackageDirty();
 	return NewShowBase;
 }
 
@@ -285,11 +297,29 @@ bool FShowSequencerEditorHelper::RemoveKey(TObjectPtr<UShowBase> RemoveShowBase)
 		return false;
 	}
 
+	int32 KeyIndex = FindShowKeyIndex(RemoveShowBase->ShowKey);
+	checkf(KeyIndex != INDEX_NONE, TEXT("FShowSequencerEditorHelper::RemoveKey: ShowKey not found in ShowKeys."));
+
+	RemoveShowBase->Dispose();
+	RemoveShowBase->RemoveFromRoot();
 	EditShowSequencer->RuntimeShowKeys.Remove(RemoveShowBase);
-	SelectedShowBase->Dispose();
-	SelectedShowBase->RemoveFromRoot();
-	EditShowSequencer->MarkPackageDirty();
+
+	EditShowSequencer->ShowSequenceAsset->ShowKeys.RemoveAt(KeyIndex);
+	EditShowSequencer->ShowSequenceAsset->MarkPackageDirty();
 	return true;
+}
+
+int32 FShowSequencerEditorHelper::FindShowKeyIndex(const FShowKey* ShowKey) const
+{
+	for (int32 i = 0; i < EditShowSequencer->ShowSequenceAsset->ShowKeys.Num(); ++i)
+	{
+		const FShowKey* Key = EditShowSequencer->ShowSequenceAsset->ShowKeys[i].GetPtr<FShowKey>();
+		if (Key == ShowKey)
+		{
+			return i;
+		}
+	}
+	return INDEX_NONE;
 }
 
 UScriptStruct* FShowSequencerEditorHelper::GetShowKeyStaticStruct(UShowBase* ShowBase)
@@ -302,6 +332,22 @@ FShowKey* FShowSequencerEditorHelper::GetMutableShowKey(UShowBase* ShowBase)
 	return const_cast<FShowKey*>(ShowBase->ShowKey);
 }
 
+TObjectPtr<UShowBase> FShowSequencerEditorHelper::CheckGetSelectedShowBase()
+{
+	for (TObjectPtr<UShowBase>& ShowBase : EditShowSequencer->RuntimeShowKeys)
+	{
+		if (ShowBase == SelectedShowBase)
+		{
+			return SelectedShowBase;
+		}
+	}
+
+	if (EditShowSequencer->RuntimeShowKeys.Num() > 0)
+	{
+		return EditShowSequencer->RuntimeShowKeys[0];
+	}
+	return nullptr;
+}
 
 bool FShowSequencerEditorHelper::ValidateRuntimeShowKeys()
 {

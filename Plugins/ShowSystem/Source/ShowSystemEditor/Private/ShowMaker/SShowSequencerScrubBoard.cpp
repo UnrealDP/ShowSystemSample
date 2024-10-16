@@ -147,7 +147,6 @@ FReply SShowSequencerScrubBoard::OnMouseMove(const FGeometry& MyGeometry, const 
         const float MouseX = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition()).X;
         const float NewValue = FMath::Clamp((MouseX / Width) * TotalValue.Get(), 0.0f, TotalValue.Get());
 
-        CrrValue.Set(NewValue);
         OnValueChanged.ExecuteIfBound(NewValue);
 
         return FReply::Handled();

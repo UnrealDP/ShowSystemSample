@@ -146,7 +146,7 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
         [
             SNew(SShowSequencerScrubBoard)
                 .Height(30)
-                .TotalValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencer->EditorGetTotalLength(); })
+                .TotalValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencer->GetWidgetLengthAlignedToInterval(2.0f); })
                 .CrrValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
         ]
         + SOverlay::Slot()
@@ -157,13 +157,9 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
                 .VAlign(VAlign_Top)
                 [
                     SNew(SShowKeyBoxHandler)
-                        .ShowSequencerEditorHelper(EditorHelper)
+                        .EditorHelper(EditorHelper)
                         .Height(30)
                         .MinWidth(100)
-                        .InWidthRate_Lambda([this]() { return 1.0f; })
-                        //.InWidthRate_Lambda([this]() { return 1.0f / ZoomRate.Get(); })
-                        .SecondToWidthRatio(10)
-                        .OnAddKey_Lambda([this](UShowBase* ShowBase) {})
                         .OnClickedKey_Lambda([this](UShowBase* ShowBase) {})
                         .OnChangedKey_Lambda([this](UShowBase* ShowBase) {})
                 ]

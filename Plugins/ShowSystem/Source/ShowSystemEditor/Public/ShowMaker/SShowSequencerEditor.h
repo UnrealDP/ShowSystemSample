@@ -24,7 +24,6 @@ public:
 		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, EditorHelper)
 		SLATE_ATTRIBUTE(float, Height)
 		SLATE_ATTRIBUTE(float, MinWidth)
-		SLATE_ATTRIBUTE(float, SecondToWidthRatio)
 		SLATE_ARGUMENT(TAttribute<EShowSequencerState>, ShowSequencerState)
 		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
 		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
@@ -40,6 +39,7 @@ public:
 
 	virtual bool SupportsKeyboardFocus() const override { return true; }
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
+	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
 private:
 	FOnShowBaseEvent OnAddKey;
@@ -49,6 +49,6 @@ private:
 	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 	FOnKeyDownSpace OnKeyDownSpace = nullptr;
-	TAttribute<float> ZoomRate = 1.0f;
 	TMap<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperMap;
+	bool IsUpdateKey = false;
 };

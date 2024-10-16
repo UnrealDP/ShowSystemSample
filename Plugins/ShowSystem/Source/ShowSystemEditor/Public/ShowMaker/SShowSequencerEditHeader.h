@@ -27,7 +27,7 @@ public:
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 	void RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperMapPtr);
-	TSharedRef<SWidget> ConstructShowSequencerHeaderWidget(FShowSequencerEditorHelper* ShowSequencerEditorHelper);
+	TSharedRef<SWidget> ConstructShowSequencerHeaderWidget(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper);
 
 	TSharedRef<SWidget> CreateAddKeyMenu();
 	TSharedRef<ITableRow> GenerateKeyRow(TSharedPtr<FString> InItem, const TSharedRef<STableViewBase>& OwnerTable);
@@ -37,7 +37,7 @@ public:
 	void OnAddKeySelected(TSharedPtr<FString> SelectedItem);
 	void OnAddSequencerKeySelected(TSharedPtr<FString> SelectedItem);
 	
-	FReply OnRemoveShowKey(TObjectPtr<UShowBase> ShowBase);
+	FReply OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, TObjectPtr<UShowBase> ShowBase);
 
 	TAttribute<float> Height = 30.0f;
 	TAttribute<float> Width = 100.0f;
