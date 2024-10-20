@@ -43,24 +43,6 @@ private:
     void Pause();
     void UnPause();
 
-#if WITH_EDITOR
-public:
-    void EditorInitialize(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
-    void EditorSetOwner(AActor* InOwner) { Owner = InOwner; }
-    FShowKey* EditorAddKey(FInstancedStruct& Key);
-    void EditorReset();
-    void EditorPlay();
-    void EditorStop();
-    void EditorPause() { Pause(); }
-    void EditorUnPause() { UnPause(); }
-    void EditorClearShowObjects();
-    void EditorBeginDestroy();
-    TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &RuntimeShowKeys; }
-    float GetWidgetLengthAlignedToInterval(float Interval);
-
-    TArray<FObjectPoolTypeSettings> EditorPoolSettings;
-#endif
-
 public:
     // setter getter
     void ClearOwner() { Owner = nullptr; }
@@ -73,7 +55,7 @@ public:
     float GetPassedTime() const { return PassedTime; }
     // end of setter getter
 
-    void Initialize(AActor* InOwner);
+    void Initialize(AActor* InOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
 
     void Dispose()
     {

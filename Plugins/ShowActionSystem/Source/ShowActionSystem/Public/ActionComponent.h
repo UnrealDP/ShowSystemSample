@@ -55,12 +55,12 @@ public:
 		for (FName ActionName : ActionNames)
 		{
 			TActionData* ActionData = DataTableManager::Data<TActionData>(ActionName);
-			checkf(ActionData != nullptr, TEXT("UActionComponent::InitializeActionPool SkillData Fail [ %s ]"), *ActionName.ToString());
+			checkf(ActionData, TEXT("UActionComponent::InitializeActionPool SkillData Fail [ %s ]"), *ActionName.ToString());
 
 			TActionShowData* SkillShowData = DataTableManager::Data<TActionShowData>(ActionName);
 
 			UActionBase* ActionBase = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
-			checkf(ActionBase != nullptr, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
+			checkf(ActionBase, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
 
 			if (ActionBase)
 			{

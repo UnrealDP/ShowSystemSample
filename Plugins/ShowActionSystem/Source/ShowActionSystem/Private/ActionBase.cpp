@@ -4,8 +4,8 @@
 #include "ActionBase.h"
 #include "Data/ActionBaseData.h"
 #include "Data/ActionBaseShowData.h"
-#include "RunTime/ShowPlayer.h"
 #include "RunTime/ShowSequencer.h"
+
 
 void UActionBase::OnPooled()
 {
@@ -21,7 +21,6 @@ void UActionBase::OnPooled()
 
 void UActionBase::OnReturnedToPool()
 {
-	UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 	if (ShowPlayer)
 	{
 
@@ -32,8 +31,8 @@ void UActionBase::OnReturnedToPool()
 			if (ShowPlayer->HasShowSequencer(Owner, CastShow))
 			{
 				ShowPlayer->DisposeSoloShow(Owner, CastShow);
-				CastShow = nullptr;
 			}
+			CastShow = nullptr;
 		}
 
 		if (ExecShow)
@@ -41,8 +40,8 @@ void UActionBase::OnReturnedToPool()
 			if (ShowPlayer->HasShowSequencer(Owner, ExecShow))
 			{
 				ShowPlayer->DisposeSoloShow(Owner, ExecShow);
-				ExecShow = nullptr;
 			}
+			ExecShow = nullptr;
 		}
 
 		if (FinishShow)
@@ -50,8 +49,8 @@ void UActionBase::OnReturnedToPool()
 			if (ShowPlayer->HasShowSequencer(Owner, FinishShow))
 			{
 				ShowPlayer->DisposeSoloShow(Owner, FinishShow);
-				FinishShow = nullptr;
 			}
+			FinishShow = nullptr;
 		}
 #else
 		if (CastShow)
@@ -106,54 +105,43 @@ void UActionBase::Tick(float DeltaTime)
 	}
 }
 
-#if WITH_EDITOR
-void UActionBase::EditorLoadAllShow(
-	TObjectPtr<UShowSequencer>& OutCastShow, 
-	TObjectPtr<UShowSequencer>& OutExecShow, 
-	TObjectPtr<UShowSequencer>& OutFinishShow)
+TObjectPtr<UShowSequencer> UActionBase::NewShowSequencer(EActionState EActionStatem)
 {
-	if (ActionBaseShowData)
-	{
-		if (ActionBaseShowData->CastShow.IsValid())
-		{
-			CastShow = LoadShow(ActionBaseShowData->CastShow);
-			OutCastShow = CastShow;
-		}
-		if (ActionBaseShowData->ExecShow.IsValid())
-		{
-			ExecShow = LoadShow(ActionBaseShowData->ExecShow);
-			OutExecShow = ExecShow;
-		}
-		if (ActionBaseShowData->FinishShow.IsValid())
-		{
-			FinishShow = LoadShow(ActionBaseShowData->FinishShow);
-			OutFinishShow = FinishShow;
-		}
-	}
-}
-#endif
+	checkf(ActionBaseShowData, TEXT("UActionBase::NewShowSequencer ActionBaseShowData is invalid"));
 
-TObjectPtr<UShowSequencer> UActionBase::LoadShow(const FSoftObjectPath& ShowPath)
-{
-	checkf(ShowPath.IsValid(), TEXT("UActionBase::PlayShow ShowPath is invalid"));
-
-	if (UShowSequencer* LoadedShowSequencer = Cast<UShowSequencer>(ShowPath.TryLoad()))
+	if (ShowPlayer)
 	{
-		LoadedShowSequencer->Initialize(Owner);
-		return LoadedShowSequencer;
+		switch (EActionStatem)
+		{
+		case EActionState::Cast:
+			if (ActionBaseShowData->CastShow.IsValid())
+			{
+				return CastShow = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->CastShow);
+			}
+			break;
+		case EActionState::Exec:
+			if (ActionBaseShowData->ExecShow.IsValid())
+			{
+				return ExecShow = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->ExecShow);
+			}
+			break;
+		case EActionState::Finish:
+			if (ActionBaseShowData->FinishShow.IsValid())
+			{
+				return FinishShow = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->FinishShow);
+			}
+			break;
+		default:
+			break;
+		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("UActionBase::PlayShow LoadedShowSequencer is invalid [ %s ]"), *ShowPath.ToString());
-		return nullptr;
-	}
+	return nullptr;
 }
 
 void UActionBase::PlayShow(TObjectPtr<UShowSequencer> ShowSequencer)
 {
 	checkf(ShowSequencer, TEXT("UActionBase::PlayShow ShowSequencer is invalid"));
 
-	UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 	if (ShowPlayer)
 	{
 		ShowPlayer->PlaySoloShow(Owner, ShowSequencer);
@@ -169,7 +157,7 @@ void UActionBase::Casting(TArray<TObjectPtr<AActor>> Targets)
 	{
 		if (!CastShow)
 		{
-			CastShow = LoadShow(ActionBaseShowData->CastShow);
+			NewShowSequencer(EActionState::Cast);
 		}
 		checkf(CastShow, TEXT("UActionBase::Cast CastShow Load Fail"));
 
@@ -201,7 +189,7 @@ void UActionBase::Exec(TArray<TObjectPtr<AActor>> Targets)
 		{
 			if (!CastShow)
 			{
-				CastShow = LoadShow(ActionBaseShowData->CastShow);
+				NewShowSequencer(EActionState::Cast);
 			}
 			checkf(CastShow, TEXT("UActionBase::Exec CastShow Load Fail"));
 
@@ -213,7 +201,7 @@ void UActionBase::Exec(TArray<TObjectPtr<AActor>> Targets)
 	{
 		if (!ExecShow)
 		{
-			ExecShow = LoadShow(ActionBaseShowData->ExecShow);
+			NewShowSequencer(EActionState::Exec);
 		}
 		checkf(ExecShow, TEXT("UActionBase::Exec ExecShow Load Fail"));
 
@@ -249,7 +237,7 @@ void UActionBase::Finish(TArray<TObjectPtr<AActor>> Targets)
 	{
 		if (!FinishShow)
 		{
-			FinishShow = LoadShow(ActionBaseShowData->FinishShow);
+			NewShowSequencer(EActionState::Finish);
 		}
 		checkf(FinishShow, TEXT("UActionBase::Finish FinishShow Load Fail"));
 
@@ -305,7 +293,6 @@ void UActionBase::Cancel()
 	checkf(Owner != nullptr, TEXT("UActionBase::Finish Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Finish ActionBaseData is invalid"));
 
-	UShowPlayer* ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 	if (ShowPlayer)
 	{
 		if (CastShow)

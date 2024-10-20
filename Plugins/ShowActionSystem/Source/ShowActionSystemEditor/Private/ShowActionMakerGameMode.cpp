@@ -7,12 +7,12 @@
 #include "Data/SkillShowData.h"
 #include "Misc/PathsUtil.h"
 #include "ActionComponent.h"
-#include "SSkillDataDetailsWidget.h"
 #include "DataTableManager.h"
 #include "ShowActionSystemEditor.h"
 #include "ActionSkill.h"
 #include "ShowActionSystemEditor.h"
 #include "RunTime/ShowSequencerComponent.h"
+#include "SSkillDataDetailsWidget.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -31,29 +31,39 @@ void AShowActionMakerGameMode::BeginPlay()
         FRotator TargetRotator;
         GetPos(CasterPos, TargetPos, TargetRotator);
 
-        Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator);
+        FActorSpawnParameters CasterSpawnParams;
+        CasterSpawnParams.Name = FName(TEXT("ActionMaker Caster"));
+
+        Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator, CasterSpawnParams);
         if (!Caster->FindComponentByClass<UShowSequencerComponent>())
         {
             UShowSequencerComponent* ShowSequencerComponent = NewObject<UShowSequencerComponent>(Caster, UShowSequencerComponent::StaticClass());
+            Caster->AddInstanceComponent(ShowSequencerComponent);
             ShowSequencerComponent->RegisterComponent();
         }
         if (!Caster->FindComponentByClass<UActionComponent>())
         {
             UActionComponent* ActionComponent = NewObject<UActionComponent>(Caster, UActionComponent::StaticClass());
+            Caster->AddInstanceComponent(ActionComponent);
 			ActionComponent->RegisterComponent();
         }
 
-        AActor* SpawnedTarget = GetWorld()->SpawnActor<AActor>(DefaultActorClass, TargetPos, TargetRotator);
+        FActorSpawnParameters TargetSpawnParams;
+        TargetSpawnParams.Name = FName(TEXT("ActionMaker Target"));
+
+        AActor* SpawnedTarget = GetWorld()->SpawnActor<AActor>(DefaultActorClass, TargetPos, TargetRotator, TargetSpawnParams);
         if (SpawnedTarget)
         {
             if (!SpawnedTarget->FindComponentByClass<UShowSequencerComponent>())
             {
                 UShowSequencerComponent* ShowSequencerComponent = NewObject<UShowSequencerComponent>(SpawnedTarget, UShowSequencerComponent::StaticClass());
+                SpawnedTarget->AddInstanceComponent(ShowSequencerComponent);
                 ShowSequencerComponent->RegisterComponent();
             }
             if (!SpawnedTarget->FindComponentByClass<UActionComponent>())
             {
                 UActionComponent* ActionComponent = NewObject<UActionComponent>(SpawnedTarget, UActionComponent::StaticClass());
+                SpawnedTarget->AddInstanceComponent(ActionComponent);
                 ActionComponent->RegisterComponent();
             }
 
@@ -72,6 +82,16 @@ void AShowActionMakerGameMode::BeginPlay()
         ShowActionSystemEditorModulePtr->OpenShowKeyDetails();
         ShowActionSystemEditorModulePtr->OpenShowActionControllPanels();
         ShowActionSystemEditorModulePtr->RegisterMenus();
+
+        TSharedPtr<SSkillDataDetailsWidget> SkillDataDetailsWidget = ShowActionSystemEditorModulePtr->SkillDataDetailsWidget;
+        if (SkillDataDetailsWidget)
+        {
+            FName FirstSkillName = SkillDataDetailsWidget->FirstSkillName();
+            if (!FirstSkillName.IsNone())
+            {
+                SkillDataDetailsWidget->OnSkillSelected(FirstSkillName.ToString());
+            }
+        }
     }
 }
 

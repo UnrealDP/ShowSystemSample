@@ -9,7 +9,6 @@
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "ActionBase.h"
 #include "ShowMaker/SShowKeyBoxHandler.h"
-#include "ShowMaker/SShowSequencerScrubPanel.h"
 #include "ShowMaker/SShowSequencerScrubBoard.h"
 #include "ShowMaker/SShowSequencerEditHeader.h"
 
@@ -17,6 +16,9 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowActionControllPanels::Construct(const FArguments& InArgs)
 {
     Args = InArgs;
+    OnAddKey = InArgs._OnAddKey;
+    OnSelectedKey = InArgs._OnSelectedKey;
+    OnRemoveKey = InArgs._OnRemoveKey;
 
     ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
         {
@@ -63,9 +65,19 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
                         .Width(100)
                         .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase) 
                             {
+                                if (OnAddKey.IsBound())
+                                {
+                                    OnAddKey.Execute(EditorHelper, ShowBase);
+                                }
+                                IsUpdateKey = true;
                             })
                         .OnRemoveShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
                             {
+                                if (OnRemoveKey.IsBound())
+                                {
+                                    OnRemoveKey.Execute(EditorHelper);
+                                }
+                                IsUpdateKey = true;
                             })
                 ]
         ]
@@ -76,10 +88,7 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
         [
             SNew(SShowSequencerControllPanel)
                 .ShowSequencerState(ShowSequencerState)
-                .OnPlay_Lambda([this]()
-					{
-						//EditorHelper->Play();
-					})
+                .OnPlay(InArgs._OnPlay)
         ];
 }
 
@@ -146,8 +155,12 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
         [
             SNew(SShowSequencerScrubBoard)
                 .Height(30)
-                .TotalValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencer->GetWidgetLengthAlignedToInterval(2.0f); })
+                .TotalValue_Lambda([EditorHelper]() { return EditorHelper->GetWidgetLengthAlignedToInterval(2.0f); })
                 .CrrValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
+                .OnValueChanged_Lambda([EditorHelper](float InValue)
+					{
+						//EditorHelper->EditShowSequencer->SetPassedTime(InValue);
+					})
         ]
         + SOverlay::Slot()
         [
@@ -156,46 +169,23 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
                 .HAlign(HAlign_Left)
                 .VAlign(VAlign_Top)
                 [
-                    SNew(SShowKeyBoxHandler)
+                    SAssignNew(ShowKeyBoxHandler, SShowKeyBoxHandler)
                         .EditorHelper(EditorHelper)
                         .Height(30)
                         .MinWidth(100)
-                        .OnClickedKey_Lambda([this](UShowBase* ShowBase) {})
-                        .OnChangedKey_Lambda([this](UShowBase* ShowBase) {})
+                        .OnClickedKey_Lambda([this, EditorHelper](UShowBase* ShowBase)
+                            {
+                                if (OnSelectedKey.IsBound())
+								{
+                                    OnSelectedKey.Execute(EditorHelper, ShowBase);
+								}
+                            })
+                        .OnChangedKey_Lambda([EditorHelper](UShowBase* ShowBase)
+                            {
+                                EditorHelper->EditShowSequencer->MarkPackageDirty();
+                            })
                 ]
         ];
-
-    //return SNew(SVerticalBox)
-    //    + SVerticalBox::Slot()
-    //    .Padding(2.0f)
-    //    .FillHeight(1.0f)
-    //    [
-    //        SNew(SShowKeyBoxHandler)
-    //            .ShowSequencerEditorHelper(EditorHelper)
-    //            .Height(30)
-    //            .MinWidth(100)
-    //            .InWidthRate_Lambda([this]() { return 1.0f; })
-    //            //.InWidthRate_Lambda([this]() { return 1.0f / ZoomRate.Get(); })
-    //            .SecondToWidthRatio(10)
-    //            .OnAddKey_Lambda([this](FShowKey* Key) {})
-    //            .OnRemoveKey_Lambda([this](FShowKey* Key) {})
-    //            .OnClickedKey_Lambda([this](FShowKey* Key) {})
-    //            .OnChangedKey_Lambda([this](FShowKey* Key) {})
-    //    ]
-
-    //    + SVerticalBox::Slot()
-    //    .Padding(2.0f)
-    //    .AutoHeight()
-    //    [
-    //        SNew(SShowSequencerScrubPanel)
-    //            .ShowSequencerEditorHelper(EditorHelper)
-    //            .bDisplayAnimScrubBarEditing(true)
-    //            .bAllowZoom(true)
-    //            .OnUpdateZoom_Lambda([this](float InZoomRate)
-    //                {
-    //                    //ZoomRate.Set(InZoomRate);
-    //                })
-    //    ];
 }
 
 void SShowActionControllPanels::SelectAction(
@@ -204,7 +194,7 @@ void SShowActionControllPanels::SelectAction(
     TObjectPtr<UShowSequencer> InExecShow,
     TObjectPtr<UShowSequencer> InFinishShow)
 {
-    InShowSequencerEditorHelperMap.Empty();
+    /*ShowSequencerEditorHelperMap.Empty();
     CrrAction = InAction;
 
     if (CastEditorHelper)
@@ -225,22 +215,70 @@ void SShowActionControllPanels::SelectAction(
 
     if (InCastShow)
     {
-        CastEditorHelper = MakeShared<FShowSequencerEditorHelper>(InCastShow);
-        InShowSequencerEditorHelperMap.Add("Cast", CastEditorHelper);
+        CastEditorHelper = MakeShared<FShowSequencerEditorHelper>();
+        CastEditorHelper->EditShowSequencer = InCastShow;
+        ShowSequencerEditorHelperMap.Add("Cast", CastEditorHelper);
     }
 
     if (InExecShow)
     {
-        ExecEditorHelper = MakeShared<FShowSequencerEditorHelper>(InExecShow);
-        InShowSequencerEditorHelperMap.Add("Exec", CastEditorHelper);
+        ExecEditorHelper = MakeShared<FShowSequencerEditorHelper>();
+        ExecEditorHelper->EditShowSequencer = InExecShow;
+        ShowSequencerEditorHelperMap.Add("Exec", ExecEditorHelper);
     }
 
     if (InFinishShow)
     {
-        FinishEditorHelper = MakeShared<FShowSequencerEditorHelper>(InFinishShow);
-        InShowSequencerEditorHelperMap.Add("Finish", CastEditorHelper);
+        FinishEditorHelper = MakeShared<FShowSequencerEditorHelper>();
+        FinishEditorHelper->EditShowSequencer = InFinishShow;
+        ShowSequencerEditorHelperMap.Add("Finish", FinishEditorHelper);
     }    
 
     ConstructRightWidget(Args);
-    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&InShowSequencerEditorHelperMap);
+    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);*/
+}
+
+void SShowActionControllPanels::ChangeShow(EActionState ActionState, TObjectPtr<UShowSequencer> NewShow)
+{
+    switch (ActionState)
+    {
+        case EActionState::Cast:
+	    	if (CastEditorHelper)
+	    	{
+                if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperMap.Find("Cast"))
+                {
+                    // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
+                    (*ExistingHelper)->EditShowSequencer = NewShow;
+                }
+	    	}
+            else
+            {
+                CastEditorHelper = MakeShared<FShowSequencerEditorHelper>();
+                CastEditorHelper->EditShowSequencer = NewShow;
+                ShowSequencerEditorHelperMap.Add("Cast", CastEditorHelper);
+            }
+	    	break;
+        default:
+            break;
+    }
+
+    ConstructRightWidget(Args);
+    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+}
+
+void SShowActionControllPanels::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
+{
+    // Tick 함수 내에서 매 프레임 처리할 작업 수행
+    if (IsUpdateKey)
+    {
+        if (ShowKeyBoxHandler)
+        {
+            ShowKeyBoxHandler->RefreshShowKeyWidgets();
+        }
+        if (ShowSequencerEditHeader)
+        {
+            ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+        }
+        IsUpdateKey = false;
+    }
 }

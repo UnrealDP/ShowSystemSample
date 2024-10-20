@@ -16,11 +16,7 @@ bool FShowSequencerEditorToolkit::OnRequestClose()
     DetailsView.Reset();
     DetailsView = nullptr;
 
-    ShowSequencer->ReleaseDontDestroy();
-    ShowSequencer->EditorBeginDestroy();
-    ShowSequencer->RemoveFromRoot();
-    ShowSequencer = nullptr;
-
+    EditorHelper->Dispose();
     EditorHelper.Reset();
     EditorHelper = nullptr;
 
@@ -102,12 +98,8 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
 
 void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequenceAsset* InShowSequenceAsset)
 {
-    ShowSequencer = NewObject<UShowSequencer>(GetTransientPackage(), UShowSequencer::StaticClass());
-    ShowSequencer->AddToRoot();
-    ShowSequencer->EditorInitialize(InShowSequenceAsset);
-    ShowSequencer->SetDontDestroy();
-
-    EditorHelper = MakeShared<FShowSequencerEditorHelper>(ShowSequencer);
+    EditorHelper = MakeShared<FShowSequencerEditorHelper>();
+    EditorHelper->NewShowSequencer(InShowSequenceAsset);
 
     // 기본 에디터 레이아웃 설정
     const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("Standalone_ShowSequencerEditor_Layout")

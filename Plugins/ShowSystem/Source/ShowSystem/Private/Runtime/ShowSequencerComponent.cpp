@@ -25,7 +25,14 @@ void UShowSequencerComponent::BeginPlay()
 
 void UShowSequencerComponent::BeginDestroy()
 {
+	for (TObjectPtr<UShowSequencer>& ShowSequencer : ShowSequencers)
+	{
+		ShowSequencer->Dispose();
+		ShowSequencer->MarkAsGarbage();
+		ShowSequencer = nullptr;
+	}
 	ShowSequencers.Empty();
+
 	Super::BeginDestroy();
 }
 
@@ -34,17 +41,31 @@ void UShowSequencerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	for (TObjectPtr<UShowSequencer> showSequencer : ShowSequencers)
+	for (TObjectPtr<UShowSequencer>& showSequencer : ShowSequencers)
 	{
 		showSequencer->Tick(DeltaTime);
 	}
+}
+
+TObjectPtr<UShowSequencer> UShowSequencerComponent::NewShowSequencer(const FSoftObjectPath& ShowPath)
+{
+	AActor* Owner = GetOwner();
+	checkf(Owner, TEXT("UShowSequencerComponent::NewShowSequencer: The Owner is invalid."));
+
+	if (UShowSequenceAsset* LoadedShowSequenceAsset = Cast<UShowSequenceAsset>(ShowPath.TryLoad())) 
+	{
+		TObjectPtr<UShowSequencer> NewShowSequencer = NewObject<UShowSequencer>(this, UShowSequencer::StaticClass(), FName(TEXT("MyNewShowSequencer")), EObjectFlags::RF_Public);
+		NewShowSequencer->Initialize(Owner, LoadedShowSequenceAsset);
+		ShowSequencers.Add(NewShowSequencer);
+		return NewShowSequencer;
+	}
+	return nullptr;
 }
 
 void UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::PlayShow: The OShowSequencer provided is invalid or null."));
 
-	ShowSequencers.Add(InShowSequencer);
 	InShowSequencer->Play();
 }
 
@@ -64,6 +85,8 @@ void UShowSequencerComponent::DisposeShow(UShowSequencer* InShowSequencer)
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::DisposeShow: InShowSequencer is invalid or null"));
 
 	InShowSequencer->Dispose();
+	InShowSequencer->MarkAsGarbage();
+	InShowSequencer = nullptr;
 	ShowSequencers.Remove(InShowSequencer);
 }
 

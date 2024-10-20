@@ -14,4 +14,6 @@ struct FSkillShowData : public FActionBaseShowData
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	float Test = 0.0f;
 };

@@ -24,7 +24,7 @@ class SHOWSYSTEMEDITOR_API SShowMakerWidget : public SCompoundWidget
 public:
 	SLATE_BEGIN_ARGS(SShowMakerWidget) {}
 		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, EditorHelper)
-		SLATE_ARGUMENT(UShowSequencer*, EditShowSequencer)
+		SLATE_ARGUMENT(TObjectPtr<UShowSequencer>, EditShowSequencer)
 		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)		
 		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
 	SLATE_END_ARGS()

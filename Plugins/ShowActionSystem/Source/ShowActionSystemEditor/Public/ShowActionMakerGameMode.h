@@ -34,7 +34,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 
     UActionBase* SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData);
-    void DoAction();    
+    void DoAction();
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowActionMakerGameMode")
@@ -48,5 +48,9 @@ private:
     FSkillData* SkillData = nullptr;
     FSkillShowData* SkillShowData = nullptr;
 
+public:
     UActionBase* CrrAction = nullptr;
 };
+
+
+

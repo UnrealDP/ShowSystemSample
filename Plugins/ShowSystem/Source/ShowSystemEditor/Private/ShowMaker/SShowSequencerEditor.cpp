@@ -4,11 +4,11 @@
 #include "ShowMaker/SShowSequencerEditor.h"
 #include "SlateOptMacros.h"
 #include "ShowMaker/SShowKeyBoxHandler.h"
-#include "ShowMaker/SShowSequencerScrubPanel.h"
 #include "SHorizontalResizableSplitter.h"
 #include "ShowMaker/SShowSequencerControllPanel.h"
 #include "ShowMaker/SShowSequencerEditHeader.h"
 #include "ShowMaker/SShowSequencerScrubBoard.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerEditor::Construct(const FArguments& InArgs)
@@ -95,7 +95,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments&
         [
             SNew(SShowSequencerScrubBoard)
                 .Height(30.0f)
-                .TotalValue_Lambda([this]() { return EditorHelper->EditShowSequencer->GetWidgetLengthAlignedToInterval(2.0f); })
+                .TotalValue_Lambda([this]() { return EditorHelper->GetWidgetLengthAlignedToInterval(2.0f); })
                 .CrrValue_Lambda([this]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
                 .OnValueChanged_Lambda([this](float InValue)
                     {

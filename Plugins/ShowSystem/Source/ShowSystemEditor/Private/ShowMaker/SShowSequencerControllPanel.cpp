@@ -103,3 +103,5 @@ FReply SShowSequencerControllPanel::HandleStopButton()
 {
 	return FReply::Handled();
 }
+
+#undef LOCTEXT_NAMESPACE

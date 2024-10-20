@@ -6,6 +6,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "ShowPlayer.generated.h"
 
+class UShowSequencer;
+
 /**
  * 
  */
@@ -16,7 +18,7 @@ class SHOWSYSTEM_API UShowPlayer : public UWorldSubsystem, public FTickableGameO
 	
 public:
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-	void PlaySoloShow(AActor* Owner, class UShowSequencer* ShowSequencer);
+	void PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
 	void StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
@@ -30,6 +32,8 @@ public:
 
 	/** Implement this for deinitialization of instances of the system */
 	virtual void Deinitialize() override;
+
+	TObjectPtr<UShowSequencer> NewShowSequencer(AActor* Owner, const FSoftObjectPath& ShowPath);
 
 	/**
 	 * Pure virtual that must be overloaded by the inheriting class. It will
@@ -50,5 +54,4 @@ public:
 
 private:
 	bool Initialized = false;
-	//TSparseArray<TObjectPtr<UShowSequencer>> ShowSequencers;
 };

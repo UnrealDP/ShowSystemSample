@@ -15,7 +15,6 @@ class SShowMakerWidget;
 class SHOWSYSTEMEDITOR_API FShowSequencerEditorHelper : public FTickableEditorObject
 {
 public:
-	FShowSequencerEditorHelper(TObjectPtr<UShowSequencer> InEditShowSequencer);
 	~FShowSequencerEditorHelper();
 
 	virtual void Tick(float DeltaTime) override;
@@ -32,6 +31,7 @@ public:
 	TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr();
 	void SetShowBaseStartTime(UShowBase* InShowBase, float StartTime);
 
+	TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &EditShowSequencer->RuntimeShowKeys; }
 	TObjectPtr<UShowBase> AddKey(FInstancedStruct& NewKey);
 	bool RemoveKey(TObjectPtr<UShowBase> RemoveShowBase);
 	int32 FindShowKeyIndex(const FShowKey* ShowKey) const;
@@ -41,7 +41,14 @@ public:
 
 	void NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged);
 
+	void Dispose();
+	void NewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
+	void SetShowSequencerOwner(AActor* InOwner) { EditShowSequencer->Owner = InOwner; }
 	void Play();
+	void ShowSequencerReset();
+	void ShowSequencerStop();
+	void ShowSequencerClearShowObjects();
+	float GetWidgetLengthAlignedToInterval(float Interval);
 
 	TObjectPtr<UShowBase> CheckGetSelectedShowBase();
 	bool ValidateRuntimeShowKeys();
@@ -58,5 +65,6 @@ public:
 	TObjectPtr<UShowSequencer> EditShowSequencer = nullptr;
 	TSharedPtr<SShowMakerWidget> ShowMakerWidget = nullptr;
 	TObjectPtr<UShowBase> SelectedShowBase = nullptr;
+	TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 };
 

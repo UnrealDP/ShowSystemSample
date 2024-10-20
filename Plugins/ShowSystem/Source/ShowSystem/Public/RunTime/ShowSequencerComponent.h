@@ -27,6 +27,13 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
+    TObjectPtr<UShowSequencer> NewShowSequencer(const FSoftObjectPath& ShowPath);
+
+    bool HasShowSequencer(TObjectPtr<UShowSequencer> Sequencer) const
+    {
+        return ShowSequencers.Contains(Sequencer);
+    }
+
     UFUNCTION(BlueprintCallable, Category = "Show")
     void PlayShow(UShowSequencer* InShowSequencer);
 
@@ -45,11 +52,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Show")
     void ChangeShowTimeScalse(UShowSequencer* InShowSequencer, float InTimeScale) const;
 
-    bool HasShowSequencer(TObjectPtr<UShowSequencer> Sequencer) const
-    {
-        return ShowSequencers.Contains(Sequencer);
-    }
-
-private:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowSequencers")
     TArray<TObjectPtr<UShowSequencer>> ShowSequencers; // 연출 시퀀스 트래킹
 };

@@ -21,7 +21,7 @@ void SShowSequencerEditHeader::Construct(const FArguments& InArgs)
     OnAddShowKeyEvent = InArgs._OnAddShowKeyEvent;
     OnRemoveShowKeyEvent = InArgs._OnRemoveShowKeyEvent;
     
-    if (const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EShowKeyType"), true))
+    if (const UEnum* EnumPtr = FindObject<UEnum>(nullptr, TEXT("/Script/ShowSystem.EShowKeyType")))
     {
         // 마지막 인덱스는 언리얼에서 추가하는 _MAX 값이므로 제외
         int32 NumEnums = EnumPtr->NumEnums() - 1;
@@ -254,7 +254,7 @@ void SShowSequencerEditHeader::OnAddKeySelected(TSharedPtr<FString> SelectedItem
 
     if (SelectedItem.IsValid())
     {
-        UScriptStruct* FoundStruct = FindObject<UScriptStruct>(ANY_PACKAGE, **SelectedItem, true);
+        UScriptStruct* FoundStruct = FindObject<UScriptStruct>(nullptr, *FString::Printf(TEXT("/Script/ShowSystem.%s"), **SelectedItem), true);
         if (FoundStruct)
         {
             FInstancedStruct NewKey(FoundStruct);
@@ -262,7 +262,6 @@ void SShowSequencerEditHeader::OnAddKeySelected(TSharedPtr<FString> SelectedItem
 
             if (NewShowBase)
             {
-                //RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
                 if (OnAddShowKeyEvent.IsBound())
                 {
                     OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewShowBase);
@@ -311,8 +310,6 @@ FReply SShowSequencerEditHeader::OnRemoveShowKey(TSharedPtr<FShowSequencerEditor
 
     if (ShowSequencerEditorHelper->RemoveKey(ShowBase))
     {
-        //RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperMapPtr);
-
         if (OnRemoveShowKeyEvent.IsBound())
         {
             OnRemoveShowKeyEvent.Execute(ShowSequencerEditorHelper);

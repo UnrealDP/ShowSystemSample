@@ -27,8 +27,15 @@ public:
 
     virtual void NotifyPostChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged) override
     {
-        UE_LOG(LogTemp, Log, TEXT("ShowSequencerNotifyHook::NotifyPostChange"));
-        EditorHelper->NotifyShowKeyChange(PropertyChangedEvent, PropertyThatChanged);
+        if (EditorHelper)
+        {
+            EditorHelper->NotifyShowKeyChange(PropertyChangedEvent, PropertyThatChanged);
+        }
+    }
+
+    void UpdateEditorHelper(FShowSequencerEditorHelper* InEditorHelper)
+    {
+        EditorHelper = InEditorHelper;
     }
 
 private:

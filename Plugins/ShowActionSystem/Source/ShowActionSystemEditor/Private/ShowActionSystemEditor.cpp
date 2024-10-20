@@ -8,7 +8,9 @@
 #include "RunTime/ShowBase.h"
 #include "RunTime/ShowSystem.h"
 #include "SShowActionControllPanels.h"
-#include "ActionBase.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
+#include "ShowMaker/ShowSequencerNotifyHook.h"
+#include "RunTime/ShowSequencerComponent.h"
 
 DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
 
@@ -17,7 +19,7 @@ DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
 void FShowActionSystemEditor::StartupModule()
 {
     SkillDataTabId = FTabId(TEXT("SkillData Details"));
-    SkillShowKeyDetailsTabId = FTabId(TEXT("ShowKey Details"));
+    ShowKeyDetailsTabId = FTabId(TEXT("ShowKey Details"));
     ShowActionControllPanelsTabId = FTabId(TEXT("Action Controll"));
 
     DataTableManager::Get().InitializeDataTables({ 
@@ -40,18 +42,19 @@ void FShowActionSystemEditor::RegisterSkillDataTab()
         FOnSpawnTab::CreateLambda([this](const FSpawnTabArgs& TabArgs) -> TSharedRef<SDockTab>
             {
                 UDataTable* LoadedSkillDataTable = DataTableManager::DataTable(EDataTable::SkillData);
+                UDataTable* LoadedSkillShowDataTable = DataTableManager::DataTable(EDataTable::SkillShowData);
 
                 // 탭 생성
                 TSharedRef<SDockTab> NewTab = SNew(SDockTab)
                     .TabRole(ETabRole::NomadTab)
                     [
                         // 데이터 전달
-                        SNew(SSkillDataDetailsWidget)
+                        SAssignNew(SkillDataDetailsWidget, SSkillDataDetailsWidget)
                             .SkillDataTable(LoadedSkillDataTable)
-                            .OnSelectAction_Lambda([this](FName SelectedActionName, FSkillData* SkillData, FSkillShowData* SkillShowData)
-                                {
-                                    SelectAction(SelectedActionName, SkillData, SkillShowData);
-                                })
+                            .SkillShowDataTable(LoadedSkillShowDataTable)
+                            .OnSelectAction(FSelectActionFunction::CreateRaw(this, &FShowActionSystemEditor::SelectAction))
+                            .OnActionPropertyChanged(FPropertyActionDataChanged::CreateRaw(this, &FShowActionSystemEditor::NotifyActionChange))
+                            .OnActionShowPropertyChanged(FPropertyActionShowDataChanged::CreateRaw(this, &FShowActionSystemEditor::NotifyActionShowChange))
                     ];
 
                 // 탭이 닫힐 때 데이터 해제
@@ -70,24 +73,24 @@ void FShowActionSystemEditor::RegisterShowKeyDetailsTab()
 {
     FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
-    FDetailsViewArgs SkillShowDetailsViewArgs;
-    SkillShowDetailsViewArgs.bAllowSearch = true;
-    SkillShowDetailsViewArgs.bShowOptions = true;
-    //NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper.Get()));
-    //SkillShowDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
+    FDetailsViewArgs ShowKeyDetailsViewArgs;
+    ShowKeyDetailsViewArgs.bAllowSearch = true;
+    ShowKeyDetailsViewArgs.bShowOptions = true;
+    ShowKeyNotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(nullptr));
+    ShowKeyDetailsViewArgs.NotifyHook = ShowKeyNotifyHookInstance.Get();
 
-    FStructureDetailsViewArgs SkillShowDetailsArgs;
-    SkillShowDetailsArgs.bShowObjects = true;
+    FStructureDetailsViewArgs ShowKeyDetailsArgs;
+    ShowKeyDetailsArgs.bShowObjects = true;
 
-    StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
-        SkillShowDetailsViewArgs,
-        SkillShowDetailsArgs,
+    ShowKeyStructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
+        ShowKeyDetailsViewArgs,
+        ShowKeyDetailsArgs,
         nullptr,
         FText::FromString("Show Key Details")
     );
 
     FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
-        SkillShowKeyDetailsTabId.TabType,
+        ShowKeyDetailsTabId.TabType,
         FOnSpawnTab::CreateLambda([this](const FSpawnTabArgs& TabArgs) -> TSharedRef<SDockTab>
             {
                 UDataTable* LoadedSkillDataTable = DataTableManager::DataTable(EDataTable::SkillData);
@@ -96,7 +99,7 @@ void FShowActionSystemEditor::RegisterShowKeyDetailsTab()
                 TSharedRef<SDockTab> NewTab = SNew(SDockTab)
                     .TabRole(ETabRole::NomadTab)
                     [
-                        StructureDetailsView->GetWidget().ToSharedRef()
+                        ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
                     ];
 
                 return NewTab;
@@ -118,12 +121,56 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                     .TabRole(ETabRole::NomadTab)
                     [
                         SAssignNew(ShowActionControllPanels, SShowActionControllPanels)
+                            .OnAddKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase)
+								{
+                                    EditorHelper->EditShowSequencer->MarkPackageDirty();
+								})
+                            .OnSelectedKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase)
+								{
+                                    if (EditorHelper->SelectedShowBase != ShowBase)
+                                    {
+                                        EditorHelper->SelectedShowBase = ShowBase;
+                                        UpdateShowKeyDetails(EditorHelper);
+                                    }
+								})
+                            .OnRemoveKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
+                                {
+                                    TObjectPtr<UShowBase> CheckSelectedShowBase = EditorHelper->CheckGetSelectedShowBase();
+                                    if (CheckSelectedShowBase != EditorHelper->SelectedShowBase)
+                                    {
+                                        EditorHelper->SelectedShowBase = CheckSelectedShowBase;
+                                        UpdateShowKeyDetails(EditorHelper);
+                                    }
+                                })
+                            .OnPlay_Lambda([this]()
+								{
+									if (ShowActionMakerGameMode)
+									{
+										ShowActionMakerGameMode->DoAction();
+									}
+								})
                     ];
 
                 return NewTab;
             }))
         .SetDisplayName(NSLOCTEXT("ShowActionSystem", "ShowActionControllPanelsTab", "Action Controll"))
         .SetMenuType(ETabSpawnerMenuType::Hidden);
+}
+
+void FShowActionSystemEditor::UpdateShowKeyDetails(TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
+{
+    if (EditorHelper->SelectedShowBase)
+    {
+        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBase);
+        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBase);
+        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
+        ShowKeyStructureDetailsView->SetStructureData(StructData);
+        ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper.Get());
+    }
+    else
+    {
+        ShowKeyStructureDetailsView->SetStructureData(nullptr);
+    }
 }
 
 void FShowActionSystemEditor::ShutdownModule()
@@ -192,7 +239,7 @@ void FShowActionSystemEditor::OpenSkillDataDetails()
 
 void FShowActionSystemEditor::OpenShowKeyDetails()
 {
-    TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(SkillShowKeyDetailsTabId);
+    TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(ShowKeyDetailsTabId);
 
     if (ExistingTab.IsValid())
     {
@@ -202,7 +249,7 @@ void FShowActionSystemEditor::OpenShowKeyDetails()
     else
     {
         // 탭이 열려 있지 않은 경우 새로 열기
-        FGlobalTabmanager::Get()->TryInvokeTab(SkillShowKeyDetailsTabId);
+        FGlobalTabmanager::Get()->TryInvokeTab(ShowKeyDetailsTabId);
     }
 }
 
@@ -228,36 +275,145 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
     {
         if (UActionBase* Action = ShowActionMakerGameMode->SelectAction(InSelectedActionName, InSkillData, InSkillShowData))
         {
-            TObjectPtr<UShowSequencer> OutCastShow;
-            TObjectPtr<UShowSequencer> OutExecShow;
-            TObjectPtr<UShowSequencer> OutFinishShow;
-            Action->EditorLoadAllShow(OutCastShow, OutExecShow, OutFinishShow);
+            if (Action->ActionBaseShowData)
+            {
+                if (Action->ActionBaseShowData->CastShow.IsValid())
+                {
+                    Action->NewShowSequencer(EActionState::Cast);
+                }
+                if (Action->ActionBaseShowData->ExecShow.IsValid())
+                {
+                    Action->NewShowSequencer(EActionState::Exec);
+                }
+                if (Action->ActionBaseShowData->FinishShow.IsValid())
+                {
+                    Action->NewShowSequencer(EActionState::Finish);
+                }
+            }
 
             if (ShowActionControllPanels)
             {
-                ShowActionControllPanels->SelectAction(Action, OutCastShow, OutExecShow, OutFinishShow);
+                ShowActionControllPanels->SelectAction(Action, Action->CastShow, Action->ExecShow, Action->FinishShow);
             }
         }
     }
 }
 
-void FShowActionSystemEditor::SetShowBase(UShowBase* NewShowBase)
+void FShowActionSystemEditor::NotifyActionChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillData* SkillData)
 {
-    if (SelectedShowBase == NewShowBase)
-    {
-        return;
-    }
+    FFieldVariant FieldVariant = PropertyChangedEvent.Property->Owner;
 
-    SelectedShowBase = NewShowBase;
-    if (SelectedShowBase)
+    if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
     {
-        UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(SelectedShowBase->GetKeyType());
-        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)SelectedShowBase->GetShowKey()));
-        StructureDetailsView->SetStructureData(StructData);
+        /*if (SelectedShowBase)
+        {
+            FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+            FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+            if (SelectedShowBase->IsA<UShowAnimStatic>())
+            {
+                if (PropertyName.IsEqual("AnimSequenceAsset"))
+                {
+                    SelectedShowBase->ExecuteReset();
+                }
+            }
+        }*/
     }
-    else
+}
+
+void FShowActionSystemEditor::NotifyActionShowChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillShowData* SkillShowData)
+{
+    if (ShowActionMakerGameMode)
     {
-        StructureDetailsView = nullptr;
+        if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
+        {
+            FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+            FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+            if (PropertyName.IsEqual("CastShow"))
+            {
+                if (SkillShowData)
+                {
+                    ChangeShow(EActionState::Cast, SkillShowData);
+
+                }
+            }
+            else if (PropertyName.IsEqual("ExecShow"))
+			{
+                if (SkillShowData)
+                {
+                    ChangeShow(EActionState::Exec, SkillShowData);
+
+                }
+			}
+            else if (PropertyName.IsEqual("FinishShow"))
+            {
+                if (SkillShowData)
+                {
+                    ChangeShow(EActionState::Finish, SkillShowData);
+
+                }
+            }
+        }
+    }
+}
+
+void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowData* SkillShowData)
+{
+    if (SkillShowData)
+    {
+        FSoftObjectPath* NewShowPath = nullptr;
+        switch (ActionState)
+        {
+        case EActionState::Cast:
+            NewShowPath = &SkillShowData->CastShow;
+            break;
+        case EActionState::Exec:
+            NewShowPath = &SkillShowData->ExecShow;
+            break;
+        case EActionState::Finish:
+            NewShowPath = &SkillShowData->FinishShow;
+            break;
+        default:
+            return;
+        }
+
+        TObjectPtr<UShowSequencer> NewShowSequencer = nullptr;
+        UActionBase* Action = ShowActionMakerGameMode ? ShowActionMakerGameMode->CrrAction : nullptr;
+        if (Action)
+        {
+            if (NewShowPath->IsValid())
+            {
+                NewShowSequencer = Action->NewShowSequencer(ActionState);
+            }
+            else
+            {
+                AActor* Owner = Action->GetOwner();
+                UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+                switch (ActionState)
+                {
+                case EActionState::Cast:
+                    ShowSequencerComponent->DisposeShow(Action->CastShow);
+                    Action->CastShow = nullptr;
+                    break;
+                case EActionState::Exec:
+                    ShowSequencerComponent->DisposeShow(Action->ExecShow);
+                    Action->ExecShow = nullptr;
+                    break;
+                case EActionState::Finish:
+                    ShowSequencerComponent->DisposeShow(Action->FinishShow);
+                    Action->FinishShow = nullptr;
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
+        if (ShowActionControllPanels)
+        {
+            ShowActionControllPanels->ChangeShow(ActionState, NewShowSequencer);
+        }
     }
 }
 

@@ -8,9 +8,13 @@
 #include "Data/ActionBaseData.h"
 #include "ObjectPool/ObjectPoolType.h"
 #include "EDataTable.h"
+#include "RunTime/ShowPlayer.h"
 #include "ActionBase.generated.h"
 
 class UShowSequencer;
+class UShowPlayer;
+struct FActionBaseData;
+struct FActionBaseShowData;
 
 /**
  * 액션의 기본 기능을 정의한 클래스
@@ -22,6 +26,10 @@ UCLASS(Abstract)
 class SHOWACTIONSYSTEM_API UActionBase : public UObject, public IPooled
 {
 	GENERATED_BODY()
+
+#if WITH_EDITOR
+	friend class FShowActionSystemEditor;
+#endif
 
 public:
 	virtual void Tick(float DeltaTime);
@@ -46,6 +54,7 @@ public:
 		bIsComplete = false;
 
 		ObjectPoolType = ObjectPoolTypeIndex<TActionObject>::GetType();
+		ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 
 		return static_cast<TActionObject*>(this);
 	}
@@ -57,6 +66,7 @@ public:
 	virtual void Complete();	
 	virtual void Cancel();
 
+	AActor* GetOwner() const { return Owner.Get(); }
 	EActionState GetState() const { return State; }
 	const FName& GetActionName() const { return *ActionName; }
 	const struct FActionBaseData* GetActionBaseData() const { return ActionBaseData; }	
@@ -76,23 +86,17 @@ public:
 	// 외부로직으로 액션을 사용할지 여부를 결정하는 필터
 	typedef void (*StepNotiFuncPtr)(const UActionBase*, EActionState);
 
-#if WITH_EDITOR
-	void EditorLoadAllShow(
-		TObjectPtr<UShowSequencer>& OutCastShow,
-		TObjectPtr<UShowSequencer>& OutExecShow,
-		TObjectPtr<UShowSequencer>& OutFinishShow);
-#endif
-
 protected:
-	TObjectPtr<UShowSequencer> LoadShow(const FSoftObjectPath& ShowPath);
+	TObjectPtr<UShowSequencer> NewShowSequencer(EActionState ActionStatem);
 	void PlayShow(TObjectPtr<UShowSequencer> ShowSequencer);
 	
 	EActionState State = EActionState::Wait;
 
 protected:
-	TObjectPtr<AActor> Owner;
-	const struct FActionBaseData* ActionBaseData;
-	const struct FActionBaseShowData* ActionBaseShowData;
+	TObjectPtr<UShowPlayer> ShowPlayer = nullptr;
+	TObjectPtr<AActor> Owner = nullptr;
+	const FActionBaseData* ActionBaseData = nullptr;
+	const FActionBaseShowData* ActionBaseShowData = nullptr;
 
 	TObjectPtr<UShowSequencer> CastShow = nullptr;
 	TObjectPtr<UShowSequencer> ExecShow = nullptr;

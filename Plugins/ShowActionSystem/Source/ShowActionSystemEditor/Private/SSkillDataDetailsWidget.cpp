@@ -8,11 +8,14 @@
 #include "SStringComboBoxWidget.h"
 #include "DataTableManager.h"
 #include "STabButtonWidget.h"
+#include "ActionDataNotifyHook.h"
+#include "ActionShowDataNotifyHook.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SSkillDataDetailsWidget::Construct(const FArguments& InArgs)
 {
     SkillDataTable = InArgs._SkillDataTable;
+    SkillShowDataTable = InArgs._SkillShowDataTable;
     OnSelectAction = InArgs._OnSelectAction;
 
     // 스킬 테이블의 Key 값을 로드
@@ -32,6 +35,9 @@ void SSkillDataDetailsWidget::Construct(const FArguments& InArgs)
     FDetailsViewArgs SkillDetailsViewArgs;
     SkillDetailsViewArgs.bAllowSearch = true;
     SkillDetailsViewArgs.bShowOptions = true;
+    ActionDataNotifyHookInstance = MakeShareable(new ActionDataNotifyHook(SkillDataTable, InArgs._OnActionPropertyChanged));
+    SkillDetailsViewArgs.NotifyHook = ActionDataNotifyHookInstance.Get();
+    
     FStructureDetailsViewArgs SkillDetailsArgs;
     SkillDetailsView = PropertyEditorModule.CreateStructureDetailView(
         SkillDetailsViewArgs,
@@ -43,6 +49,9 @@ void SSkillDataDetailsWidget::Construct(const FArguments& InArgs)
     FDetailsViewArgs SkillShowDetailsViewArgs;
     SkillShowDetailsViewArgs.bAllowSearch = true;
     SkillShowDetailsViewArgs.bShowOptions = true;
+    ActionShowDataNotifyHookInstance = MakeShareable(new ActionShowDataNotifyHook(SkillShowDataTable, InArgs._OnActionShowPropertyChanged));
+    SkillShowDetailsViewArgs.NotifyHook = ActionShowDataNotifyHookInstance.Get();
+
     FStructureDetailsViewArgs SkillShowDetailsArgs;    
     SkillShowDetailsView = PropertyEditorModule.CreateStructureDetailView(
         SkillShowDetailsViewArgs,
@@ -92,6 +101,11 @@ TSharedRef<SWidget> SSkillDataDetailsWidget::GenerateComboBoxItem(FName InItem)
 
 void SSkillDataDetailsWidget::OnSkillSelected(TSharedPtr<FString> NewSelection, ESelectInfo::Type SelectInfo)
 {
+    OnSkillSelected(*NewSelection);
+}
+
+void SSkillDataDetailsWidget::OnSkillSelected(FString NewSelection)
+{
     FName NewSelectionName = FName(*NewSelection);
 
     if (SelectedSkillName.IsEqual(NewSelectionName))
@@ -111,6 +125,7 @@ void SSkillDataDetailsWidget::OnSkillSelected(TSharedPtr<FString> NewSelection, 
                 // 구조체 데이터
                 TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(FSkillData::StaticStruct(), (uint8*)SkillData));
                 SkillDetailsView->SetStructureData(StructData);
+                ActionDataNotifyHookInstance->CrrSkillData = SkillData;
             }
 
             FSkillShowData* SkillShowData = nullptr;
@@ -121,8 +136,9 @@ void SSkillDataDetailsWidget::OnSkillSelected(TSharedPtr<FString> NewSelection, 
                 {
                     TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(FSkillShowData::StaticStruct(), (uint8*)SkillShowData));
                     SkillShowDetailsView->SetStructureData(StructData);
+                    ActionShowDataNotifyHookInstance->CrrSkillShowData = SkillShowData;
                 }
-            }            
+            }
 
             if (OnSelectAction.IsBound())
             {

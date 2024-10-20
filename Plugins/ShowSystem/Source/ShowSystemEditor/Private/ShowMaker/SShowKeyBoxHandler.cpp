@@ -70,7 +70,7 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
 
 float SShowKeyBoxHandler::GetSecondToWidthRatio()
 {
-    return WidgetWidth / EditorHelper->EditShowSequencer->GetWidgetLengthAlignedToInterval(2.0f);
+    return WidgetWidth / EditorHelper->GetWidgetLengthAlignedToInterval(2.0f);
 }
 
 void SShowKeyBoxHandler::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)

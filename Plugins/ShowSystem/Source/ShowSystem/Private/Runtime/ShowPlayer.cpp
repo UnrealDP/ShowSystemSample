@@ -41,6 +41,31 @@ void UShowPlayer::Tick(float DeltaTime)
     }
 }
 
+TObjectPtr<UShowSequencer> UShowPlayer::NewShowSequencer(AActor* Owner, const FSoftObjectPath& ShowPath)
+{
+    checkf(Owner, TEXT("UShowPlayer::NewShowSequencer: The Owner provided is invalid or null."));
+
+    UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+    if (!ShowSequencerComponent)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UShowPlayer::NewShowSequencer add UShowSequencerComponent"));
+
+        ShowSequencerComponent = NewObject<UShowSequencerComponent>(Owner);
+        if (ShowSequencerComponent)
+        {
+            Owner->AddInstanceComponent(ShowSequencerComponent);
+            ShowSequencerComponent->RegisterComponent();
+        }
+    }
+
+    if (ShowSequencerComponent)
+    {
+        return ShowSequencerComponent->NewShowSequencer(ShowPath);
+    }
+
+    return nullptr;
+}
+
 void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
 {
     checkf(Owner, TEXT("UShowPlayer::PlaySoloShow: The Owner provided is invalid or null."));

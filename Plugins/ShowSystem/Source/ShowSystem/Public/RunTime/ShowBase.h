@@ -234,7 +234,7 @@ protected:
     virtual void ApplyTimeScale(float FinalTimeScale) PURE_VIRTUAL(UShowBase::ApplyTimeScale, );
 
 protected:
-    TObjectPtr<UShowSequencer> ShowSequencer;
+    TObjectPtr<UShowSequencer> ShowSequencer = nullptr;
 
     // ShowSequencer 어셋으로 받아온거라 절대 편집하면 안됨, 편집은 오로지 툴에서만 가능함
     const FShowKey* ShowKey = nullptr;

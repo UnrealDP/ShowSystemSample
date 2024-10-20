@@ -48,12 +48,12 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     if (UClass* LastSelectedActorClass = EditorHelper->GetLastSelectedActorClass())
     {
         AActor* Owner = PreviewViewport->SpawnActorInPreviewWorld(LastSelectedActorClass);
-        EditorHelper->EditShowSequencer->EditorSetOwner(Owner);
+        EditorHelper->SetShowSequencerOwner(Owner);
     }
     else
     {
         AActor* Owner = PreviewViewport->SpawnActorInPreviewWorld(AActor::StaticClass());
-        EditorHelper->EditShowSequencer->EditorSetOwner(Owner);
+        EditorHelper->SetShowSequencerOwner(Owner);
 
         USkeletalMesh* LoadedSkeletalMesh = EditorHelper->LoadLastSelectedOrDefaultSkeletalMesh();
         if (LoadedSkeletalMesh)
@@ -163,20 +163,20 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
 {
     FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
-    FDetailsViewArgs SkillShowDetailsViewArgs;
-    SkillShowDetailsViewArgs.bAllowSearch = true;
-    SkillShowDetailsViewArgs.bShowOptions = true;
+    FDetailsViewArgs ShowKeyDetailsViewArgs;
+    ShowKeyDetailsViewArgs.bAllowSearch = true;
+    ShowKeyDetailsViewArgs.bShowOptions = true;
     NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper.Get()));
-    SkillShowDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
+    ShowKeyDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
 
-    FStructureDetailsViewArgs SkillShowDetailsArgs;
-    SkillShowDetailsArgs.bShowObjects = true;
+    FStructureDetailsViewArgs ShowKeyDetailsArgs;
+    ShowKeyDetailsArgs.bShowObjects = true;
     
     StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
-        SkillShowDetailsViewArgs,
-        SkillShowDetailsArgs,
+        ShowKeyDetailsViewArgs,
+        ShowKeyDetailsArgs,
         nullptr,
-        FText::FromString("Skill Key Details")
+        FText::FromString("Show Key Details")
     );
 
     return SNew(SVerticalBox)

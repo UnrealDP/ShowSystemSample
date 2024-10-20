@@ -45,7 +45,6 @@ protected:
     void OnSelectedAnim(const FAssetData& SelectedAsset);
 
 public:
-    TObjectPtr<UShowSequencer> ShowSequencer = nullptr;
     TSharedPtr<IDetailsView> DetailsView = nullptr;
     TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 };

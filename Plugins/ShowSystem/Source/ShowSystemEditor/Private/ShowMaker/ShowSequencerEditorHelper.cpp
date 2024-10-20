@@ -11,18 +11,9 @@
 
 #define LOCTEXT_NAMESPACE "FShowSequencerEditorHelper"
 
-FShowSequencerEditorHelper::FShowSequencerEditorHelper(TObjectPtr<UShowSequencer> InEditShowSequencer)
-{
-	checkf(InEditShowSequencer, TEXT("FShowSequencerEditorHelper::FShowSequencerEditorHelper InEditShowSequencer is nullptr"));
-	EditShowSequencer = InEditShowSequencer;
-}
-
 FShowSequencerEditorHelper::~FShowSequencerEditorHelper()
 {
-	ShowMakerWidget.Reset();
-	ShowMakerWidget = nullptr;
-	SelectedShowBase = nullptr;
-	EditShowSequencer = nullptr;
+	Dispose();
 }
 
 void FShowSequencerEditorHelper::SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget)
@@ -45,7 +36,7 @@ void FShowSequencerEditorHelper::Tick(float DeltaTime)
 		case EShowSequencerState::ShowSequencer_Pause:
 			break;
 		case EShowSequencerState::ShowSequencer_End:
-			EditShowSequencer->EditorReset();
+			ShowSequencerReset();
 			break;
 		default:
 			break;
@@ -77,9 +68,80 @@ void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent
 	EditShowSequencer->ShowSequenceAsset->MarkPackageDirty();
 }
 
+void FShowSequencerEditorHelper::Dispose()
+{
+	if (EditShowSequencer)
+	{
+		EditShowSequencer->ReleaseDontDestroy();
+		ShowSequencerClearShowObjects();
+		EditShowSequencer->RemoveFromRoot();
+		EditShowSequencer->Owner = nullptr;
+		EditShowSequencer = nullptr;
+	}
+
+	ShowMakerWidget.Reset();
+	ShowMakerWidget = nullptr;
+	SelectedShowBase = nullptr;
+}
+
+void FShowSequencerEditorHelper::NewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
+{
+	checkf(InShowSequenceAsset, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize InShowSequenceAsset is nullptr."));
+	checkf(!EditShowSequencer, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize EditShowSequencer is already initialized."));
+
+	EditShowSequencer = NewObject<UShowSequencer>(GetTransientPackage(), UShowSequencer::StaticClass());
+	checkf(EditShowSequencer, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize EditShowSequencer is nullptr."));
+
+	EditShowSequencer->AddToRoot();
+	EditShowSequencer->SetDontDestroy();
+	EditShowSequencer->ShowSequenceAsset = InShowSequenceAsset;
+	EditShowSequencer->ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
+	EditShowSequencer->PassedTime = 0.0f;
+
+	if (EditShowSequencer->RuntimeShowKeys.IsEmpty())
+	{
+		EditShowSequencer->RuntimeShowKeys.SetNum(EditShowSequencer->ShowSequenceAsset->ShowKeys.Num());
+	}
+
+	for (int32 i = 0; i < EditShowSequencer->ShowSequenceAsset->ShowKeys.Num(); ++i)
+	{
+		if (EditShowSequencer->RuntimeShowKeys[i])
+		{
+			continue;
+		}
+
+		const FInstancedStruct& Key = EditShowSequencer->ShowSequenceAsset->ShowKeys[i];
+		checkf(Key.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("UShowSequencer::EditorPlay: not FShowKey."));
+
+		const FShowKey* ShowKey = Key.GetPtr<FShowKey>();
+		if (!ShowKey)
+		{
+			continue;
+		}
+
+		if (EditorPoolSettings.Num() == 0)
+		{
+			UObjectPoolManager::GetPoolSettings(EditorPoolSettings);
+		}
+
+		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowKey->KeyType);
+		int32 Index = static_cast<int32>(PoolType);
+		UShowBase* ShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
+		ShowBase->InitShowKey(EditShowSequencer, ShowKey);
+		EditShowSequencer->RuntimeShowKeys[i] = ShowBase;
+	}
+}
+
 void FShowSequencerEditorHelper::Play()
 {
-	EditShowSequencer->EditorReset();
+	AActor* Owner = EditShowSequencer->GetOwner();
+	if (!Owner)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FShowSequencerEditorHelper::Play: Owner is Invalid."));
+		return;
+	}
+
+	ShowSequencerReset();
 
 	if (EditShowSequencer && ValidateRuntimeShowKeys())
 	{
@@ -88,21 +150,79 @@ void FShowSequencerEditorHelper::Play()
 		switch (showSequencerState)
 		{
 		case EShowSequencerState::ShowSequencer_Wait:
-			EditShowSequencer->EditorPlay();
+			EditShowSequencer->Play();
 			break;
 		case EShowSequencerState::ShowSequencer_Playing:
-			EditShowSequencer->EditorPause();
+			EditShowSequencer->Pause();
 			break;
 		case EShowSequencerState::ShowSequencer_Pause:
-			EditShowSequencer->EditorUnPause();
+			EditShowSequencer->UnPause();
 			break;
 		case EShowSequencerState::ShowSequencer_End:
-			EditShowSequencer->EditorPlay();
+			EditShowSequencer->Play();
 			break;
 		default:
 			break;
 		}
 	}
+}
+
+void FShowSequencerEditorHelper::ShowSequencerReset()
+{
+	EditShowSequencer->ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
+	EditShowSequencer->PassedTime = 0.0f;
+
+	for (TObjectPtr<UShowBase>& ShowBase : EditShowSequencer->RuntimeShowKeys)
+	{
+		if (!ShowBase)
+		{
+			continue;
+		}
+
+		ShowBase->ExecuteReset();
+	}
+}
+
+void FShowSequencerEditorHelper::ShowSequencerStop()
+{
+	EditShowSequencer->ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+	ShowSequencerClearShowObjects();
+}
+
+void FShowSequencerEditorHelper::ShowSequencerClearShowObjects()
+{
+	for (TObjectPtr<UShowBase>& ShowBase : EditShowSequencer->RuntimeShowKeys)
+	{
+		ShowBase->Dispose();
+		ShowBase->RemoveFromRoot();
+		ShowBase = nullptr;
+	}
+	EditShowSequencer->RuntimeShowKeys.Empty();
+}
+
+float FShowSequencerEditorHelper::GetWidgetLengthAlignedToInterval(float Interval)
+{
+	float TotalLength = 0.0f;
+	for (TObjectPtr<UShowBase>& ShowBase : EditShowSequencer->RuntimeShowKeys)
+	{
+		if (!ShowBase)
+		{
+			continue;
+		}
+
+		float StartTime = ShowBase->GetStartTime();
+		float ShowLength = ShowBase->EditorInitializeAssetLength();
+
+		TotalLength = FMath::Max(TotalLength, StartTime + ShowLength);
+	}
+
+	if (TotalLength <= 0)
+	{
+		return Interval;
+	}
+
+	int32 RoundedTotalLength = (FMath::FloorToInt((TotalLength - 0.001f) / Interval) + 1) * Interval;
+	return static_cast<float>(RoundedTotalLength);
 }
 
 TArray<TObjectPtr<UShowBase>>* FShowSequencerEditorHelper::RuntimeShowKeysPtr()
@@ -200,7 +320,7 @@ void FShowSequencerEditorHelper::ReplaceActorPreviewWorld(UClass* ActorClass)
 		if (SActorPreviewViewport* ActorPreviewViewport = ShowMakerWidget->GetPreviewViewportPtr())
 		{
 			AActor* Owner = ActorPreviewViewport->ReplaceActorPreviewWorld(ActorClass);
-			EditShowSequencer->EditorSetOwner(Owner);
+			SetShowSequencerOwner(Owner);
 
 			FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowSystem"), TEXT("Config/ShowSystemEditor.ini"));
 			if (GConfig)
@@ -223,7 +343,7 @@ void FShowSequencerEditorHelper::ReplaceSkeletalMeshPreviewWorld(USkeletalMesh* 
 			if (PreviewActorClass != AActor::StaticClass() || PreviewActorClass->ClassGeneratedBy != nullptr)
 			{
 				AActor* Owner = ActorPreviewViewport->ReplaceActorPreviewWorld(AActor::StaticClass());
-				EditShowSequencer->EditorSetOwner(Owner);
+				SetShowSequencerOwner(Owner);
 
 				ActorPreviewViewport->SetSkeletalMesh(SelectedSkeletalMesh);
 			}
@@ -267,26 +387,38 @@ TObjectPtr<UShowBase> FShowSequencerEditorHelper::AddKey(FInstancedStruct& NewKe
 	checkf(NewKey.GetScriptStruct()->IsChildOf(FShowKey::StaticStruct()), TEXT("FShowSequencerEditorHelper::EditorAddKey: not FShowKey."));
 
 	EditShowSequencer->ShowSequenceAsset->ShowKeys.Add(MoveTemp(NewKey));
-
 	FShowKey* NewShowKey = EditShowSequencer->ShowSequenceAsset->ShowKeys.Last().GetMutablePtr<FShowKey>();
-	if (!NewShowKey)
-	{
-		return nullptr;
-	}
-
-	if (EditShowSequencer->EditorPoolSettings.Num() == 0)
-	{
-		UObjectPoolManager::GetPoolSettings(EditShowSequencer->EditorPoolSettings);
-	}
-
-	EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
-	int32 Index = static_cast<int32>(PoolType);
-	UShowBase* NewShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditShowSequencer->EditorPoolSettings[Index].ObjectClass);
-	NewShowBase->AddToRoot();
-	NewShowBase->InitShowKey(EditShowSequencer, NewShowKey);
-	EditShowSequencer->RuntimeShowKeys.Add(NewShowBase);
-
 	EditShowSequencer->ShowSequenceAsset->MarkPackageDirty();
+
+	AActor* Owner = EditShowSequencer->GetOwner();
+	UWorld* World = Owner->GetWorld();
+	UShowBase* NewShowBase = nullptr;
+	UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
+	if (PoolManager)
+	{
+		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
+		NewShowBase = PoolManager->GetPooledObject<UShowBase>(PoolType);
+	}
+	else
+	{
+		if (EditorPoolSettings.Num() == 0)
+		{
+			UObjectPoolManager::GetPoolSettings(EditorPoolSettings);
+		}
+
+		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
+		int32 Index = static_cast<int32>(PoolType);
+		NewShowBase = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
+		NewShowBase->AddToRoot();
+	}
+
+	checkf(NewShowBase, TEXT("FShowSequencerEditorHelper::EditorAddKey: NewShowBase is nullptr."));
+	if (NewShowBase)
+	{
+		NewShowBase->InitShowKey(EditShowSequencer, NewShowKey);
+		EditShowSequencer->RuntimeShowKeys.Add(NewShowBase);
+	}
+	
 	return NewShowBase;
 }
 
@@ -300,10 +432,21 @@ bool FShowSequencerEditorHelper::RemoveKey(TObjectPtr<UShowBase> RemoveShowBase)
 	int32 KeyIndex = FindShowKeyIndex(RemoveShowBase->ShowKey);
 	checkf(KeyIndex != INDEX_NONE, TEXT("FShowSequencerEditorHelper::RemoveKey: ShowKey not found in ShowKeys."));
 
-	RemoveShowBase->Dispose();
-	RemoveShowBase->RemoveFromRoot();
-	EditShowSequencer->RuntimeShowKeys.Remove(RemoveShowBase);
+	AActor* Owner = EditShowSequencer->GetOwner();
+	UWorld* World = Owner->GetWorld();
+	UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
+	if (PoolManager)
+	{
+		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(RemoveShowBase->ShowKey->KeyType);
+		PoolManager->ReturnPooledObject(RemoveShowBase, PoolType);
+	}
+	else
+	{
+		RemoveShowBase->Dispose();
+		RemoveShowBase->RemoveFromRoot();
+	}
 
+	EditShowSequencer->RuntimeShowKeys.Remove(RemoveShowBase);
 	EditShowSequencer->ShowSequenceAsset->ShowKeys.RemoveAt(KeyIndex);
 	EditShowSequencer->ShowSequenceAsset->MarkPackageDirty();
 	return true;
@@ -412,6 +555,5 @@ bool FShowSequencerEditorHelper::ValidateShowAnimStatic(AActor* Owner, TObjectPt
 
 	return true;
 }
-
 
 #undef LOCTEXT_NAMESPACE
