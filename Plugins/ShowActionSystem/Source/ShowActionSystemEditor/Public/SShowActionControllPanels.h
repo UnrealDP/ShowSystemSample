@@ -6,6 +6,7 @@
 #include "Widgets/SCompoundWidget.h"
 #include "RunTime/ShowSequencer.h"
 #include "Data/ActionBaseData.h"
+#include "Misc/SortedPairArray.h"
 
 struct FSkillData;
 struct FSkillShowData;
@@ -35,14 +36,9 @@ public:
 	void Construct(const FArguments& InArgs);
 	TSharedRef<SWidget> ConstructLeftWidget(const FArguments& InArgs);
 	void ConstructRightWidget(const FArguments& InArgs);
-	TSharedRef<SWidget> ConstructShowSequencerWidget(const FArguments& InArgs, TSharedPtr<FShowSequencerEditorHelper> EditorHelper);
+	TSharedRef<SWidget> ConstructShowSequencerWidget(const FArguments& InArgs, TSharedPtr<FShowSequencerEditorHelper>& EditorHelper);
 
-    void SelectAction(
-		UActionBase* InAction, 
-		TObjectPtr<UShowSequencer> InCastShow,
-		TObjectPtr<UShowSequencer> InExecShow,
-		TObjectPtr<UShowSequencer> InFinishShow);
-	void ChangeShow(EActionState ActionState, TObjectPtr<UShowSequencer> NewShow);
+	void RefreshShowActionControllPanels(TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr);
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
@@ -53,11 +49,7 @@ public:
 	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;
 	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 
-	UActionBase* CrrAction = nullptr;
-	TSharedPtr<FShowSequencerEditorHelper> CastEditorHelper = nullptr;
-	TSharedPtr<FShowSequencerEditorHelper> ExecEditorHelper = nullptr;
-	TSharedPtr<FShowSequencerEditorHelper> FinishEditorHelper = nullptr;
-	TMap<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperMap;
+	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* ShowSequencerEditorHelperSortMapPtr;
 
 	bool IsUpdateKey = false;
 	FOnShowBaseEditEvent OnAddKey = nullptr;

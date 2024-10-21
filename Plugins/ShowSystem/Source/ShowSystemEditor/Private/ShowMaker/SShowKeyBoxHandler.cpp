@@ -41,26 +41,26 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
     VerticalBox->ClearChildren();
 
     // EditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
-    TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr = EditorHelper->RuntimeShowKeysPtr();
-    for (TObjectPtr<UShowBase>& ShowBase : *RuntimeShowKeysPtr)
+    TArray<UShowBase*>* RuntimeShowKeysPtr = EditorHelper->RuntimeShowKeysPtr();
+    for (UShowBase* ShowBasePtr : *RuntimeShowKeysPtr)
     {
         VerticalBox->AddSlot()
             .AutoHeight()
             .HAlign(HAlign_Fill)
             [
                 SNew(SShowKeyBox)
-                    .ShowBase(ShowBase)
+                    .ShowBasePtr(ShowBasePtr)
                     .Height(Height)
                     .MinWidth(MinWidth)
                     .SecondToWidthRatio(TAttribute<float>::Create(TAttribute<float>::FGetter::CreateSP(this, &SShowKeyBoxHandler::GetSecondToWidthRatio)))
                     .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
-                    .OnChangedStartTime_Lambda([this](UShowBase* ShowBase, float StartTime) 
+                    .OnChangedStartTime_Lambda([this](UShowBase* ChangedShowBasePtr, float StartTime) 
                         { 
-                            EditorHelper->SetShowBaseStartTime(ShowBase, StartTime); 
+                            EditorHelper->SetShowBaseStartTime(ChangedShowBasePtr, StartTime);
 
                             if (OnChangedKey.IsBound())
 							{
-								OnChangedKey.Execute(ShowBase);
+								OnChangedKey.Execute(ChangedShowBasePtr);
 							}
                         })
                     .IsShowKeySelected(this, &SShowKeyBoxHandler::IsShowKeySelected)
@@ -79,22 +79,22 @@ void SShowKeyBoxHandler::Tick(const FGeometry& AllottedGeometry, const double In
 }
 
 // Key를 클릭했을 때 호출
-void SShowKeyBoxHandler::OnKeyClicked(UShowBase* ClickedhowBase)
+void SShowKeyBoxHandler::OnKeyClicked(UShowBase* ClickedhowBasePtr)
 {
     // 키 관련 로직 처리
     if (OnClickedKey.IsBound())
 	{
-		OnClickedKey.Execute(ClickedhowBase);
+		OnClickedKey.Execute(ClickedhowBasePtr);
 	}
 }
 
-bool SShowKeyBoxHandler::IsShowKeySelected(UShowBase* ShowBase)
+bool SShowKeyBoxHandler::IsShowKeySelected(UShowBase* ShowBasePtr)
 {
-    if (!EditorHelper->SelectedShowBase)
+    if (!EditorHelper->SelectedShowBasePtr)
     {
 		return false;
 	}
-    return EditorHelper->SelectedShowBase == ShowBase;
+    return EditorHelper->SelectedShowBasePtr == ShowBasePtr;
 }
 
 #undef LOCTEXT_NAMESPACE

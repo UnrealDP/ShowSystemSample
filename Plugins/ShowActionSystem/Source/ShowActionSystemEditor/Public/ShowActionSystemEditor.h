@@ -2,6 +2,7 @@
 
 #include "Modules/ModuleManager.h"
 #include "ActionBase.h"
+#include "Misc/SortedPairArray.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(ShowActionSystemEditor, All, All);
 
@@ -54,4 +55,5 @@ public:
 	FTabId ShowActionControllPanelsTabId;
 	TSharedPtr<SShowActionControllPanels> ShowActionControllPanels = nullptr;
 	
+	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperSortMap;
 };

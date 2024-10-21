@@ -121,24 +121,24 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                     .TabRole(ETabRole::NomadTab)
                     [
                         SAssignNew(ShowActionControllPanels, SShowActionControllPanels)
-                            .OnAddKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase)
+                            .OnAddKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
 								{
-                                    EditorHelper->EditShowSequencer->MarkPackageDirty();
+                                    EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
 								})
-                            .OnSelectedKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase)
+                            .OnSelectedKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
 								{
-                                    if (EditorHelper->SelectedShowBase != ShowBase)
+                                    if (EditorHelper->SelectedShowBasePtr != ShowBasePtr)
                                     {
-                                        EditorHelper->SelectedShowBase = ShowBase;
+                                        EditorHelper->SelectedShowBasePtr = ShowBasePtr;
                                         UpdateShowKeyDetails(EditorHelper);
                                     }
 								})
                             .OnRemoveKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
                                 {
-                                    TObjectPtr<UShowBase> CheckSelectedShowBase = EditorHelper->CheckGetSelectedShowBase();
-                                    if (CheckSelectedShowBase != EditorHelper->SelectedShowBase)
+                                    UShowBase* CheckSelectedShowBasePtr = EditorHelper->CheckGetSelectedShowBase();
+                                    if (CheckSelectedShowBasePtr != EditorHelper->SelectedShowBasePtr)
                                     {
-                                        EditorHelper->SelectedShowBase = CheckSelectedShowBase;
+                                        EditorHelper->SelectedShowBasePtr = CheckSelectedShowBasePtr;
                                         UpdateShowKeyDetails(EditorHelper);
                                     }
                                 })
@@ -159,10 +159,10 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
 
 void FShowActionSystemEditor::UpdateShowKeyDetails(TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
 {
-    if (EditorHelper->SelectedShowBase)
+    if (EditorHelper->SelectedShowBasePtr)
     {
-        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBase);
-        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBase);
+        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBasePtr);
+        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBasePtr);
         TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
         ShowKeyStructureDetailsView->SetStructureData(StructData);
         ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper.Get());
@@ -275,25 +275,44 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
     {
         if (UActionBase* Action = ShowActionMakerGameMode->SelectAction(InSelectedActionName, InSkillData, InSkillShowData))
         {
+            for (auto& Elem : ShowSequencerEditorHelperSortMap)
+            {
+                Elem.Value.Reset();
+                Elem.Value = nullptr;
+            }
+            ShowSequencerEditorHelperSortMap.Empty();
+
             if (Action->ActionBaseShowData)
             {
                 if (Action->ActionBaseShowData->CastShow.IsValid())
                 {
-                    Action->NewShowSequencer(EActionState::Cast);
+                    if (UShowSequencer* NewShowSequencer = Action->NewShowSequencer(EActionState::Cast))
+                    {
+                        ShowSequencerEditorHelperSortMap["Cast"] = MakeShared<FShowSequencerEditorHelper>();
+                        ShowSequencerEditorHelperSortMap["Cast"]->EditShowSequencerPtr = NewShowSequencer;
+                    }
                 }
                 if (Action->ActionBaseShowData->ExecShow.IsValid())
                 {
-                    Action->NewShowSequencer(EActionState::Exec);
+                    if (UShowSequencer* NewShowSequencer = Action->NewShowSequencer(EActionState::Exec))
+                    {
+                        ShowSequencerEditorHelperSortMap["Exec"] = MakeShared<FShowSequencerEditorHelper>();
+                        ShowSequencerEditorHelperSortMap["Exec"]->EditShowSequencerPtr = NewShowSequencer;
+                    }
                 }
                 if (Action->ActionBaseShowData->FinishShow.IsValid())
                 {
-                    Action->NewShowSequencer(EActionState::Finish);
+                    if (UShowSequencer* NewShowSequencer = Action->NewShowSequencer(EActionState::Finish))
+                    {
+                        ShowSequencerEditorHelperSortMap["Finish"] = MakeShared<FShowSequencerEditorHelper>();
+                        ShowSequencerEditorHelperSortMap["Finish"]->EditShowSequencerPtr = NewShowSequencer;
+                    }
                 }
             }
 
             if (ShowActionControllPanels)
             {
-                ShowActionControllPanels->SelectAction(Action, Action->CastShow, Action->ExecShow, Action->FinishShow);
+                ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
             }
         }
     }
@@ -378,31 +397,66 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
             return;
         }
 
-        TObjectPtr<UShowSequencer> NewShowSequencer = nullptr;
-        UActionBase* Action = ShowActionMakerGameMode ? ShowActionMakerGameMode->CrrAction : nullptr;
-        if (Action)
+        UShowSequencer* NewShowSequencerPtr = nullptr;
+        UActionBase* ActionBasePtr = ShowActionMakerGameMode ? ShowActionMakerGameMode->CrrActionPtr : nullptr;
+        if (ActionBasePtr)
         {
             if (NewShowPath->IsValid())
             {
-                NewShowSequencer = Action->NewShowSequencer(ActionState);
+                NewShowSequencerPtr = ActionBasePtr->NewShowSequencer(ActionState);
+                if (NewShowSequencerPtr)
+                {
+                    FString StepStr = StaticEnum<EActionState>()->GetNameStringByValue(static_cast<int64>(ActionState));
+                    if (ShowSequencerEditorHelperSortMap.ContainsKey(StepStr))
+                    {
+                        if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperSortMap.Find(StepStr))
+                        {
+                            // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
+                            (*ExistingHelper)->EditShowSequencerPtr = NewShowSequencerPtr;
+                        }
+                    }
+                    else
+                    {
+                        ShowSequencerEditorHelperSortMap[StepStr] = MakeShared<FShowSequencerEditorHelper>();
+                        ShowSequencerEditorHelperSortMap[StepStr]->EditShowSequencerPtr = NewShowSequencerPtr;
+                    }
+                }
             }
             else
             {
-                AActor* Owner = Action->GetOwner();
+                AActor* Owner = ActionBasePtr->GetOwner();
                 UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
                 switch (ActionState)
                 {
                 case EActionState::Cast:
-                    ShowSequencerComponent->DisposeShow(Action->CastShow);
-                    Action->CastShow = nullptr;
+                    if (ShowSequencerEditorHelperSortMap.ContainsKey("Cast"))
+                    {
+                        ShowSequencerEditorHelperSortMap["Cast"]->Dispose();
+                        ShowSequencerEditorHelperSortMap.Remove("Cast");
+                    }
+                    
+                    ShowSequencerComponent->DisposeShow(ActionBasePtr->CastShowPtr);
+                    ActionBasePtr->CastShowPtr = nullptr;
                     break;
                 case EActionState::Exec:
-                    ShowSequencerComponent->DisposeShow(Action->ExecShow);
-                    Action->ExecShow = nullptr;
+                    if (ShowSequencerEditorHelperSortMap.ContainsKey("Exec"))
+                    {
+                        ShowSequencerEditorHelperSortMap["Exec"]->Dispose();
+                        ShowSequencerEditorHelperSortMap.Remove("Exec");
+                    }
+
+                    ShowSequencerComponent->DisposeShow(ActionBasePtr->ExecShowPtr);
+                    ActionBasePtr->ExecShowPtr = nullptr;
                     break;
                 case EActionState::Finish:
-                    ShowSequencerComponent->DisposeShow(Action->FinishShow);
-                    Action->FinishShow = nullptr;
+                    if (ShowSequencerEditorHelperSortMap.ContainsKey("Finish"))
+					{
+						ShowSequencerEditorHelperSortMap["Finish"]->Dispose();
+						ShowSequencerEditorHelperSortMap.Remove("Finish");
+					}
+
+                    ShowSequencerComponent->DisposeShow(ActionBasePtr->FinishShowPtr);
+                    ActionBasePtr->FinishShowPtr = nullptr;
                     break;
                 default:
                     break;
@@ -412,7 +466,7 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
 
         if (ShowActionControllPanels)
         {
-            ShowActionControllPanels->ChangeShow(ActionState, NewShowSequencer);
+            ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
         }
     }
 }

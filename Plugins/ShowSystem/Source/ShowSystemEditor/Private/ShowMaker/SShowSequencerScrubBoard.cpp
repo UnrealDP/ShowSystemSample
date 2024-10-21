@@ -53,10 +53,12 @@ int32 SShowSequencerScrubBoard::OnPaint(const FPaintArgs& Args, const FGeometry&
     // Time markers (6.2, 6.3)
     float MarkerInterval = (FrameRate == 0) ? 1.0f : 1.0f / FrameRate;
     float MinorMarkerInterval = (FrameRate == 0) ? 0.1f : 0.5f;
-    int32 MainMarkerIndex = FMath::RoundToInt(TotalTime / MarkerInterval); // 메인선의 개수 계산
 
     int32 Index = 0;
-    for (float Time = 0; Time <= TotalTime; Time += MinorMarkerInterval, ++Index)
+    int32 LastIndex = FMath::CeilToInt(TotalTime / MinorMarkerInterval); // 전체 루프에서의 마지막 인덱스 계산
+    const float Tolerance = 0.001f;  // 부동소수점 오차 허용 범위
+
+    for (float Time = 0; Time <= TotalTime + Tolerance; Time += MinorMarkerInterval, ++Index)
     {
         float XPos = (Time / TotalTime) * Width;
 
@@ -83,7 +85,16 @@ int32 SShowSequencerScrubBoard::OnPaint(const FPaintArgs& Args, const FGeometry&
             FSlateFontInfo FontInfo = FCoreStyle::GetDefaultFontStyle("Regular", 10);
             FVector2D TextSize = FSlateApplication::Get().GetRenderer()->GetFontMeasureService()->Measure(TimeText, FontInfo);
 
-            FVector2D TextPosition = FVector2D(XPos + 3, HeightValue - TextSize.Y - 2);
+            // 마지막 반복일 때 텍스트를 좌측에 배치
+            FVector2D TextPosition;
+            if (FMath::IsNearlyEqual(Time, TotalTime, Tolerance))
+            {
+                TextPosition = FVector2D(XPos - TextSize.X - 3, HeightValue - TextSize.Y - 2); // 마지막 텍스트는 좌측으로
+            }
+            else
+            {
+                TextPosition = FVector2D(XPos + 3, HeightValue - TextSize.Y - 2); // 나머지는 우측에 배치
+            }
 
             FSlateDrawElement::MakeText(
                 OutDrawElements,

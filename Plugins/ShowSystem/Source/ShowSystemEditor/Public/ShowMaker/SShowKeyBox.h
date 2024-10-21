@@ -17,7 +17,7 @@ class SHOWSYSTEMEDITOR_API SShowKeyBox : public SCompoundWidget
 {
 public:
     SLATE_BEGIN_ARGS(SShowKeyBox) {}
-        SLATE_ARGUMENT(TObjectPtr<UShowBase>, ShowBase)
+        SLATE_ARGUMENT(UShowBase*, ShowBasePtr)
         SLATE_ATTRIBUTE(float, SecondToWidthRatio) // 1초당 width 비율
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
@@ -47,7 +47,7 @@ private:
     mutable FSlateRect ClickableBox;
     FVector2D DragStartPosition = FVector2D::ZeroVector;
     
-    TObjectPtr<UShowBase> ShowBase = nullptr;
+    UShowBase* ShowBasePtr = nullptr;
     TAttribute<float> Height = 20.0f;
     TAttribute<float> MinWidth = 20.0f;
     TAttribute<float> SecondToWidthRatio = 10.0f;

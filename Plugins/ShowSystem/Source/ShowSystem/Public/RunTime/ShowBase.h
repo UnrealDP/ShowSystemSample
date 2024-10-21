@@ -57,7 +57,7 @@ public:
     // 객체가 풀로 반환될 때 호출됨
     virtual void OnReturnedToPool() override
     {
-        ShowSequencer = nullptr;
+        ShowSequencerPtr = nullptr;
         ShowKey = nullptr;
 
         Length = FLT_MAX;
@@ -69,15 +69,15 @@ public:
         ShowKeyState = EShowKeyState::ShowKey_Wait;
     }
 
-    void InitShowKey(TObjectPtr<UShowSequencer> InShowSequencer, const FShowKey* InShowKey)
+    void InitShowKey(UShowSequencer* InShowSequencerPtr, const FShowKey* InShowKey)
     {
-        checkf(InShowSequencer, TEXT("UShowBase::InitShowKey: The InShowSequencer is invalid."));
+        checkf(InShowSequencerPtr, TEXT("UShowBase::InitShowKey: The InShowSequencerPtr is invalid."));
         checkf(InShowKey, TEXT("UShowBase::InitShowKey: The InShowKey is invalid."));
 
         ShowKeyState = EShowKeyState::ShowKey_Wait;
 
-        ShowSequencer = InShowSequencer;
-        CachedTimeScale = ShowSequencer->GetTimeScale();
+        ShowSequencerPtr = InShowSequencerPtr;
+        CachedTimeScale = ShowSequencerPtr->GetTimeScale();
 
         ShowKey = InShowKey;
         Length = InShowKey->Length;
@@ -159,13 +159,13 @@ public:
     void SetKeyTimeScale(float InKeyTimeScale)
 	{
         KeyTimeScale = InKeyTimeScale;
-        CachedTimeScale = KeyTimeScale * ShowSequencer->GetTimeScale();
+        CachedTimeScale = KeyTimeScale * ShowSequencerPtr->GetTimeScale();
         ApplyTimeScale(CachedTimeScale);
 	}
 
     void OnUpdateSequenceTimeScale()
 	{
-        CachedTimeScale = KeyTimeScale * ShowSequencer->GetTimeScale();
+        CachedTimeScale = KeyTimeScale * ShowSequencerPtr->GetTimeScale();
         ApplyTimeScale(CachedTimeScale);
 	}
 
@@ -218,7 +218,7 @@ public:
 protected:
     AActor* GetOwner() const
     {
-        return ShowSequencer->GetOwner();
+        return ShowSequencerPtr->GetOwner();
     }
 
     virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
@@ -234,7 +234,7 @@ protected:
     virtual void ApplyTimeScale(float FinalTimeScale) PURE_VIRTUAL(UShowBase::ApplyTimeScale, );
 
 protected:
-    TObjectPtr<UShowSequencer> ShowSequencer = nullptr;
+    UShowSequencer* ShowSequencerPtr = nullptr;
 
     // ShowSequencer 어셋으로 받아온거라 절대 편집하면 안됨, 편집은 오로지 툴에서만 가능함
     const FShowKey* ShowKey = nullptr;

@@ -7,6 +7,7 @@
 #include "ShowSequencerComponent.generated.h"
 
 class UShowSequencer;
+class UObjectPoolManager;
 
 UCLASS( BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SHOWSYSTEM_API UShowSequencerComponent : public UActorComponent
@@ -27,11 +28,11 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-    TObjectPtr<UShowSequencer> NewShowSequencer(const FSoftObjectPath& ShowPath);
+    UShowSequencer* NewShowSequencer(const FSoftObjectPath& ShowPath);
 
-    bool HasShowSequencer(TObjectPtr<UShowSequencer> Sequencer) const
+    bool HasShowSequencer(const UShowSequencer* SequencerPtr) const
     {
-        return ShowSequencers.Contains(Sequencer);
+        return ShowSequencers.Contains(SequencerPtr);
     }
 
     UFUNCTION(BlueprintCallable, Category = "Show")
@@ -52,6 +53,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Show")
     void ChangeShowTimeScalse(UShowSequencer* InShowSequencer, float InTimeScale) const;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowSequencers")
-    TArray<TObjectPtr<UShowSequencer>> ShowSequencers; // 연출 시퀀스 트래킹
+private:
+    TArray<UShowSequencer*> ShowSequencers; // 연출 시퀀스 트래킹
+
+    UObjectPoolManager* PoolManager = nullptr;
 };

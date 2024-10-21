@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
+#include "Misc/SortedPairArray.h"
 
 class UShowBase;
 class FShowSequencerEditorHelper;
@@ -18,6 +19,7 @@ class SHOWSYSTEMEDITOR_API SShowSequencerEditHeader : public SCompoundWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SShowSequencerEditHeader) {}
+		SLATE_ATTRIBUTE(float, TitleHeight)
 		SLATE_ATTRIBUTE(float, Height)
 		SLATE_ATTRIBUTE(float, Width)
 		SLATE_EVENT(FOnShowBaseEditEvent, OnAddShowKeyEvent)
@@ -26,7 +28,7 @@ public:
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
-	void RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperMapPtr);
+	void RefreshShowKeyHeaderBoxs(TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr);
 	TSharedRef<SWidget> ConstructShowSequencerHeaderWidget(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper);
 
 	TSharedRef<SWidget> CreateAddKeyMenu();
@@ -37,14 +39,15 @@ public:
 	void OnAddKeySelected(TSharedPtr<FString> SelectedItem);
 	void OnAddSequencerKeySelected(TSharedPtr<FString> SelectedItem);
 	
-	FReply OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, TObjectPtr<UShowBase> ShowBase);
+	FReply OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, UShowBase* ShowBasePtr);
 
+	TAttribute<float> TitleHeight = 30.0f;
 	TAttribute<float> Height = 30.0f;
 	TAttribute<float> Width = 100.0f;
 	FOnShowBaseEditEvent OnAddShowKeyEvent = nullptr;
 	FOnShowSequencerRemoveEvent OnRemoveShowKeyEvent = nullptr;
 
-	TMap<FString, TSharedPtr<FShowSequencerEditorHelper>>* ShowSequencerEditorHelperMapPtr = nullptr;
+	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* ShowSequencerEditorHelperSortMapPtr;
 	TArray<TSharedPtr<FString>> KeyOptions;
 	TSharedPtr<SVerticalBox> VerticalBox = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> SelectedShowSequencerEditorHelper = nullptr;

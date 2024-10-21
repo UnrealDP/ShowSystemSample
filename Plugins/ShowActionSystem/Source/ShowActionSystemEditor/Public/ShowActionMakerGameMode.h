@@ -49,7 +49,7 @@ private:
     FSkillShowData* SkillShowData = nullptr;
 
 public:
-    UActionBase* CrrAction = nullptr;
+    UActionBase* CrrActionPtr = nullptr;
 };
 
 

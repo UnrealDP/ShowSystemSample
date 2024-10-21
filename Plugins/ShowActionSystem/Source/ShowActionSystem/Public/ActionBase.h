@@ -87,8 +87,8 @@ public:
 	typedef void (*StepNotiFuncPtr)(const UActionBase*, EActionState);
 
 protected:
-	TObjectPtr<UShowSequencer> NewShowSequencer(EActionState ActionStatem);
-	void PlayShow(TObjectPtr<UShowSequencer> ShowSequencer);
+	UShowSequencer* NewShowSequencer(EActionState ActionStatem);
+	void PlayShow(UShowSequencer* ShowSequencerPtr);
 	
 	EActionState State = EActionState::Wait;
 
@@ -98,9 +98,9 @@ protected:
 	const FActionBaseData* ActionBaseData = nullptr;
 	const FActionBaseShowData* ActionBaseShowData = nullptr;
 
-	TObjectPtr<UShowSequencer> CastShow = nullptr;
-	TObjectPtr<UShowSequencer> ExecShow = nullptr;
-	TObjectPtr<UShowSequencer> FinishShow = nullptr;
+	UShowSequencer* CastShowPtr = nullptr;
+	UShowSequencer* ExecShowPtr = nullptr;
+	UShowSequencer* FinishShowPtr = nullptr;
 
 	float StepPassedTime = 0.0f;
 	float RemainCoolDown = 0.0f;

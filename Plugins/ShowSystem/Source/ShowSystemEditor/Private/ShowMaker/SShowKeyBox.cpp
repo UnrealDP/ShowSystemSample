@@ -8,7 +8,7 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowKeyBox::Construct(const FArguments& InArgs)
 {
-    ShowBase = InArgs._ShowBase;
+    ShowBasePtr = InArgs._ShowBasePtr;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
@@ -39,10 +39,10 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect,
     FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
-    if (ShowBase)
+    if (ShowBasePtr)
     {
-        const float StartX = ShowBase->GetStartTime() * SecondToWidthRatio.Get();
-        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowBase->GetShowLength() * SecondToWidthRatio.Get());
+        const float StartX = ShowBasePtr->GetStartTime() * SecondToWidthRatio.Get();
+        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowBasePtr->GetShowLength() * SecondToWidthRatio.Get());
 
         // 클릭 영역을 저장
         ClickableBox = FSlateRect(StartX, 0, StartX + KeyWidth, Height.Get());
@@ -51,7 +51,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
         FLinearColor TextColor = FLinearColor::Black;
         if (IsShowKeySelected.IsBound())
         {
-            if (IsShowKeySelected.Execute(ShowBase))
+            if (IsShowKeySelected.Execute(ShowBasePtr))
             {
                 BoxColor = FLinearColor::Blue;
                 TextColor = FLinearColor::Red;
@@ -83,7 +83,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
             OutDrawElements,
             LayerId + 1,
             AllottedGeometry.ToPaintGeometry(FVector2D(KeyWidth, TextSize.Y), FSlateLayoutTransform(FVector2D(StartX + 5, TextPosY))),
-            ShowBase->GetTitle(),
+            ShowBasePtr->GetTitle(),
             FontInfo,
             ESlateDrawEffect::None,
             TextColor
@@ -102,9 +102,9 @@ FReply SShowKeyBox::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointe
 
         if (ClickableBox.ContainsPoint(LocalClickPos))
         {
-            if (OnClick.IsBound() && ShowBase)
+            if (OnClick.IsBound() && ShowBasePtr)
             {
-                OnClick.Execute(ShowBase);
+                OnClick.Execute(ShowBasePtr);
             }
 
             DragStartPosition = MyGeometry.AbsoluteToLocal(MouseEvent.GetScreenSpacePosition());
@@ -123,14 +123,14 @@ FReply SShowKeyBox::OnMouseMove(const FGeometry& MyGeometry, const FPointerEvent
         float DragDeltaX = DragCurrentPosition.X - DragStartPosition.X;
 
         float DeltaTime = DragDeltaX / SecondToWidthRatio.Get();
-        float StartTime = ShowBase->GetStartTime() + DeltaTime;
+        float StartTime = ShowBasePtr->GetStartTime() + DeltaTime;
         StartTime = FMath::Max(StartTime, 0.0f);
 
         DragStartPosition = DragCurrentPosition;
 
         if (OnChangedStartTime.IsBound())
         {
-            OnChangedStartTime.Execute(ShowBase, StartTime);
+            OnChangedStartTime.Execute(ShowBasePtr, StartTime);
         }
 
         return FReply::Handled();

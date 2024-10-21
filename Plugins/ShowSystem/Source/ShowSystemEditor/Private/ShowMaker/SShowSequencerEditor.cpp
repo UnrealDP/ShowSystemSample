@@ -18,7 +18,7 @@ void SShowSequencerEditor::Construct(const FArguments& InArgs)
     OnAddKey = InArgs._OnAddKey;
     OnRemoveKey = InArgs._OnRemoveKey;
 
-    ShowSequencerEditorHelperMap.Add("Show", EditorHelper);
+    ShowSequencerEditorHelperSortMap.Add("Show", EditorHelper);
 
 	ChildSlot
 	[
@@ -48,11 +48,11 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
     ShowSequencerEditHeader = SNew(SShowSequencerEditHeader)
         .Height(30)
         .Width(100)
-        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase)
+        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
             {
                 if (OnAddKey.IsBound())
                 {
-                    OnAddKey.Execute(ShowBase);
+                    OnAddKey.Execute(ShowBasePtr);
                 }
                 IsUpdateKey = true;
             })
@@ -65,7 +65,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
                 IsUpdateKey = true;
             });
 
-    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperSortMap);
 
     return SNew(SVerticalBox)
         + SVerticalBox::Slot()
@@ -96,7 +96,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments&
             SNew(SShowSequencerScrubBoard)
                 .Height(30.0f)
                 .TotalValue_Lambda([this]() { return EditorHelper->GetWidgetLengthAlignedToInterval(2.0f); })
-                .CrrValue_Lambda([this]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
+                .CrrValue_Lambda([this]() { return EditorHelper->EditShowSequencerPtr->GetPassedTime(); })
                 .OnValueChanged_Lambda([this](float InValue)
                     {
                         //EditorHelper->ScrubToSeconds(InValue);
@@ -145,7 +145,7 @@ void SShowSequencerEditor::Tick(const FGeometry& AllottedGeometry, const double 
         }
         if (ShowSequencerEditHeader)
         {
-            ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+            ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperSortMap);
         }
         IsUpdateKey = false;
     }

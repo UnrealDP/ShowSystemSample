@@ -6,11 +6,14 @@
 #include "UObject/NoExportTypes.h"
 #include "InstancedStruct.h"
 #include "ObjectPool/ObjectPoolManager.h"
+#include "ObjectPool/ObjectPoolType.h"
 #include "ShowSequenceAsset.h"
 #include "ShowSequencer.generated.h"
 
 class UShowBase;
 struct FShowKey;
+
+OBJPOOL_TYPE_INDEX(UShowSequencer, EObjectPoolType::ObjectPool_ShowSequencer)
 
 UENUM(BlueprintType)
 enum class EShowSequencerState : uint8
@@ -25,7 +28,7 @@ enum class EShowSequencerState : uint8
  * 
  */
 UCLASS(BlueprintType)
-class SHOWSYSTEM_API UShowSequencer : public UObject
+class SHOWSYSTEM_API UShowSequencer : public UObject, public IPooled
 {
 	GENERATED_BODY()
 
@@ -35,7 +38,8 @@ class SHOWSYSTEM_API UShowSequencer : public UObject
     friend class UShowSequencerComponent;
 
 public:
-    virtual void BeginDestroy() override;
+    virtual void OnPooled() override;
+    virtual void OnReturnedToPool() override;
 
 private:
     void Play();
@@ -56,21 +60,6 @@ public:
     // end of setter getter
 
     void Initialize(AActor* InOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
-
-    void Dispose()
-    {
-        // Owner 를 null 먼저 하면 ClearShowObjects 에서 checkf(Owner) 에서 에러 발생
-        if (Owner)
-        {
-            ClearShowObjects();
-            Owner = nullptr;
-        }
-
-        bIsDontDestroy = false;
-        ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
-        PassedTime = 0.0f;
-        TimeScale = 1.0f;
-    }
     void Tick(float DeltaTime);
 
     EShowSequencerState GetShowSequencerState() const { return ShowSequencerState; }
@@ -93,6 +82,6 @@ private:
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
     float PassedTime = 0.0f;
     TObjectPtr<AActor> Owner;
-    TArray<TObjectPtr<UShowBase>> RuntimeShowKeys;
+    TArray<UShowBase*> RuntimeShowKeys;
     float TimeScale = 1.0f;
 };

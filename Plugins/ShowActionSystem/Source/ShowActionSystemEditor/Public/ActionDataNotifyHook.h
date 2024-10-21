@@ -17,9 +17,7 @@ public:
 		LoadedSkillDataTable = InLoadedSkillDataTable;
         OnPropertyChanged = InOnPropertyChanged;
     }
-	~ActionDataNotifyHook()
-    {
-    }
+    virtual ~ActionDataNotifyHook() {}
 
     virtual void NotifyPostChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged) override
     {

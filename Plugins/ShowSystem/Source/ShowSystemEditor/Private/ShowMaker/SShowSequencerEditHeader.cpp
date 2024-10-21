@@ -16,6 +16,7 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerEditHeader::Construct(const FArguments& InArgs)
 {
+    TitleHeight = InArgs._TitleHeight;
     Height = InArgs._Height;
     Width = InArgs._Width;
     OnAddShowKeyEvent = InArgs._OnAddShowKeyEvent;
@@ -62,11 +63,11 @@ void SShowSequencerEditHeader::Construct(const FArguments& InArgs)
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperMapPtr)
+void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr)
 {
-    checkf(InShowSequencerEditorHelperMapPtr, TEXT("SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs InShowSequencerEditorHelperMapPtr is nullptr."));
+    checkf(InShowSequencerEditorHelperSortMapPtr, TEXT("SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs InShowSequencerEditorHelperSortMapPtr is nullptr."));
 
-    ShowSequencerEditorHelperMapPtr = InShowSequencerEditorHelperMapPtr;
+    ShowSequencerEditorHelperSortMapPtr = InShowSequencerEditorHelperSortMapPtr;
 
     VerticalBox->ClearChildren();
 
@@ -74,19 +75,27 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr
     VerticalBox->AddSlot()
         .AutoHeight()
         .HAlign(HAlign_Left)
-        .Padding(3.0f, 3.0f)
         [
-            SNew(SPositiveActionButton)
-                .Text(LOCTEXT("AddButton", "Add"))
-                .OnGetMenuContent(this, &SShowSequencerEditHeader::CreateAddKeyMenu)
-                .ToolTipText(LOCTEXT("AddButtonTooltip", "Add Show Key."))
-                .Icon(FAppStyle::Get().GetBrush("Icons.Plus"))
+            SNew(SBox)
+                .HeightOverride(TitleHeight.Get())
+                [
+                    SNew(SPositiveActionButton)
+                        .Text(LOCTEXT("AddButton", "Add"))
+                        .OnGetMenuContent(this, &SShowSequencerEditHeader::CreateAddKeyMenu)
+                        .ToolTipText(LOCTEXT("AddButtonTooltip", "Add Show Key."))
+                        .Icon(FAppStyle::Get().GetBrush("Icons.Plus"))
+                ]
         ];
 
-    //SLATE_VERTICAL_SLOT(0.0f, 5.0f)
+    VerticalBox->AddSlot()
+		.AutoHeight()
+		.HAlign(HAlign_Fill)
+		[
+            SNew(SSpacer).Size(FVector2D(0.0f, 3.0f))
+		];
 
     // ShowSequencerEditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
-    for (auto& Elem : *ShowSequencerEditorHelperMapPtr) // 포인터를 역참조하여 TMap 순회
+    for (auto& Elem : *ShowSequencerEditorHelperSortMapPtr)
     {
         FString Key = Elem.Key;
         TSharedPtr<FShowSequencerEditorHelper> Value = Elem.Value;
@@ -95,7 +104,14 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr
 			.AutoHeight()
 			.HAlign(HAlign_Fill)
 			[
-                SNew(SOverlay)
+                ConstructShowSequencerHeaderWidget(Value)
+                /*SNew(SBox)
+                    .HeightOverride(Height.Get())
+                    [
+                        ConstructShowSequencerHeaderWidget(Value)
+                    ]*/
+                
+                /*SNew(SOverlay)
                     + SOverlay::Slot()
                     [
                         SNew(SBorder)
@@ -106,7 +122,7 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TMap<FString, TSharedPtr
                     + SOverlay::Slot()
                     [
                         ConstructShowSequencerHeaderWidget(Value)
-                    ]
+                    ]*/
 			];
     }
 }
@@ -118,25 +134,25 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
 		return SNullWidget::NullWidget;
 	}
 
-    TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr = ShowSequencerEditorHelper->RuntimeShowKeysPtr();
+    TArray<UShowBase*>* RuntimeShowKeysPtr = ShowSequencerEditorHelper->RuntimeShowKeysPtr();
     if (!RuntimeShowKeysPtr)
     {
         return SNullWidget::NullWidget;
     }
 
     TSharedRef<SVerticalBox> ShowSequencerVerticalBox = SNew(SVerticalBox);
-    for (TObjectPtr<UShowBase>& ShowBase : *RuntimeShowKeysPtr)
+    for (UShowBase* ShowBasePtr : *RuntimeShowKeysPtr)
 	{
         ShowSequencerVerticalBox->AddSlot()
 			.AutoHeight()
 			.HAlign(HAlign_Fill)
 			[
-                SNew(SBorder)
-                    .BorderImage(FAppStyle::Get().GetBrush("ToolPanel.GroupBorder"))
-                    .Padding(FMargin(1.0f))
+                SNew(SBox)
+                    .HeightOverride(Height.Get())
                     [
                         SNew(SHorizontalBox)
                             + SHorizontalBox::Slot()
+                            .HAlign(HAlign_Fill)
                             .AutoWidth()
                             [
                                 SNew(SButton)
@@ -144,9 +160,9 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
                                     .VAlign(VAlign_Center)
                                     .ButtonStyle(FAppStyle::Get(), "SimpleButton")
                                     .ToolTipText(LOCTEXT("RemoveButtonTooltip", "Remove Show Key."))
-                                    .OnClicked_Lambda([this, ShowSequencerEditorHelper, ShowBase]() -> FReply
+                                    .OnClicked_Lambda([this, ShowSequencerEditorHelper, ShowBasePtr]() -> FReply
                                         {
-                                            return OnRemoveShowKey(ShowSequencerEditorHelper, ShowBase);
+                                            return OnRemoveShowKey(ShowSequencerEditorHelper, ShowBasePtr);
                                         })
                                     [
                                         SNew(SImage)
@@ -154,9 +170,10 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
                                     ]
                             ]
                             + SHorizontalBox::Slot()
+                            .HAlign(HAlign_Fill)
                             .AutoWidth()
                             [
-                                SNew(STextBlock).Text(FText::FromString(ShowBase->GetClass()->GetName()))
+                                SNew(STextBlock).Text(FText::FromString(ShowBasePtr->GetClass()->GetName()))
                             ]
                     ]
 			];
@@ -169,16 +186,16 @@ TSharedRef<SWidget> SShowSequencerEditHeader::CreateAddKeyMenu()
 {
     SelectedShowSequencerEditorHelper = nullptr;
 
-    int Num = ShowSequencerEditorHelperMapPtr->Num();
+    int Num = ShowSequencerEditorHelperSortMapPtr->Num();
     if (Num == 0)
     {
         return SNullWidget::NullWidget;
     }
     else if (Num == 1)
     {
-        if (ShowSequencerEditorHelperMapPtr && ShowSequencerEditorHelperMapPtr->Num() > 0)
+        if (ShowSequencerEditorHelperSortMapPtr && ShowSequencerEditorHelperSortMapPtr->Num() > 0)
         {
-            SelectedShowSequencerEditorHelper = (*ShowSequencerEditorHelperMapPtr).CreateConstIterator().Value();
+            SelectedShowSequencerEditorHelper = *ShowSequencerEditorHelperSortMapPtr->FirstValue();
         }
 
         if (!SelectedShowSequencerEditorHelper)
@@ -220,22 +237,19 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ShowSequencerMenuBuilder()
 {
     FMenuBuilder MenuBuilder(true, nullptr);
 
-    TArray<FString> ShowSequencerKeyOptions;
-    ShowSequencerEditorHelperMapPtr->GetKeys(ShowSequencerKeyOptions);
-
-    for (FString& Option : ShowSequencerKeyOptions)
-    {
-        TSharedPtr<FString> OptionPtr = MakeShared<FString>(Option);
+    for (auto& Elem : *ShowSequencerEditorHelperSortMapPtr)
+	{
+        TSharedPtr<FString> OptionPtr = MakeShared<FString>(Elem.Key);
 
         MenuBuilder.AddMenuEntry(
-            FText::FromString(Option),
-            FText::FromString(Option),
+            FText::FromString(Elem.Key),
+            FText::FromString(Elem.Key),
             FSlateIcon(),
             FUIAction(
                 FExecuteAction::CreateSP(this, &SShowSequencerEditHeader::OnAddSequencerKeySelected, OptionPtr)
             )
         );
-    }
+	}
 
     return MenuBuilder.MakeWidget();
 }
@@ -258,13 +272,13 @@ void SShowSequencerEditHeader::OnAddKeySelected(TSharedPtr<FString> SelectedItem
         if (FoundStruct)
         {
             FInstancedStruct NewKey(FoundStruct);
-            TObjectPtr<UShowBase> NewShowBase = SelectedShowSequencerEditorHelper->AddKey(NewKey);
+            UShowBase* NewShowBasePtr = SelectedShowSequencerEditorHelper->AddKey(NewKey);
 
-            if (NewShowBase)
+            if (NewShowBasePtr)
             {
                 if (OnAddShowKeyEvent.IsBound())
                 {
-                    OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewShowBase);
+                    OnAddShowKeyEvent.Execute(SelectedShowSequencerEditorHelper, NewShowBasePtr);
                 }
             }
         }
@@ -274,7 +288,14 @@ void SShowSequencerEditHeader::OnAddKeySelected(TSharedPtr<FString> SelectedItem
 void SShowSequencerEditHeader::OnAddSequencerKeySelected(TSharedPtr<FString> SelectedItem)
 {
     SelectedShowSequencerEditorHelper = nullptr;
-    SelectedShowSequencerEditorHelper = *ShowSequencerEditorHelperMapPtr->Find(*SelectedItem);
+    for (auto& Elem : *ShowSequencerEditorHelperSortMapPtr)
+    {
+        if (Elem.Key == *SelectedItem)
+        {
+            SelectedShowSequencerEditorHelper = Elem.Value;
+            break;
+        }
+    }
 
     FMenuBuilder SecondMenuBuilder(true, nullptr);
 
@@ -301,14 +322,14 @@ void SShowSequencerEditHeader::OnAddSequencerKeySelected(TSharedPtr<FString> Sel
 }
 
 
-FReply SShowSequencerEditHeader::OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, TObjectPtr<UShowBase> ShowBase)
+FReply SShowSequencerEditHeader::OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, UShowBase* ShowBasePtr)
 {
     if (!ShowSequencerEditorHelper)
     {
         return FReply::Handled();
     }
 
-    if (ShowSequencerEditorHelper->RemoveKey(ShowBase))
+    if (ShowSequencerEditorHelper->RemoveKey(ShowBasePtr))
     {
         if (OnRemoveShowKeyEvent.IsBound())
         {

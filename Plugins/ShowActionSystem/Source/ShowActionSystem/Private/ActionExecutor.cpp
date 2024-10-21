@@ -6,24 +6,24 @@
 
 void UActionExecutor::BeginDestroy()
 {
-	ActionBase = nullptr;
+	ActionBasePtr = nullptr;
 	Super::BeginDestroy();
 }
 
 void UActionExecutor::Tick(float DeltaTime)
 {
-	if (!ActionBase)
+	if (!ActionBasePtr)
 	{
 		return;
 	}
 
-	EActionState ActionState = ActionBase->GetState();
+	EActionState ActionState = ActionBasePtr->GetState();
 	if (ActionState == EActionState::Wait)
 	{
 		return;
 	}
 
-	const FActionBaseData* ActionBaseData = ActionBase->GetActionBaseData();
+	const FActionBaseData* ActionBaseData = ActionBasePtr->GetActionBaseData();
 	if (!ActionBaseData)
 	{
 		return;

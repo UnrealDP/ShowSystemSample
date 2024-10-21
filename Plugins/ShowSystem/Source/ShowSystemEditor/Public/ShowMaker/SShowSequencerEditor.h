@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "RunTime/ShowBase.h"
 #include "Widgets/SCompoundWidget.h"
+#include "Misc/SortedPairArray.h"
 
 class SShowKeyBoxHandler;
 class FShowSequencerEditorHelper;
@@ -49,6 +50,6 @@ private:
 	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 	FOnKeyDownSpace OnKeyDownSpace = nullptr;
-	TMap<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperMap;
+	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperSortMap;
 	bool IsUpdateKey = false;
 };

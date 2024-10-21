@@ -5,14 +5,11 @@
 #include "RunTime/ShowBase.h"
 #include "RunTime/ShowSystem.h"
 
-void UShowSequencer::Initialize(AActor* InOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
+void UShowSequencer::OnPooled()
 {
-    Owner = InOwner;
-    ShowSequenceAsset = InShowSequenceAsset;
-    GenerateShowBase();
 }
 
-void UShowSequencer::BeginDestroy()
+void UShowSequencer::OnReturnedToPool()
 {
     // Owner 를 null 먼저 하면 ClearShowObjects 에서 checkf(Owner) 에서 에러 발생
     if (Owner)
@@ -21,7 +18,18 @@ void UShowSequencer::BeginDestroy()
         Owner = nullptr;
     }
 
-    Super::BeginDestroy();
+    ShowSequenceAsset = nullptr;
+    bIsDontDestroy = false;
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
+    PassedTime = 0.0f;
+    TimeScale = 1.0f;
+}
+
+void UShowSequencer::Initialize(AActor* InOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
+{
+    Owner = InOwner;
+    ShowSequenceAsset = InShowSequenceAsset;
+    GenerateShowBase();
 }
 
 void UShowSequencer::GenerateShowBase()
@@ -39,8 +47,8 @@ void UShowSequencer::GenerateShowBase()
             continue;
         }
 
-        UShowBase* ShowBase = CreateShowObject(ShowKey);
-        RuntimeShowKeys[i] = ShowBase;
+        UShowBase* ShowBasePtr = CreateShowObject(ShowKey);
+        RuntimeShowKeys[i] = ShowBasePtr;
     }
 }
 
@@ -73,10 +81,10 @@ void UShowSequencer::ClearShowObjects()
     }
 
     UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
-    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
-        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowBase->GetKeyType());
-        PoolManager->ReturnPooledObject(ShowBase, PoolType);
+        EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowBasePtr->GetKeyType());
+        PoolManager->ReturnPooledObject(ShowBasePtr, PoolType);
     }
     RuntimeShowKeys.Empty();
 }
@@ -96,14 +104,14 @@ void UShowSequencer::Stop()
 		return;
 	}
 
-    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
-        if (!ShowBase)
+        if (!ShowBasePtr)
         {
             continue;
         }
 
-        ShowBase->ExecuteStop();
+        ShowBasePtr->ExecuteStop();
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_End;
@@ -116,14 +124,14 @@ void UShowSequencer::Pause()
         return;
     }
 
-    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
-        if (!ShowBase)
+        if (!ShowBasePtr)
         {
             continue;
         }
 
-        ShowBase->ExecutePause();
+        ShowBasePtr->ExecutePause();
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Pause;
@@ -136,14 +144,14 @@ void UShowSequencer::UnPause()
 		return;
 	}
 
-    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
-        if (!ShowBase)
+        if (!ShowBasePtr)
         {
             continue;
         }
 
-        ShowBase->ExecuteUnPause();
+        ShowBasePtr->ExecuteUnPause();
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
@@ -153,14 +161,14 @@ void UShowSequencer::ChangeTimeScale(float InTimeScale)
 {
     TimeScale = InTimeScale;
 
-    for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
-        if (!ShowBase)
+        if (!ShowBasePtr)
         {
             continue;
         }
 
-        ShowBase->OnUpdateSequenceTimeScale();
+        ShowBasePtr->OnUpdateSequenceTimeScale();
     }
 }
 
@@ -171,14 +179,14 @@ void UShowSequencer::Tick(float DeltaTime)
         PassedTime += (DeltaTime * TimeScale);
 
         bool bIsAllEnd = true;
-        for (TObjectPtr<UShowBase>& ShowBase : RuntimeShowKeys)
+        for (UShowBase* ShowBasePtr : RuntimeShowKeys)
         {
-            if (!ShowBase)
+            if (!ShowBasePtr)
             {
                 continue;
             }
 
-            if (ShowBase->IsEnd())
+            if (ShowBasePtr->IsEnd())
             {
                 UE_LOG(LogTemp, Warning, TEXT("UShowSequencer::Tick: TTT"));
             }
@@ -187,27 +195,27 @@ void UShowSequencer::Tick(float DeltaTime)
                 UE_LOG(LogTemp, Warning, TEXT("UShowSequencer::Tick: FFF"));
             }
 
-            if (bIsAllEnd && !ShowBase->IsEnd())
+            if (bIsAllEnd && !ShowBasePtr->IsEnd())
             {
                 bIsAllEnd = false;
             }
 
-            if (ShowBase->IsWait())
+            if (ShowBasePtr->IsWait())
             {
-                if (ShowBase->IsPassedStartTime(PassedTime))
+                if (ShowBasePtr->IsPassedStartTime(PassedTime))
                 {
-                    ShowBase->ExecutePlay();
+                    ShowBasePtr->ExecutePlay();
                 }
             }
-			else if (ShowBase->IsPlaying())
+			else if (ShowBasePtr->IsPlaying())
 			{
-                ShowBase->BaseTick(DeltaTime);
+                ShowBasePtr->BaseTick(DeltaTime);
 			}
         }
         
         // IsEnd() 에서 바로 Object Pool로 반환 안하는 이유 :
         // UShowSequencer 같은 경우는 그다지 길지 않은 연출에 사용하는데
-        // Object Pool로 반환하고 TArray<TObjectPtr<UShowBase>> RuntimeShowKeys 에서 remove를 하는 것은
+        // Object Pool로 반환하고 TArray<UShowBase*> RuntimeShowKeys 에서 remove를 하는 것은
         // 메모리 이동이 너무 자주 발생할 것이기에 모든 키가 끝났을 때 한번에 반환하도록 함
         // 물론 툴에서는 지속적으로 플레이 해보면서 확인 하기 때문에 FShowSequencerEditorHelper::SetShowSequencerEditor 여기서 DontDestroy 함
         if (bIsAllEnd)

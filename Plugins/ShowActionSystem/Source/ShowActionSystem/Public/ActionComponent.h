@@ -39,7 +39,7 @@ public:
 
 	UActionBase* DoActionPool(const FName& ActionName, ActionFilterFuncPtr ActionFilter = nullptr);
 
-	const UActionBase* GetMainAction() const { return MainAction; }
+	const UActionBase* GetMainActionPtr() const { return MainActionPtr; }
 	UActionBase* GetAction(const FName& ActionName) const { return ActionPool.FindRef(ActionName); }
 
 	template<typename TActionObject, typename TActionData, typename TActionShowData>
@@ -59,13 +59,13 @@ public:
 
 			TActionShowData* SkillShowData = DataTableManager::Data<TActionShowData>(ActionName);
 
-			UActionBase* ActionBase = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
-			checkf(ActionBase, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
+			UActionBase* ActionBasePtr = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
+			checkf(ActionBasePtr, TEXT("UActionComponent::InitializeActionPool GetPooledObject Fail [ %s ]"), *ActionName.ToString());
 
-			if (ActionBase)
+			if (ActionBasePtr)
 			{
-				ActionBase->Initialize<TActionObject, TActionData, TActionShowData>(GetOwner(), ActionName, ActionData, SkillShowData);
-				ActionPool.Add(ActionName, ActionBase);
+				ActionBasePtr->Initialize<TActionObject, TActionData, TActionShowData>(GetOwner(), ActionName, ActionData, SkillShowData);
+				ActionPool.Add(ActionName, ActionBasePtr);
 			}
 		}
 	}
@@ -75,25 +75,25 @@ public:
 	template<typename TActionObject, typename TActionData, typename TActionShowData>
 	UActionBase* DoAction(const FName& ActionName, ActionFilterFuncPtr ActionFilter)
 	{
-		UActionBase** ActionBasePtr = OneShotActions.Find(ActionName);
-		UActionBase* ActionBase = nullptr;
-		if (ActionBasePtr)
+		UActionBase** ActionBasePtrAddress = OneShotActions.Find(ActionName);
+		UActionBase* ActionBasePtr = nullptr;
+		if (ActionBasePtrAddress)
 		{
-			ActionBase = *ActionBasePtr;
+			ActionBasePtr = *ActionBasePtrAddress;
 
 			if (ActionFilter)
 			{
-				if (!ActionFilter(this, ActionName, ActionBase->GetActionBaseData()))
+				if (!ActionFilter(this, ActionName, ActionBasePtr->GetActionBaseData()))
 				{
 					return nullptr;
 				}
 			}
-			else if (!DefaultFilterRule(ActionName, ActionBase->GetActionBaseData()))
+			else if (!DefaultFilterRule(ActionName, ActionBasePtr->GetActionBaseData()))
 			{
 				return nullptr;
 			}
 
-			ActionBase->Cancel();
+			ActionBasePtr->Cancel();
 		}
 		else
 		{
@@ -115,28 +115,28 @@ public:
 			}
 
 			UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-			ActionBase = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
-			checkf(ActionBase != nullptr, TEXT("UActionComponent::DoAction GetPooledObject Fail"));
+			ActionBasePtr = static_cast<UActionBase*>(PoolManager->GetPooledObject<TActionObject>());
+			checkf(ActionBasePtr != nullptr, TEXT("UActionComponent::DoAction GetPooledObject Fail"));
 
-			ActionBase->Initialize<TActionObject, TActionData, TActionShowData>(GetOwner(), ActionName, ActionBaseData, ActionBaseShowData);
-			OneShotActions.Add(ActionName, ActionBase);
+			ActionBasePtr->Initialize<TActionObject, TActionData, TActionShowData>(GetOwner(), ActionName, ActionBaseData, ActionBaseShowData);
+			OneShotActions.Add(ActionName, ActionBasePtr);
 		}
 
-		if (ActionBase)
+		if (ActionBasePtr)
 		{
-			if (MainAction)
+			if (MainActionPtr)
 			{
-				MainAction->Cancel();
+				MainActionPtr->Cancel();
 			}
 
-			MainAction = ActionBase;
+			MainActionPtr = ActionBasePtr;
 		}
 
-		return ActionBase;
+		return ActionBasePtr;
 	}
 
 private:
-	UActionBase* MainAction = nullptr;
+	UActionBase* MainActionPtr = nullptr;
 
 	TMap<FName, UActionBase*> ActionPool;
 

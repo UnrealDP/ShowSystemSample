@@ -26,49 +26,49 @@ void UActionBase::OnReturnedToPool()
 
 		// 에디터에서는 UActionBase::EditorLoadAllShow 로 PlayShow 하지 않고 Load를 먼저 해두기 때문에
 #if WITH_EDITOR		
-		if (CastShow)
+		if (CastShowPtr)
 		{
-			if (ShowPlayer->HasShowSequencer(Owner, CastShow))
+			if (ShowPlayer->HasShowSequencer(Owner, CastShowPtr))
 			{
-				ShowPlayer->DisposeSoloShow(Owner, CastShow);
+				ShowPlayer->DisposeSoloShow(Owner, CastShowPtr);
 			}
-			CastShow = nullptr;
+			CastShowPtr = nullptr;
 		}
 
-		if (ExecShow)
+		if (ExecShowPtr)
 		{
-			if (ShowPlayer->HasShowSequencer(Owner, ExecShow))
+			if (ShowPlayer->HasShowSequencer(Owner, ExecShowPtr))
 			{
-				ShowPlayer->DisposeSoloShow(Owner, ExecShow);
+				ShowPlayer->DisposeSoloShow(Owner, ExecShowPtr);
 			}
-			ExecShow = nullptr;
+			ExecShowPtr = nullptr;
 		}
 
-		if (FinishShow)
+		if (FinishShowPtr)
 		{
-			if (ShowPlayer->HasShowSequencer(Owner, FinishShow))
+			if (ShowPlayer->HasShowSequencer(Owner, FinishShowPtr))
 			{
-				ShowPlayer->DisposeSoloShow(Owner, FinishShow);
+				ShowPlayer->DisposeSoloShow(Owner, FinishShowPtr);
 			}
-			FinishShow = nullptr;
+			FinishShowPtr = nullptr;
 		}
 #else
-		if (CastShow)
+		if (CastShowPtr)
 		{
-			ShowPlayer->DisposeSoloShow(Owner, CastShow);
-			CastShow = nullptr;
+			ShowPlayer->DisposeSoloShow(Owner, CastShowPtr);
+			CastShowPtr = nullptr;
 		}
 
-		if (ExecShow)
+		if (ExecShowPtr)
 		{
-			ShowPlayer->DisposeSoloShow(Owner, ExecShow);
-			ExecShow = nullptr;
+			ShowPlayer->DisposeSoloShow(Owner, ExecShowPtr);
+			ExecShowPtr = nullptr;
 		}
 
-		if (FinishShow)
+		if (FinishShowPtr)
 		{
-			ShowPlayer->DisposeSoloShow(Owner, FinishShow);
-			FinishShow = nullptr;
+			ShowPlayer->DisposeSoloShow(Owner, FinishShowPtr);
+			FinishShowPtr = nullptr;
 		}
 #endif
 	}
@@ -105,7 +105,7 @@ void UActionBase::Tick(float DeltaTime)
 	}
 }
 
-TObjectPtr<UShowSequencer> UActionBase::NewShowSequencer(EActionState EActionStatem)
+UShowSequencer* UActionBase::NewShowSequencer(EActionState EActionStatem)
 {
 	checkf(ActionBaseShowData, TEXT("UActionBase::NewShowSequencer ActionBaseShowData is invalid"));
 
@@ -114,21 +114,39 @@ TObjectPtr<UShowSequencer> UActionBase::NewShowSequencer(EActionState EActionSta
 		switch (EActionStatem)
 		{
 		case EActionState::Cast:
+			if (CastShowPtr)
+			{
+				ShowPlayer->DisposeSoloShow(Owner, CastShowPtr);
+				CastShowPtr = nullptr;
+			}
+
 			if (ActionBaseShowData->CastShow.IsValid())
 			{
-				return CastShow = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->CastShow);
+				return CastShowPtr = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->CastShow);
 			}
 			break;
 		case EActionState::Exec:
+			if (ExecShowPtr)
+			{
+				ShowPlayer->DisposeSoloShow(Owner, ExecShowPtr);
+				ExecShowPtr = nullptr;
+			}
+
 			if (ActionBaseShowData->ExecShow.IsValid())
 			{
-				return ExecShow = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->ExecShow);
+				return ExecShowPtr = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->ExecShow);
 			}
 			break;
 		case EActionState::Finish:
+			if (FinishShowPtr)
+			{
+				ShowPlayer->DisposeSoloShow(Owner, FinishShowPtr);
+				FinishShowPtr = nullptr;
+			}
+
 			if (ActionBaseShowData->FinishShow.IsValid())
 			{
-				return FinishShow = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->FinishShow);
+				return FinishShowPtr = ShowPlayer->NewShowSequencer(Owner, ActionBaseShowData->FinishShow);
 			}
 			break;
 		default:
@@ -138,13 +156,13 @@ TObjectPtr<UShowSequencer> UActionBase::NewShowSequencer(EActionState EActionSta
 	return nullptr;
 }
 
-void UActionBase::PlayShow(TObjectPtr<UShowSequencer> ShowSequencer)
+void UActionBase::PlayShow(UShowSequencer* ShowSequencerPtr)
 {
-	checkf(ShowSequencer, TEXT("UActionBase::PlayShow ShowSequencer is invalid"));
+	checkf(ShowSequencerPtr, TEXT("UActionBase::PlayShow ShowSequencerPtr is invalid"));
 
 	if (ShowPlayer)
 	{
-		ShowPlayer->PlaySoloShow(Owner, ShowSequencer);
+		ShowPlayer->PlaySoloShow(Owner, ShowSequencerPtr);
 	}
 }
 
@@ -155,13 +173,13 @@ void UActionBase::Casting(TArray<TObjectPtr<AActor>> Targets)
 
 	if (ActionBaseShowData && ActionBaseShowData->CastShow.IsValid())
 	{
-		if (!CastShow)
+		if (!CastShowPtr)
 		{
 			NewShowSequencer(EActionState::Cast);
 		}
-		checkf(CastShow, TEXT("UActionBase::Cast CastShow Load Fail"));
+		checkf(CastShowPtr, TEXT("UActionBase::Cast CastShowPtr Load Fail"));
 
-		PlayShow(CastShow);
+		PlayShow(CastShowPtr);
 	}
 
 	if (ActionBaseData->CooldownStart == EActionState::Cast)
@@ -187,25 +205,25 @@ void UActionBase::Exec(TArray<TObjectPtr<AActor>> Targets)
 	{
 		if (ActionBaseShowData && ActionBaseShowData->CastShow.IsValid())
 		{
-			if (!CastShow)
+			if (!CastShowPtr)
 			{
 				NewShowSequencer(EActionState::Cast);
 			}
-			checkf(CastShow, TEXT("UActionBase::Exec CastShow Load Fail"));
+			checkf(CastShowPtr, TEXT("UActionBase::Exec CastShowPtr Load Fail"));
 
-			PlayShow(CastShow);
+			PlayShow(CastShowPtr);
 		}
 	}
 
 	if (ActionBaseShowData && ActionBaseShowData->ExecShow.IsValid())
 	{
-		if (!ExecShow)
+		if (!ExecShowPtr)
 		{
 			NewShowSequencer(EActionState::Exec);
 		}
-		checkf(ExecShow, TEXT("UActionBase::Exec ExecShow Load Fail"));
+		checkf(ExecShowPtr, TEXT("UActionBase::Exec ExecShowPtr Load Fail"));
 
-		PlayShow(ExecShow);
+		PlayShow(ExecShowPtr);
 	}
 
 	StepPassedTime = 0.0f;
@@ -235,13 +253,13 @@ void UActionBase::Finish(TArray<TObjectPtr<AActor>> Targets)
 
 	if (ActionBaseShowData && ActionBaseShowData->FinishShow.IsValid())
 	{
-		if (!FinishShow)
+		if (!FinishShowPtr)
 		{
 			NewShowSequencer(EActionState::Finish);
 		}
-		checkf(FinishShow, TEXT("UActionBase::Finish FinishShow Load Fail"));
+		checkf(FinishShowPtr, TEXT("UActionBase::Finish FinishShowPtr Load Fail"));
 
-		PlayShow(FinishShow);
+		PlayShow(FinishShowPtr);
 	}
 
 	StepPassedTime = 0.0f;
@@ -295,19 +313,19 @@ void UActionBase::Cancel()
 
 	if (ShowPlayer)
 	{
-		if (CastShow)
+		if (CastShowPtr)
 		{
-			ShowPlayer->StopSoloShow(Owner, CastShow);
+			ShowPlayer->StopSoloShow(Owner, CastShowPtr);
 		}
 
-		if (ExecShow)
+		if (ExecShowPtr)
 		{
-			ShowPlayer->StopSoloShow(Owner, ExecShow);
+			ShowPlayer->StopSoloShow(Owner, ExecShowPtr);
 		}
 
-		if (FinishShow)
+		if (FinishShowPtr)
 		{
-			ShowPlayer->StopSoloShow(Owner, FinishShow);
+			ShowPlayer->StopSoloShow(Owner, FinishShowPtr);
 		}
 	}
 

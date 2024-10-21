@@ -26,7 +26,7 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
 
     ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
         {
-            return EditorHelper->EditShowSequencer->GetShowSequencerState();
+            return EditorHelper->EditShowSequencerPtr->GetShowSequencerState();
         }));
 
     // 기본 UI 레이아웃 구성
@@ -98,21 +98,21 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                             .Height(20.0f)
                             .MinWidth(20.0f)
                             .ShowSequencerState(ShowSequencerState)
-                            .OnAddKey_Lambda([this](UShowBase* ShowBase)
+                            .OnAddKey_Lambda([this](UShowBase* ShowBasePtr)
                                 {
-                                    EditorHelper->EditShowSequencer->MarkPackageDirty();
+                                    EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
 
                                     if (OnAddKey.IsBound())
 									{
-										OnAddKey.Execute(ShowBase);
+										OnAddKey.Execute(ShowBasePtr);
 									}
                                 })
                             .OnRemoveKey_Lambda([this]()
                                 {
-                                    TObjectPtr<UShowBase> CheckSelectedShowBase = EditorHelper->CheckGetSelectedShowBase();
-                                    if (CheckSelectedShowBase != EditorHelper->SelectedShowBase)
+                                    UShowBase* CheckSelectedShowBasePtr = EditorHelper->CheckGetSelectedShowBase();
+                                    if (CheckSelectedShowBasePtr != EditorHelper->SelectedShowBasePtr)
                                     {
-                                        EditorHelper->SelectedShowBase = CheckSelectedShowBase;
+                                        EditorHelper->SelectedShowBasePtr = CheckSelectedShowBasePtr;
                                         UpdateShowKeyDetails();
                                     }
                                     
@@ -121,17 +121,17 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                                         OnRemoveKey.Execute();
                                     }
                                 })
-                            .OnClickedKey_Lambda([this](UShowBase* ShowBase)
+                            .OnClickedKey_Lambda([this](UShowBase* ShowBasePtr)
 								{
-                                    if (EditorHelper->SelectedShowBase != ShowBase)
+                                    if (EditorHelper->SelectedShowBasePtr != ShowBasePtr)
                                     {
-                                        EditorHelper->SelectedShowBase = ShowBase;
+                                        EditorHelper->SelectedShowBasePtr = ShowBasePtr;
                                         UpdateShowKeyDetails();
                                     }
 								})
-                            .OnChangedKey_Lambda([this](UShowBase* ShowBase)
+                            .OnChangedKey_Lambda([this](UShowBase* ShowBasePtr)
                                 {
-                                    EditorHelper->EditShowSequencer->MarkPackageDirty();
+                                    EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
                                 })
                             .OnKeyDownSpace_Lambda([this]()
                                 {
@@ -208,10 +208,10 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
 
 void SShowMakerWidget::UpdateShowKeyDetails()
 {
-    if (EditorHelper->SelectedShowBase)
+    if (EditorHelper->SelectedShowBasePtr)
     {
-        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBase);
-        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBase);
+        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBasePtr);
+        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBasePtr);
         TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
         StructureDetailsView->SetStructureData(StructData);
     }

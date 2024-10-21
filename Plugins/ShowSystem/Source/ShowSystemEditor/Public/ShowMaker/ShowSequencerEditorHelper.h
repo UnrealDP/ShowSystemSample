@@ -28,31 +28,31 @@ public:
 	}
 
 	void SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget);
-	TArray<TObjectPtr<UShowBase>>* RuntimeShowKeysPtr();
-	void SetShowBaseStartTime(UShowBase* InShowBase, float StartTime);
+	TArray<UShowBase*>* RuntimeShowKeysPtr();
+	void SetShowBaseStartTime(UShowBase* InShowBasePtr, float StartTime);
 
-	TArray<TObjectPtr<UShowBase>>* EditorGetShowKeys() { return &EditShowSequencer->RuntimeShowKeys; }
-	TObjectPtr<UShowBase> AddKey(FInstancedStruct& NewKey);
-	bool RemoveKey(TObjectPtr<UShowBase> RemoveShowBase);
+	TArray<UShowBase*>* EditorGetShowKeys() { return &EditShowSequencerPtr->RuntimeShowKeys; }
+	UShowBase* AddKey(FInstancedStruct& NewKey);
+	bool RemoveKey(UShowBase* RemoveShowBasePtr);
 	int32 FindShowKeyIndex(const FShowKey* ShowKey) const;
 
-	UScriptStruct* GetShowKeyStaticStruct(UShowBase* ShowBase);
-	FShowKey* GetMutableShowKey(UShowBase* ShowBase);
+	UScriptStruct* GetShowKeyStaticStruct(UShowBase* ShowBasePtr);
+	FShowKey* GetMutableShowKey(UShowBase* ShowBasePtr);
 
 	void NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged);
 
 	void Dispose();
 	void NewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
-	void SetShowSequencerOwner(AActor* InOwner) { EditShowSequencer->Owner = InOwner; }
+	void SetShowSequencerOwner(AActor* InOwner) { EditShowSequencerPtr->Owner = InOwner; }
 	void Play();
 	void ShowSequencerReset();
 	void ShowSequencerStop();
 	void ShowSequencerClearShowObjects();
 	float GetWidgetLengthAlignedToInterval(float Interval);
 
-	TObjectPtr<UShowBase> CheckGetSelectedShowBase();
+	UShowBase* CheckGetSelectedShowBase();
 	bool ValidateRuntimeShowKeys();
-	bool ValidateShowAnimStatic(AActor* Owner, TObjectPtr<UShowBase>& ShowBase);
+	bool ValidateShowAnimStatic(AActor* Owner, UShowBase* ShowBasePtr);
 
 	UClass* GetLastSelectedActorClass();
 	USkeletalMesh* LoadLastSelectedOrDefaultSkeletalMesh();	
@@ -62,9 +62,9 @@ public:
 	void ReplaceSkeletalMeshPreviewWorld(USkeletalMesh* SelectedSkeletalMesh);
 	void ReplaceAnimInstancePreviewWorld(UClass* AnimInterfaceClass);
 
-	TObjectPtr<UShowSequencer> EditShowSequencer = nullptr;
+	UShowSequencer* EditShowSequencerPtr = nullptr;
 	TSharedPtr<SShowMakerWidget> ShowMakerWidget = nullptr;
-	TObjectPtr<UShowBase> SelectedShowBase = nullptr;
+	UShowBase* SelectedShowBasePtr = nullptr;
 	TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 };
 

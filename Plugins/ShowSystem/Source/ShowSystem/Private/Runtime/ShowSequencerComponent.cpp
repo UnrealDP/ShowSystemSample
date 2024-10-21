@@ -3,6 +3,7 @@
 
 #include "RunTime/ShowSequencerComponent.h"
 #include "RunTime/ShowSequencer.h"
+#include "RunTime/ShowSystem.h"
 
 // Sets default values for this component's properties
 UShowSequencerComponent::UShowSequencerComponent()
@@ -19,17 +20,24 @@ void UShowSequencerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
+	AActor* Owner = GetOwner();
+	checkf(Owner, TEXT("UShowSequencerComponent::BeginPlay: The Owner is invalid."));
+
+	UWorld* World = Owner->GetWorld();
+	checkf(World, TEXT("UShowSequencerComponent::BeginPlay: The World is invalid."));
+
+	PoolManager = World->GetSubsystem<UObjectPoolManager>();
 	
 }
 
 void UShowSequencerComponent::BeginDestroy()
 {
-	for (TObjectPtr<UShowSequencer>& ShowSequencer : ShowSequencers)
+	checkf(PoolManager, TEXT("UShowSequencerComponent::NewShowSequencer: The PoolManager is invalid."));
+
+	for (UShowSequencer*& ShowSequencerPtr : ShowSequencers)
 	{
-		ShowSequencer->Dispose();
-		ShowSequencer->MarkAsGarbage();
-		ShowSequencer = nullptr;
+		PoolManager->ReturnPooledObject(ShowSequencerPtr, EObjectPoolType::ObjectPool_ShowSequencer);
+		ShowSequencerPtr = nullptr;
 	}
 	ShowSequencers.Empty();
 
@@ -41,20 +49,21 @@ void UShowSequencerComponent::TickComponent(float DeltaTime, ELevelTick TickType
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	for (TObjectPtr<UShowSequencer>& showSequencer : ShowSequencers)
+	for (UShowSequencer* ShowSequencerPtr : ShowSequencers)
 	{
-		showSequencer->Tick(DeltaTime);
+		ShowSequencerPtr->Tick(DeltaTime);
 	}
 }
 
-TObjectPtr<UShowSequencer> UShowSequencerComponent::NewShowSequencer(const FSoftObjectPath& ShowPath)
+UShowSequencer* UShowSequencerComponent::NewShowSequencer(const FSoftObjectPath& ShowPath)
 {
 	AActor* Owner = GetOwner();
 	checkf(Owner, TEXT("UShowSequencerComponent::NewShowSequencer: The Owner is invalid."));
+	checkf(PoolManager, TEXT("UShowSequencerComponent::NewShowSequencer: The PoolManager is invalid."));
 
 	if (UShowSequenceAsset* LoadedShowSequenceAsset = Cast<UShowSequenceAsset>(ShowPath.TryLoad())) 
 	{
-		TObjectPtr<UShowSequencer> NewShowSequencer = NewObject<UShowSequencer>(this, UShowSequencer::StaticClass(), FName(TEXT("MyNewShowSequencer")), EObjectFlags::RF_Public);
+		UShowSequencer* NewShowSequencer = PoolManager->GetPooledObject<UShowSequencer>();
 		NewShowSequencer->Initialize(Owner, LoadedShowSequenceAsset);
 		ShowSequencers.Add(NewShowSequencer);
 		return NewShowSequencer;
@@ -83,11 +92,10 @@ void UShowSequencerComponent::StopShow(UShowSequencer* InShowSequencer) const
 void UShowSequencerComponent::DisposeShow(UShowSequencer* InShowSequencer)
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::DisposeShow: InShowSequencer is invalid or null"));
+	checkf(PoolManager, TEXT("UShowSequencerComponent::NewShowSequencer: The PoolManager is invalid."));
 
-	InShowSequencer->Dispose();
-	InShowSequencer->MarkAsGarbage();
-	InShowSequencer = nullptr;
 	ShowSequencers.Remove(InShowSequencer);
+	PoolManager->ReturnPooledObject(InShowSequencer, EObjectPoolType::ObjectPool_ShowSequencer);
 }
 
 void UShowSequencerComponent::PauseShow(UShowSequencer* InShowSequencer) const

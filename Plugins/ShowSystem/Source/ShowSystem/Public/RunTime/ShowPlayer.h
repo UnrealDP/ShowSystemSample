@@ -18,13 +18,13 @@ class SHOWSYSTEM_API UShowPlayer : public UWorldSubsystem, public FTickableGameO
 	
 public:
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-	void PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
+	void PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-	void StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
+	void StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 
 	UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-	void DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencer);
+	void DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 
 	/** Implement this for initialization of instances of the system */
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -33,7 +33,7 @@ public:
 	/** Implement this for deinitialization of instances of the system */
 	virtual void Deinitialize() override;
 
-	TObjectPtr<UShowSequencer> NewShowSequencer(AActor* Owner, const FSoftObjectPath& ShowPath);
+	UShowSequencer* NewShowSequencer(AActor* Owner, const FSoftObjectPath& ShowPath);
 
 	/**
 	 * Pure virtual that must be overloaded by the inheriting class. It will
@@ -50,7 +50,7 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(UShowPlayer, STATGROUP_Tickables);
 	}
 
-	bool HasShowSequencer(AActor* Owner, TObjectPtr<UShowSequencer> Sequencer) const;
+	bool HasShowSequencer(const AActor* Owner, const UShowSequencer* SequencerPtr) const;
 
 private:
 	bool Initialized = false;

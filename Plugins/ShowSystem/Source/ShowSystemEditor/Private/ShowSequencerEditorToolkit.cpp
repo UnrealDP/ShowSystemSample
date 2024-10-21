@@ -80,8 +80,7 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
         [
             SAssignNew(ShowMakerWidget, SShowMakerWidget)
                 .EditorHelper(EditorHelper) 
-                .EditShowSequencer(EditorHelper->EditShowSequencer)  // ShowSequencer 전달 (필요 시)
-                .OnAddKey_Lambda([this](UShowBase* ShowBase) 
+                .OnAddKey_Lambda([this](UShowBase* ShowBasePtr)
                     {
                         DetailsView->ForceRefresh();
 				    })

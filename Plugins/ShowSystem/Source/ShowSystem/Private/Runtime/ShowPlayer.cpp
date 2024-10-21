@@ -41,7 +41,7 @@ void UShowPlayer::Tick(float DeltaTime)
     }
 }
 
-TObjectPtr<UShowSequencer> UShowPlayer::NewShowSequencer(AActor* Owner, const FSoftObjectPath& ShowPath)
+UShowSequencer* UShowPlayer::NewShowSequencer(AActor* Owner, const FSoftObjectPath& ShowPath)
 {
     checkf(Owner, TEXT("UShowPlayer::NewShowSequencer: The Owner provided is invalid or null."));
 
@@ -66,10 +66,10 @@ TObjectPtr<UShowSequencer> UShowPlayer::NewShowSequencer(AActor* Owner, const FS
     return nullptr;
 }
 
-void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
+void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
 {
     checkf(Owner, TEXT("UShowPlayer::PlaySoloShow: The Owner provided is invalid or null."));
-    checkf(ShowSequencer, TEXT("UShowPlayer::PlaySoloShow: The ShowSequencer provided is invalid or null."));
+    checkf(ShowSequencerPtr, TEXT("UShowPlayer::PlaySoloShow: The ShowSequencer provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
     if (!ShowSequencerComponent)
@@ -84,35 +84,35 @@ void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
         }
     }
 
-    ShowSequencerComponent->PlayShow(ShowSequencer);
+    ShowSequencerComponent->PlayShow(ShowSequencerPtr);
 }
 
-void UShowPlayer::StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
+void UShowPlayer::StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
 {
     checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
     checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
 
-    ShowSequencerComponent->StopShow(ShowSequencer);
+    ShowSequencerComponent->StopShow(ShowSequencerPtr);
 }
 
-void UShowPlayer::DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencer)
+void UShowPlayer::DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
 {
     checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
     checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
 
-    ShowSequencerComponent->DisposeShow(ShowSequencer);
+    ShowSequencerComponent->DisposeShow(ShowSequencerPtr);
 }
 
-bool UShowPlayer::HasShowSequencer(AActor* Owner, TObjectPtr<UShowSequencer> Sequencer) const
+bool UShowPlayer::HasShowSequencer(const AActor* Owner, const UShowSequencer* SequencerPtr) const
 {
     checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
     checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
 
-	return ShowSequencerComponent->HasShowSequencer(Sequencer);
+	return ShowSequencerComponent->HasShowSequencer(SequencerPtr);
 }

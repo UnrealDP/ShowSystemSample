@@ -55,19 +55,19 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
 {
     return SNew(SVerticalBox)
         + SVerticalBox::Slot()
-        .Padding(2.0f)
         .FillHeight(1.0f)
         [
             SNew(SBox)
                 [
                     SAssignNew(ShowSequencerEditHeader, SShowSequencerEditHeader)
-                        .Height(30)
+                        .TitleHeight(30)
+                        .Height(20)
                         .Width(100)
-                        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBase) 
+                        .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
                             {
                                 if (OnAddKey.IsBound())
                                 {
-                                    OnAddKey.Execute(EditorHelper, ShowBase);
+                                    OnAddKey.Execute(EditorHelper, ShowBasePtr);
                                 }
                                 IsUpdateKey = true;
                             })
@@ -96,20 +96,7 @@ void SShowActionControllPanels::ConstructRightWidget(const FArguments& InArgs)
 {
     HorizontalBox->ClearChildren();
 
-    int32 SlotCount = 0;
-    if (CastEditorHelper)
-    {
-		SlotCount++;
-	}
-    if (ExecEditorHelper)
-    {
-        SlotCount++;
-    }
-    if (FinishEditorHelper)
-    {
-		SlotCount++;
-	}
-
+    int32 SlotCount = ShowSequencerEditorHelperSortMapPtr ? ShowSequencerEditorHelperSortMapPtr->Num() : 0;
     if (SlotCount == 0)
     {
 		return;
@@ -117,38 +104,38 @@ void SShowActionControllPanels::ConstructRightWidget(const FArguments& InArgs)
 
     const float EqualWidth = 1.0f / SlotCount;
 
-    if (CastEditorHelper)
+    if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Cast"))
     {
         HorizontalBox->AddSlot()
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
             [
-                ConstructShowSequencerWidget(InArgs, CastEditorHelper)
+                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Cast"])
             ];
     }
 
-    if (ExecEditorHelper)
+    if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Exec"))
     {
         HorizontalBox->AddSlot()
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
             [
-                ConstructShowSequencerWidget(InArgs, ExecEditorHelper)
+                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Exec"])
             ];
     }
 
-    if (FinishEditorHelper)
+    if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Finish"))
     {
         HorizontalBox->AddSlot()
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
             [
-                ConstructShowSequencerWidget(InArgs, FinishEditorHelper)
+                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Finish"])
             ];
     }
 }
 
-TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(const FArguments& InArgs, TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
+TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(const FArguments& InArgs, TSharedPtr<FShowSequencerEditorHelper>& EditorHelper)
 {
     return SNew(SOverlay)
         + SOverlay::Slot()
@@ -156,7 +143,7 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
             SNew(SShowSequencerScrubBoard)
                 .Height(30)
                 .TotalValue_Lambda([EditorHelper]() { return EditorHelper->GetWidgetLengthAlignedToInterval(2.0f); })
-                .CrrValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencer->GetPassedTime(); })
+                .CrrValue_Lambda([EditorHelper]() { return EditorHelper->EditShowSequencerPtr->GetPassedTime(); })
                 .OnValueChanged_Lambda([EditorHelper](float InValue)
 					{
 						//EditorHelper->EditShowSequencer->SetPassedTime(InValue);
@@ -166,104 +153,33 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
         [
             SNew(SBox)
                 .Padding(FMargin(0, 30, 0, 0))
-                .HAlign(HAlign_Left)
+                .HAlign(HAlign_Fill)
                 .VAlign(VAlign_Top)
                 [
                     SAssignNew(ShowKeyBoxHandler, SShowKeyBoxHandler)
                         .EditorHelper(EditorHelper)
-                        .Height(30)
-                        .MinWidth(100)
-                        .OnClickedKey_Lambda([this, EditorHelper](UShowBase* ShowBase)
+                        .Height(20)
+                        .MinWidth(20)
+                        .OnClickedKey_Lambda([this, EditorHelper](UShowBase* ShowBasePtr)
                             {
                                 if (OnSelectedKey.IsBound())
 								{
-                                    OnSelectedKey.Execute(EditorHelper, ShowBase);
+                                    OnSelectedKey.Execute(EditorHelper, ShowBasePtr);
 								}
                             })
-                        .OnChangedKey_Lambda([EditorHelper](UShowBase* ShowBase)
+                        .OnChangedKey_Lambda([EditorHelper](UShowBase* ShowBasePtr)
                             {
-                                EditorHelper->EditShowSequencer->MarkPackageDirty();
+                                EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
                             })
                 ]
         ];
 }
 
-void SShowActionControllPanels::SelectAction(
-    UActionBase* InAction, 
-    TObjectPtr<UShowSequencer> InCastShow,
-    TObjectPtr<UShowSequencer> InExecShow,
-    TObjectPtr<UShowSequencer> InFinishShow)
+void SShowActionControllPanels::RefreshShowActionControllPanels(TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr)
 {
-    /*ShowSequencerEditorHelperMap.Empty();
-    CrrAction = InAction;
-
-    if (CastEditorHelper)
-    {
-        CastEditorHelper.Reset();
-        CastEditorHelper = nullptr;
-    }
-    if (ExecEditorHelper)
-    {
-        ExecEditorHelper.Reset();
-        ExecEditorHelper = nullptr;
-    }
-    if (FinishEditorHelper)
-    {
-        FinishEditorHelper.Reset();
-        FinishEditorHelper = nullptr;
-    }
-
-    if (InCastShow)
-    {
-        CastEditorHelper = MakeShared<FShowSequencerEditorHelper>();
-        CastEditorHelper->EditShowSequencer = InCastShow;
-        ShowSequencerEditorHelperMap.Add("Cast", CastEditorHelper);
-    }
-
-    if (InExecShow)
-    {
-        ExecEditorHelper = MakeShared<FShowSequencerEditorHelper>();
-        ExecEditorHelper->EditShowSequencer = InExecShow;
-        ShowSequencerEditorHelperMap.Add("Exec", ExecEditorHelper);
-    }
-
-    if (InFinishShow)
-    {
-        FinishEditorHelper = MakeShared<FShowSequencerEditorHelper>();
-        FinishEditorHelper->EditShowSequencer = InFinishShow;
-        ShowSequencerEditorHelperMap.Add("Finish", FinishEditorHelper);
-    }    
-
+    ShowSequencerEditorHelperSortMapPtr = InShowSequencerEditorHelperSortMapPtr;
     ConstructRightWidget(Args);
-    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);*/
-}
-
-void SShowActionControllPanels::ChangeShow(EActionState ActionState, TObjectPtr<UShowSequencer> NewShow)
-{
-    switch (ActionState)
-    {
-        case EActionState::Cast:
-	    	if (CastEditorHelper)
-	    	{
-                if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperMap.Find("Cast"))
-                {
-                    // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
-                    (*ExistingHelper)->EditShowSequencer = NewShow;
-                }
-	    	}
-            else
-            {
-                CastEditorHelper = MakeShared<FShowSequencerEditorHelper>();
-                CastEditorHelper->EditShowSequencer = NewShow;
-                ShowSequencerEditorHelperMap.Add("Cast", CastEditorHelper);
-            }
-	    	break;
-        default:
-            break;
-    }
-
-    ConstructRightWidget(Args);
-    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+    ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperSortMapPtr);
 }
 
 void SShowActionControllPanels::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
@@ -277,7 +193,7 @@ void SShowActionControllPanels::Tick(const FGeometry& AllottedGeometry, const do
         }
         if (ShowSequencerEditHeader)
         {
-            ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperMap);
+            ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperSortMapPtr);
         }
         IsUpdateKey = false;
     }

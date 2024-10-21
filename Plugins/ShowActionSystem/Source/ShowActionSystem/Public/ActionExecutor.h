@@ -20,10 +20,10 @@ private:
     virtual void BeginDestroy() override;
 
 public:
-    UActionExecutor(TObjectPtr<UActionBase> InActionBase)
+    UActionExecutor(UActionBase* InActionBasePtr)
     {
-        checkf(InActionBase != nullptr, TEXT("UActionExecutor::UActionExecutor InActionBase is invalid"));
-        ActionBase = InActionBase;
+        checkf(InActionBasePtr != nullptr, TEXT("UActionExecutor::UActionExecutor InActionBasePtr is invalid"));
+        ActionBasePtr = InActionBasePtr;
     }
 
     /**
@@ -48,8 +48,7 @@ public:
     // -- End FTickableGameObject virtual = 0;
 
 private:
-    UPROPERTY()
-    TObjectPtr<UActionBase> ActionBase;
+    UActionBase* ActionBasePtr;
 
     float PassedTime = 0.0f;
     float StepPassedTime = 0.0f;

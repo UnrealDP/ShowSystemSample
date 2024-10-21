@@ -29,8 +29,8 @@ public:
 	void Construct(const FArguments& InArgs);
     void RefreshShowKeyWidgets();
 
-    void OnKeyClicked(UShowBase* ClickedhowBase);
-    bool IsShowKeySelected(UShowBase* ShowBase);
+    void OnKeyClicked(UShowBase* ClickedhowBasePtr);
+    bool IsShowKeySelected(UShowBase* ShowBasePtr);
     float GetSecondToWidthRatio();
 
     virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;

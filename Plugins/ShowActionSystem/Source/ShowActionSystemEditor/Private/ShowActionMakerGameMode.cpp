@@ -207,10 +207,10 @@ UActionBase* AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, 
     {
         UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
         ActionComponent->InitializeActionPool<UActionSkill, FSkillData, FSkillShowData>({ SelectedActionName });
-        CrrAction = ActionComponent->GetAction(SelectedActionName);
+        CrrActionPtr = ActionComponent->GetAction(SelectedActionName);
     }
 
-    return CrrAction;
+    return CrrActionPtr;
 }
 
 void AShowActionMakerGameMode::DoAction()

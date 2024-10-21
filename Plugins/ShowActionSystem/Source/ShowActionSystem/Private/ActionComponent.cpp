@@ -27,7 +27,7 @@ void UActionComponent::BeginPlay()
 
 void UActionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	MainAction = nullptr;
+	MainActionPtr = nullptr;
 
 	UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
 
@@ -69,22 +69,22 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 	for (TMap<FName, UActionBase*>::TIterator It = OneShotActions.CreateIterator(); It; ++It)
 	{
-		UActionBase* ActionBase = It.Value();
+		UActionBase* ActionBasePtr = It.Value();
 
-		if (ActionBase)
+		if (ActionBasePtr)
 		{
 			// 액션 완료 여부 확인
-			if (ActionBase->IsCompleted())
+			if (ActionBasePtr->IsCompleted())
 			{
 				UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-				PoolManager->ReturnPooledObject(ActionBase, ActionBase->GetObjectPoolType());
-				ActionBase = nullptr;
+				PoolManager->ReturnPooledObject(ActionBasePtr, ActionBasePtr->GetObjectPoolType());
+				ActionBasePtr = nullptr;
 
 				It.RemoveCurrent();
 			}
 			else
 			{
-				ActionBase->Tick(DeltaTime);
+				ActionBasePtr->Tick(DeltaTime);
 			}
 		}
 		else
@@ -94,30 +94,30 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		}
 	}
 
-	if (MainAction)
+	if (MainActionPtr)
 	{
 		// Cast 나 Exec 상태가 아니면 몸을 점유하는 메인 액션에서는 뺀다
-		if (MainAction->GetState() != EActionState::Cast &&
-			MainAction->GetState() != EActionState::Exec)
+		if (MainActionPtr->GetState() != EActionState::Cast &&
+			MainActionPtr->GetState() != EActionState::Exec)
 		{
-			MainAction = nullptr;
+			MainActionPtr = nullptr;
 		}
 	}
 }
 
 bool UActionComponent::DefaultFilterRule(const FName& ActionName, const FActionBaseData* InActionBaseData)
 {
-	if (!MainAction)
+	if (!MainActionPtr)
 	{
 		return true;
 	}
 
-	if (MainAction->GetState() == EActionState::Exec)
+	if (MainActionPtr->GetState() == EActionState::Exec)
 	{
 		return false;
 	}
 
-	if (MainAction->GetActionBaseData()->Priority > InActionBaseData->Priority)
+	if (MainActionPtr->GetActionBaseData()->Priority > InActionBaseData->Priority)
 	{
 		return false;
 	}
@@ -145,32 +145,32 @@ void UActionComponent::ClearActionPool()
 
 UActionBase* UActionComponent::DoActionPool(const FName& ActionName, ActionFilterFuncPtr ActionFilter)
 {
-	UActionBase** ActionBasePtr = ActionPool.Find(ActionName);
-	if (!ActionBasePtr)
+	UActionBase** ActionBasePtrAddress = ActionPool.Find(ActionName);
+	if (!ActionBasePtrAddress)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UActionComponent::DoActionPool ActionBase is nullptr [ %s ]"), *ActionName.ToString());
 		return nullptr;
 	}
 
-	UActionBase* ActionBase = *ActionBasePtr;
+	UActionBase* ActionBasePtr = *ActionBasePtrAddress;
 	if (ActionFilter)
 	{
-		if (!ActionFilter(this, ActionName, ActionBase->GetActionBaseData()))
+		if (!ActionFilter(this, ActionName, ActionBasePtr->GetActionBaseData()))
 		{
 			return nullptr;
 		}
 	}
-	else if (!DefaultFilterRule(ActionName, ActionBase->GetActionBaseData()))
+	else if (!DefaultFilterRule(ActionName, ActionBasePtr->GetActionBaseData()))
 	{
 		return nullptr;
 	}
 
-	if(MainAction)
+	if(MainActionPtr)
 	{
-		MainAction->Cancel();
+		MainActionPtr->Cancel();
 	}
 
-	MainAction = ActionBase;
-	return ActionBase;
+	MainActionPtr = ActionBasePtr;
+	return ActionBasePtr;
 }
 
