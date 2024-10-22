@@ -17,6 +17,7 @@ void SShowSequencerEditor::Construct(const FArguments& InArgs)
     OnKeyDownSpace = InArgs._OnKeyDownSpace;
     OnAddKey = InArgs._OnAddKey;
     OnRemoveKey = InArgs._OnRemoveKey;
+    OnClickedKey = InArgs._OnClickedKey;
 
     ShowSequencerEditorHelperSortMap.Add("Show", EditorHelper);
 
@@ -46,7 +47,8 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& InArgs)
 {
     ShowSequencerEditHeader = SNew(SShowSequencerEditHeader)
-        .Height(30)
+        .TitleHeight(30)
+        .Height(20)
         .Width(100)
         .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
             {
@@ -63,7 +65,15 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
                     OnRemoveKey.Execute();
                 }
                 IsUpdateKey = true;
-            });
+            })
+        .OnShowKeyClicked_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
+            {
+                if (OnClickedKey.IsBound())
+                {
+                    OnClickedKey.Execute(ShowBasePtr);
+                }
+            })
+        .IsShowKeySelected(InArgs._IsShowKeySelected);
 
     ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(&ShowSequencerEditorHelperSortMap);
 
@@ -115,6 +125,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments&
                         .MinWidth(InArgs._MinWidth)
                         .OnClickedKey(InArgs._OnClickedKey)
                         .OnChangedKey(InArgs._OnChangedKey)
+                        .IsShowKeySelected(InArgs._IsShowKeySelected)
                 ]
         ];
 }

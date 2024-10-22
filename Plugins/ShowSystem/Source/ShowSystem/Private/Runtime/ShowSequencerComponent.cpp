@@ -11,11 +11,8 @@ UShowSequencerComponent::UShowSequencerComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
 }
 
-// Called when the game starts
 void UShowSequencerComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -27,19 +24,21 @@ void UShowSequencerComponent::BeginPlay()
 	checkf(World, TEXT("UShowSequencerComponent::BeginPlay: The World is invalid."));
 
 	PoolManager = World->GetSubsystem<UObjectPoolManager>();
-	
 }
 
 void UShowSequencerComponent::BeginDestroy()
 {
-	checkf(PoolManager, TEXT("UShowSequencerComponent::NewShowSequencer: The PoolManager is invalid."));
-
-	for (UShowSequencer*& ShowSequencerPtr : ShowSequencers)
+	if (HasBegunPlay())
 	{
-		PoolManager->ReturnPooledObject(ShowSequencerPtr, EObjectPoolType::ObjectPool_ShowSequencer);
-		ShowSequencerPtr = nullptr;
+		checkf(PoolManager, TEXT("UShowSequencerComponent::NewShowSequencer: The PoolManager is invalid."));
+
+		for (UShowSequencer*& ShowSequencerPtr : ShowSequencers)
+		{
+			PoolManager->ReturnPooledObject(ShowSequencerPtr, EObjectPoolType::ObjectPool_ShowSequencer);
+			ShowSequencerPtr = nullptr;
+		}
+		ShowSequencers.Empty();
 	}
-	ShowSequencers.Empty();
 
 	Super::BeginDestroy();
 }

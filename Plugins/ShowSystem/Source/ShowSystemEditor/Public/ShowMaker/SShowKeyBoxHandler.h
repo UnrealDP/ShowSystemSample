@@ -7,9 +7,10 @@
 #include "ShowMaker/SShowKeyBox.h"
 #include "Widgets/SCompoundWidget.h"
 
-class FShowSequencerEditorHelper;
-
+DECLARE_DELEGATE_RetVal_OneParam(bool, FIsShowKeySelected, UShowBase*);
 DECLARE_DELEGATE_OneParam(FOnShowBaseEvent, UShowBase*);
+
+class FShowSequencerEditorHelper;
 
 /**
  * 
@@ -23,6 +24,7 @@ public:
         SLATE_ATTRIBUTE(float, MinWidth)
         SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)
         SLATE_EVENT(FOnShowBaseEvent, OnChangedKey)
+        SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
     SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -30,12 +32,14 @@ public:
     void RefreshShowKeyWidgets();
 
     void OnKeyClicked(UShowBase* ClickedhowBasePtr);
-    bool IsShowKeySelected(UShowBase* ShowBasePtr);
     float GetSecondToWidthRatio();
 
     virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
+    TSharedPtr<FShowSequencerEditorHelper> GetEditorHelper() const { return EditorHelper; }
+
 private:
+    FArguments Args;
     TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
     TAttribute<float> Height = 30.0f;
     TAttribute<float> MinWidth = 20.0f;

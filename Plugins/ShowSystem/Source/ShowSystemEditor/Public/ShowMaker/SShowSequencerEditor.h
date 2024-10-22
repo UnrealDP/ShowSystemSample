@@ -14,6 +14,7 @@ class SShowSequencerEditHeader;
 DECLARE_DELEGATE_OneParam(FOnShowBaseEvent, UShowBase*);
 DECLARE_DELEGATE(FOnShowRemoveEvent);
 DECLARE_DELEGATE(FOnKeyDownSpace);
+DECLARE_DELEGATE_RetVal_OneParam(bool, FIsShowKeySelected, UShowBase*);
 
 /**
  * 
@@ -30,7 +31,8 @@ public:
 		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
 		SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)
 		SLATE_EVENT(FOnShowBaseEvent, OnChangedKey)
-		SLATE_EVENT(FOnKeyDownSpace, OnKeyDownSpace)		
+		SLATE_EVENT(FOnKeyDownSpace, OnKeyDownSpace)
+		SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -45,6 +47,7 @@ public:
 private:
 	FOnShowBaseEvent OnAddKey;
 	FOnShowRemoveEvent OnRemoveKey;
+	FOnShowBaseEvent OnClickedKey;
 	
 	TSharedPtr<SShowKeyBoxHandler> ShowKeyBoxHandler = nullptr;
 	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;

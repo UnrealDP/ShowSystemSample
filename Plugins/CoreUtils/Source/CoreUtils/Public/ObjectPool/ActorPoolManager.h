@@ -70,7 +70,14 @@ public:
     template <typename T>
     T* GetPooledObject(EActorPoolType ActorType, FTransform const& Transform, const FActorSpawnParameters& SpawnParameters = nullptr)
     {
-        EnsurePoolsInitialized(ActorType);
+        // ActorPools 배열이 초기화되었는지 확인
+        checkf(ActorPools.Num() > 0, TEXT("[UActorPoolManager] ActorPools 배열이 초기화되지 않았습니다. InitializePoolSettings 함수를 먼저 호출하세요."));
+
+        // 지정한 ActorType에 해당하는 풀 배열이 유효한지 확인
+        checkf(ActorPools.IsValidIndex(static_cast<int32>(ActorType)), TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀 배열이 초기화되지 않았습니다."));
+
+        // 해당 ActorType의 풀 배열에 객체가 있는지 확인
+        checkf(ActorPools[static_cast<int32>(ActorType)].Num() > 0, TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀에 객체가 없습니다."));
 
         int32 Index = static_cast<int32>(ActorType);
         // 액터 클래스는 ActorType에 맞게 정의된 클래스 타입이거나 상속 관계여야 함
@@ -120,17 +127,6 @@ public:
     void ReturnPooledObject(AActor* Object, EActorPoolType ActorType);
 
 private:
-    inline void EnsurePoolsInitialized(EActorPoolType ActorType)
-    {
-        // ActorPools 배열이 초기화되었는지 확인
-        checkf(ActorPools.Num() > 0, TEXT("[UActorPoolManager] ActorPools 배열이 초기화되지 않았습니다. InitializePoolSettings 함수를 먼저 호출하세요."));
-
-        // 지정한 ActorType에 해당하는 풀 배열이 유효한지 확인
-        checkf(ActorPools.IsValidIndex(static_cast<int32>(ActorType)), TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀 배열이 초기화되지 않았습니다."));
-
-        // 해당 ActorType의 풀 배열에 객체가 있는지 확인
-        checkf(ActorPools[static_cast<int32>(ActorType)].Num() > 0, TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀에 객체가 없습니다."));
-    }
 
     // 풀 크기를 확장하는 메서드
     template <typename T>

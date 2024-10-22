@@ -11,6 +11,7 @@ class FShowSequencerEditorHelper;
 
 DECLARE_DELEGATE_TwoParams(FOnShowBaseEditEvent, TSharedPtr<FShowSequencerEditorHelper>, UShowBase*);
 DECLARE_DELEGATE_OneParam(FOnShowSequencerRemoveEvent, TSharedPtr<FShowSequencerEditorHelper>);
+DECLARE_DELEGATE_RetVal_OneParam(bool, FIsShowKeySelected, UShowBase*);
 
 /**
  * 
@@ -22,8 +23,10 @@ public:
 		SLATE_ATTRIBUTE(float, TitleHeight)
 		SLATE_ATTRIBUTE(float, Height)
 		SLATE_ATTRIBUTE(float, Width)
+		SLATE_EVENT(FOnShowBaseEditEvent, OnShowKeyClicked)
 		SLATE_EVENT(FOnShowBaseEditEvent, OnAddShowKeyEvent)
 		SLATE_EVENT(FOnShowSequencerRemoveEvent, OnRemoveShowKeyEvent)
+		SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -41,6 +44,8 @@ public:
 	
 	FReply OnRemoveShowKey(TSharedPtr<FShowSequencerEditorHelper> ShowSequencerEditorHelper, UShowBase* ShowBasePtr);
 
+private:
+	FArguments Args;
 	TAttribute<float> TitleHeight = 30.0f;
 	TAttribute<float> Height = 30.0f;
 	TAttribute<float> Width = 100.0f;

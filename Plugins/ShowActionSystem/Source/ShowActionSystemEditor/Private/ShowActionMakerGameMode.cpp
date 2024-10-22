@@ -77,21 +77,7 @@ void AShowActionMakerGameMode::BeginPlay()
 
     if (FShowActionSystemEditor* ShowActionSystemEditorModulePtr = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
     {
-        ShowActionSystemEditorModulePtr->ShowActionMakerGameMode = this;
-        ShowActionSystemEditorModulePtr->OpenSkillDataDetails();
-        ShowActionSystemEditorModulePtr->OpenShowKeyDetails();
-        ShowActionSystemEditorModulePtr->OpenShowActionControllPanels();
-        ShowActionSystemEditorModulePtr->RegisterMenus();
-
-        TSharedPtr<SSkillDataDetailsWidget> SkillDataDetailsWidget = ShowActionSystemEditorModulePtr->SkillDataDetailsWidget;
-        if (SkillDataDetailsWidget)
-        {
-            FName FirstSkillName = SkillDataDetailsWidget->FirstSkillName();
-            if (!FirstSkillName.IsNone())
-            {
-                SkillDataDetailsWidget->OnSkillSelected(FirstSkillName.ToString());
-            }
-        }
+        ShowActionSystemEditorModulePtr->InitializeModule(this);
     }
 }
 
@@ -101,6 +87,11 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
     SaveActorPositions();
 
+    if (FShowActionSystemEditor* ShowActionSystemEditorModulePtr = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
+    {
+        ShowActionSystemEditorModulePtr->ClearModule();
+    }
+
     if (Caster && !Caster->IsPendingKillPending())
     {
         Caster->Destroy();
@@ -108,22 +99,14 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
     }
 
     for (AActor* Target : Targets)
-	{
-		if (Target && !Target->IsPendingKillPending())
-		{
-			Target->Destroy();
-            Target = nullptr;
-		}
-	}
-    Targets.Empty();
-
-    if (FShowActionSystemEditor* ShowActionSystemEditorModulePtr = static_cast<FShowActionSystemEditor*>(FModuleManager::Get().GetModule(TEXT("ShowActionSystemEditor"))))
     {
-        ShowActionSystemEditorModulePtr->UnRegisterMenus();
-        ShowActionSystemEditorModulePtr->ShowActionMakerGameMode = nullptr;
-
-        //ShowActionSystemEditorModulePtr->CloseShowKeyDetails();
+        if (Target && !Target->IsPendingKillPending())
+        {
+            Target->Destroy();
+            Target = nullptr;
+        }
     }
+    Targets.Empty();
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }

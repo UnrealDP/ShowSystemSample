@@ -13,12 +13,21 @@ bool FShowSequencerEditorToolkit::OnRequestClose()
 {
     UnregisterTabSpawners(GetTabManager().ToSharedRef());
 
-    DetailsView.Reset();
-    DetailsView = nullptr;
+    // DetailsView 와 EditorHelper 가 nullptr 일 수는 없다.
+    // 다만, 언리얼 자체를 종료하면 OnRequestClose 가 2번 들어온다.
 
-    EditorHelper->Dispose();
-    EditorHelper.Reset();
-    EditorHelper = nullptr;
+    if (DetailsView)
+    {
+        DetailsView.Reset();
+        DetailsView = nullptr;
+    }
+
+    if (EditorHelper)
+    {
+        EditorHelper->Dispose();
+        EditorHelper.Reset();
+        EditorHelper = nullptr;
+    }
 
     return true; 
 }

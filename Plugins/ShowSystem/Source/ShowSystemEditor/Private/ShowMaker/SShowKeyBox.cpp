@@ -47,16 +47,19 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
         // 클릭 영역을 저장
         ClickableBox = FSlateRect(StartX, 0, StartX + KeyWidth, Height.Get());
 
-        FLinearColor BoxColor = FLinearColor::Gray;
-        FLinearColor TextColor = FLinearColor::Black;
+        bool IsSelected = false;
+        FLinearColor BoxColor = FLinearColor(0.2f, 0.2f, 0.2f);
+        FLinearColor TextColor = FLinearColor::Gray;
         if (IsShowKeySelected.IsBound())
         {
-            if (IsShowKeySelected.Execute(ShowBasePtr))
-            {
-                BoxColor = FLinearColor::Blue;
-                TextColor = FLinearColor::Red;
-            }
+            IsSelected = IsShowKeySelected.Execute(ShowBasePtr);
         }
+        if (IsSelected)
+        {
+            BoxColor = FLinearColor(0.0f, 0.0f, 0.5f);
+            TextColor = FLinearColor(0.0f, 0.5f, 0.0f);
+        }
+
         // 박스 그리기
         FSlateDrawElement::MakeBox(
             OutDrawElements,
@@ -79,9 +82,27 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
 
         // 박스의 중앙에 텍스트 배치
         float TextPosY = (Height.Get() - TextSize.Y) * 0.5f;
+
+        if (!IsSelected)
+        {
+            // 텍스트 외곽선 두께 설정
+            const float OutlineThickness = 1.5f;
+            // 텍스트 외곽선을 그리기 (검정색)
+//            FSlateDrawElement::MakeText(
+//                OutDrawElements,
+//                ++LayerId,
+////                AllottedGeometry.ToPaintGeometry(FVector2D(KeyWidth, TextSize.Y), FSlateLayoutTransform(FVector2D(StartX + 5 - OutlineThickness, TextPosY - OutlineThickness))),
+//                AllottedGeometry.ToPaintGeometry(FVector2D(KeyWidth, TextSize.Y), FSlateLayoutTransform(FVector2D(StartX + 5 + OutlineThickness, TextPosY + OutlineThickness))),
+//                ShowBasePtr->GetTitle(),
+//                FontInfo,
+//                ESlateDrawEffect::None,
+//                FLinearColor::Black
+//            );
+        }
+
         FSlateDrawElement::MakeText(
             OutDrawElements,
-            LayerId + 1,
+            ++LayerId,
             AllottedGeometry.ToPaintGeometry(FVector2D(KeyWidth, TextSize.Y), FSlateLayoutTransform(FVector2D(StartX + 5, TextPosY))),
             ShowBasePtr->GetTitle(),
             FontInfo,

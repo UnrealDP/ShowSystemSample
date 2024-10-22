@@ -12,7 +12,7 @@
 class SHOWSYSTEMEDITOR_API ShowSequencerNotifyHook : public FNotifyHook
 {
 public:
-    ShowSequencerNotifyHook(FShowSequencerEditorHelper* InEditorHelper)
+    ShowSequencerNotifyHook(TSharedPtr<FShowSequencerEditorHelper> InEditorHelper)
     {
         EditorHelper = InEditorHelper;
     }
@@ -33,11 +33,11 @@ public:
         }
     }
 
-    void UpdateEditorHelper(FShowSequencerEditorHelper* InEditorHelper)
+    void UpdateEditorHelper(TSharedPtr<FShowSequencerEditorHelper> InEditorHelper)
     {
         EditorHelper = InEditorHelper;
     }
 
 private:
-    FShowSequencerEditorHelper* EditorHelper = nullptr;
+    TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
 };

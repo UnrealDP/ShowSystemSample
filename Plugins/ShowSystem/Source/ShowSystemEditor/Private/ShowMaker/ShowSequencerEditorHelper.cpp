@@ -74,19 +74,14 @@ void FShowSequencerEditorHelper::Dispose()
 {
 	if (EditShowSequencerPtr)
 	{
-		UShowSequencerComponent* ShowSequencerComponent = nullptr;
-		if (EditShowSequencerPtr->Owner)
-		{
-			ShowSequencerComponent = EditShowSequencerPtr->Owner->FindComponentByClass<UShowSequencerComponent>();
-		}
-		
-		if (!ShowSequencerComponent)
+		if (!bIsCreateObjectPool)
 		{
 			EditShowSequencerPtr->ReleaseDontDestroy();
 			ShowSequencerClearShowObjects();
 			EditShowSequencerPtr->RemoveFromRoot();
 			EditShowSequencerPtr->Owner = nullptr;
 		}
+		
 		EditShowSequencerPtr = nullptr;
 	}
 
@@ -102,6 +97,7 @@ void FShowSequencerEditorHelper::NewShowSequencer(TObjectPtr<UShowSequenceAsset>
 
 	EditShowSequencerPtr = NewObject<UShowSequencer>(GetTransientPackage(), UShowSequencer::StaticClass());
 	checkf(EditShowSequencerPtr, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize EditShowSequencerPtr is nullptr."));
+	bIsCreateObjectPool = false;
 
 	EditShowSequencerPtr->AddToRoot();
 	EditShowSequencerPtr->SetDontDestroy();
@@ -236,7 +232,7 @@ float FShowSequencerEditorHelper::GetWidgetLengthAlignedToInterval(float Interva
 	return static_cast<float>(RoundedTotalLength);
 }
 
-TArray<UShowBase*>* FShowSequencerEditorHelper::RuntimeShowKeysPtr()
+const TArray<UShowBase*>* FShowSequencerEditorHelper::RuntimeShowKeysPtr() const
 {
 	return &EditShowSequencerPtr->RuntimeShowKeys;
 }

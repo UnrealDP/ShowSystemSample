@@ -35,6 +35,53 @@ void FShowActionSystemEditor::StartupModule()
 	UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been loaded"));
 }
 
+void FShowActionSystemEditor::ShutdownModule()
+{
+    FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(SkillDataTabId.TabType);
+
+    if (DataTableManager::IsInitialized())
+    {
+        DataTableManager::Get().ReleaseDatas({
+            EDataTable::SkillData,
+            EDataTable::SkillShowData,
+            EDataTable::EffectData,
+            });
+    }
+
+    UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been unloaded"));
+}
+
+void FShowActionSystemEditor::InitializeModule(TObjectPtr<AShowActionMakerGameMode> InShowActionMakerGameMode)
+{
+    ShowActionMakerGameMode = InShowActionMakerGameMode;
+    OpenSkillDataDetails();
+    OpenShowKeyDetails();
+    OpenShowActionControllPanels();
+    RegisterMenus();
+
+    if (SkillDataDetailsWidget)
+    {
+        FName FirstSkillName = SkillDataDetailsWidget->FirstSkillName();
+        if (!FirstSkillName.IsNone())
+        {
+            SkillDataDetailsWidget->OnSkillSelected(FirstSkillName.ToString());
+        }
+    }
+}
+
+void FShowActionSystemEditor::ClearModule()
+{
+    UnRegisterMenus();
+    ShowActionMakerGameMode = nullptr;
+
+    SelectedShowBasePtr = nullptr;
+    ShowSequencerEditorHelperSortMap.Empty();
+    if (ShowActionControllPanels)
+    {
+        ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
+    }
+}
+
 void FShowActionSystemEditor::RegisterSkillDataTab()
 {
     FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
@@ -121,16 +168,23 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                     .TabRole(ETabRole::NomadTab)
                     [
                         SAssignNew(ShowActionControllPanels, SShowActionControllPanels)
+                            .Height(20.0f)
                             .OnAddKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
 								{
-                                    EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
+                                    EditorHelper->ShowSequenceAssetMarkPackageDirty();
 								})
                             .OnSelectedKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
 								{
+                                    if (SelectedShowBasePtr != ShowBasePtr)
+                                    {
+                                        SelectedShowBasePtr = ShowBasePtr;
+                                        ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper);
+                                        UpdateShowKeyDetails(SelectedShowBasePtr);
+                                    }
+                                    
                                     if (EditorHelper->SelectedShowBasePtr != ShowBasePtr)
                                     {
                                         EditorHelper->SelectedShowBasePtr = ShowBasePtr;
-                                        UpdateShowKeyDetails(EditorHelper);
                                     }
 								})
                             .OnRemoveKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
@@ -138,8 +192,14 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                     UShowBase* CheckSelectedShowBasePtr = EditorHelper->CheckGetSelectedShowBase();
                                     if (CheckSelectedShowBasePtr != EditorHelper->SelectedShowBasePtr)
                                     {
+                                        if (SelectedShowBasePtr == EditorHelper->SelectedShowBasePtr)
+                                        {
+                                            SelectedShowBasePtr = CheckSelectedShowBasePtr;
+                                            ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper);
+                                            UpdateShowKeyDetails(SelectedShowBasePtr);
+                                        }
+
                                         EditorHelper->SelectedShowBasePtr = CheckSelectedShowBasePtr;
-                                        UpdateShowKeyDetails(EditorHelper);
                                     }
                                 })
                             .OnPlay_Lambda([this]()
@@ -149,6 +209,10 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
 										ShowActionMakerGameMode->DoAction();
 									}
 								})
+                            .IsShowKeySelected_Lambda([this](UShowBase* ShowBasePtr)
+                                {
+									return SelectedShowBasePtr == ShowBasePtr;
+								})
                     ];
 
                 return NewTab;
@@ -157,36 +221,19 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
         .SetMenuType(ETabSpawnerMenuType::Hidden);
 }
 
-void FShowActionSystemEditor::UpdateShowKeyDetails(TSharedPtr<FShowSequencerEditorHelper> EditorHelper)
+void FShowActionSystemEditor::UpdateShowKeyDetails(UShowBase* InSelectedShowBasePtr)
 {
-    if (EditorHelper->SelectedShowBasePtr)
+    if (InSelectedShowBasePtr)
     {
-        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBasePtr);
-        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBasePtr);
+        UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(InSelectedShowBasePtr->GetShowKey()->KeyType);
+        FShowKey* ShowKeyPtr = const_cast<FShowKey*>(InSelectedShowBasePtr->GetShowKey());
         TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
         ShowKeyStructureDetailsView->SetStructureData(StructData);
-        ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper.Get());
     }
     else
     {
         ShowKeyStructureDetailsView->SetStructureData(nullptr);
     }
-}
-
-void FShowActionSystemEditor::ShutdownModule()
-{
-    FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(SkillDataTabId.TabType);
-
-    if (DataTableManager::IsInitialized())
-    {
-        DataTableManager::Get().ReleaseDatas({
-            EDataTable::SkillData,
-            EDataTable::SkillShowData,
-            EDataTable::EffectData,
-            });
-    }
-
-	UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been unloaded"));
 }
 
 void FShowActionSystemEditor::RegisterMenus()
@@ -463,6 +510,25 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
                 }
             }
         }
+
+        ShowSequencerEditorHelperSortMap.Sort(
+            [](const TPair<FString, TSharedPtr<FShowSequencerEditorHelper>>& A, const TPair<FString, TSharedPtr<FShowSequencerEditorHelper>>& B)
+            {
+                if (A.Key == TEXT("Cast"))
+                {
+                    return true;
+                }
+                else if (A.Key == TEXT("Exec") && B.Key != TEXT("Cast"))
+                {
+                    return true;
+                }
+                else if (A.Key == TEXT("Finish") && B.Key == TEXT("Finish"))
+                {
+                    return false;
+                }
+                return false;
+            });
+
 
         if (ShowActionControllPanels)
         {

@@ -100,7 +100,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                             .ShowSequencerState(ShowSequencerState)
                             .OnAddKey_Lambda([this](UShowBase* ShowBasePtr)
                                 {
-                                    EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
+                                    EditorHelper->ShowSequenceAssetMarkPackageDirty();
 
                                     if (OnAddKey.IsBound())
 									{
@@ -131,12 +131,16 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
 								})
                             .OnChangedKey_Lambda([this](UShowBase* ShowBasePtr)
                                 {
-                                    EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
+                                    EditorHelper->ShowSequenceAssetMarkPackageDirty();
                                 })
                             .OnKeyDownSpace_Lambda([this]()
                                 {
                                     EditorHelper->Play();
                                 })
+                            .IsShowKeySelected_Lambda([this](UShowBase* ShowBasePtr)
+								{
+									return EditorHelper->SelectedShowBasePtr == ShowBasePtr;
+								})
                     }
                 )
                 .InitialRatios
@@ -166,7 +170,7 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
     FDetailsViewArgs ShowKeyDetailsViewArgs;
     ShowKeyDetailsViewArgs.bAllowSearch = true;
     ShowKeyDetailsViewArgs.bShowOptions = true;
-    NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper.Get()));
+    NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper));
     ShowKeyDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
 
     FStructureDetailsViewArgs ShowKeyDetailsArgs;

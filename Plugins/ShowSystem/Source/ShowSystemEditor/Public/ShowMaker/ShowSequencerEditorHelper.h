@@ -28,18 +28,23 @@ public:
 	}
 
 	void SetShowMakerWidget(TSharedPtr<SShowMakerWidget> InShowMakerWidget);
-	TArray<UShowBase*>* RuntimeShowKeysPtr();
+	const TArray<UShowBase*>* RuntimeShowKeysPtr()const;
 	void SetShowBaseStartTime(UShowBase* InShowBasePtr, float StartTime);
 
 	TArray<UShowBase*>* EditorGetShowKeys() { return &EditShowSequencerPtr->RuntimeShowKeys; }
 	UShowBase* AddKey(FInstancedStruct& NewKey);
 	bool RemoveKey(UShowBase* RemoveShowBasePtr);
 	int32 FindShowKeyIndex(const FShowKey* ShowKey) const;
+	int ShowKeyNum() const { return EditShowSequencerPtr->RuntimeShowKeys.Num(); }
 
 	UScriptStruct* GetShowKeyStaticStruct(UShowBase* ShowBasePtr);
 	FShowKey* GetMutableShowKey(UShowBase* ShowBasePtr);
 
 	void NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged);
+	void ShowSequenceAssetMarkPackageDirty()
+	{
+		EditShowSequencerPtr->ShowSequenceAsset->MarkPackageDirty();
+	}
 
 	void Dispose();
 	void NewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
@@ -66,5 +71,7 @@ public:
 	TSharedPtr<SShowMakerWidget> ShowMakerWidget = nullptr;
 	UShowBase* SelectedShowBasePtr = nullptr;
 	TArray<FObjectPoolTypeSettings> EditorPoolSettings;
+
+	bool bIsCreateObjectPool = true;
 };
 

@@ -79,6 +79,8 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
                                 }
                                 IsUpdateKey = true;
                             })
+                        .OnShowKeyClicked(InArgs._OnSelectedKey)
+                        .IsShowKeySelected(InArgs._IsShowKeySelected)
                 ]
         ]
 
@@ -110,32 +112,53 @@ void SShowActionControllPanels::ConstructRightWidget(const FArguments& InArgs)
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
             [
-                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Cast"])
+                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Cast"], 0)
             ];
     }
 
     if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Exec"))
     {
+        float ExHeight = 0.0f;
+        if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Cast"))
+        {
+            ExHeight = (*ShowSequencerEditorHelperSortMapPtr)["Cast"]->ShowKeyNum() * Args._Height.Get();
+        }
+
         HorizontalBox->AddSlot()
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
+            .Padding(2.0f)
             [
-                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Exec"])
+                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Exec"], ExHeight)
             ];
     }
 
     if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Finish"))
     {
+        int Num = 0;
+        if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Cast"))
+        {
+            Num = (*ShowSequencerEditorHelperSortMapPtr)["Cast"]->ShowKeyNum();
+        }
+        if (ShowSequencerEditorHelperSortMapPtr->ContainsKey("Exec"))
+		{
+			Num += (*ShowSequencerEditorHelperSortMapPtr)["Exec"]->ShowKeyNum();
+		}
+        float ExHeight = Num * Args._Height.Get();
+
         HorizontalBox->AddSlot()
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
             [
-                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Finish"])
+                ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Finish"], ExHeight)
             ];
     }
 }
 
-TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(const FArguments& InArgs, TSharedPtr<FShowSequencerEditorHelper>& EditorHelper)
+TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(
+    const FArguments& InArgs, 
+    TSharedPtr<FShowSequencerEditorHelper>& EditorHelper, 
+    float ExHeight)
 {
     return SNew(SOverlay)
         + SOverlay::Slot()
@@ -152,13 +175,13 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
         + SOverlay::Slot()
         [
             SNew(SBox)
-                .Padding(FMargin(0, 30, 0, 0))
+                .Padding(FMargin(0, 30 + ExHeight, 0, 0))
                 .HAlign(HAlign_Fill)
                 .VAlign(VAlign_Top)
                 [
-                    SAssignNew(ShowKeyBoxHandler, SShowKeyBoxHandler)
+                    SNew(SShowKeyBoxHandler)
                         .EditorHelper(EditorHelper)
-                        .Height(20)
+                        .Height(Args._Height)
                         .MinWidth(20)
                         .OnClickedKey_Lambda([this, EditorHelper](UShowBase* ShowBasePtr)
                             {
@@ -167,10 +190,16 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(cons
                                     OnSelectedKey.Execute(EditorHelper, ShowBasePtr);
 								}
                             })
-                        .OnChangedKey_Lambda([EditorHelper](UShowBase* ShowBasePtr)
+                        .OnChangedKey_Lambda([this, EditorHelper](UShowBase* ShowBasePtr)
                             {
-                                EditorHelper->EditShowSequencerPtr->MarkPackageDirty();
+                                if (OnSelectedKey.IsBound())
+                                {
+                                    OnSelectedKey.Execute(EditorHelper, ShowBasePtr);
+                                }
+
+                                EditorHelper->ShowSequenceAssetMarkPackageDirty();
                             })
+                        .IsShowKeySelected(InArgs._IsShowKeySelected)
                 ]
         ];
 }
@@ -187,10 +216,8 @@ void SShowActionControllPanels::Tick(const FGeometry& AllottedGeometry, const do
     // Tick 함수 내에서 매 프레임 처리할 작업 수행
     if (IsUpdateKey)
     {
-        if (ShowKeyBoxHandler)
-        {
-            ShowKeyBoxHandler->RefreshShowKeyWidgets();
-        }
+        ConstructRightWidget(Args);
+        
         if (ShowSequencerEditHeader)
         {
             ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperSortMapPtr);

@@ -15,6 +15,7 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
 {
+    Args = InArgs;
     EditorHelper = InArgs._EditorHelper;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
@@ -41,7 +42,7 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
     VerticalBox->ClearChildren();
 
     // EditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
-    TArray<UShowBase*>* RuntimeShowKeysPtr = EditorHelper->RuntimeShowKeysPtr();
+    const TArray<UShowBase*>* RuntimeShowKeysPtr = EditorHelper->RuntimeShowKeysPtr();
     for (UShowBase* ShowBasePtr : *RuntimeShowKeysPtr)
     {
         VerticalBox->AddSlot()
@@ -63,7 +64,7 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
 								OnChangedKey.Execute(ChangedShowBasePtr);
 							}
                         })
-                    .IsShowKeySelected(this, &SShowKeyBoxHandler::IsShowKeySelected)
+                    .IsShowKeySelected(Args._IsShowKeySelected)
             ];
     }
 }
@@ -86,15 +87,6 @@ void SShowKeyBoxHandler::OnKeyClicked(UShowBase* ClickedhowBasePtr)
 	{
 		OnClickedKey.Execute(ClickedhowBasePtr);
 	}
-}
-
-bool SShowKeyBoxHandler::IsShowKeySelected(UShowBase* ShowBasePtr)
-{
-    if (!EditorHelper->SelectedShowBasePtr)
-    {
-		return false;
-	}
-    return EditorHelper->SelectedShowBasePtr == ShowBasePtr;
 }
 
 #undef LOCTEXT_NAMESPACE

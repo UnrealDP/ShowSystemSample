@@ -113,7 +113,11 @@ void UObjectPoolManager::GetPoolSettings(TArray<FObjectPoolTypeSettings>& OutPoo
 
 void UObjectPoolManager::ReturnPooledObject(UObject* Object, EObjectPoolType ObjectType)
 {
-    EnsurePoolsInitialized(ObjectType);
+    // ObjectPools 배열이 초기화되었는지 확인
+    checkf(ObjectPools.Num() > 0, TEXT("[UObjectPoolManager] ObjectPools 배열이 초기화되지 않았습니다. InitializePoolSettings 함수를 먼저 호출하세요."));
+
+    // 지정한 ObjectType에 해당하는 풀 배열이 유효한지 확인
+    checkf(ObjectPools.IsValidIndex(static_cast<int32>(ObjectType)), TEXT("[UObjectPoolManager] 지정된 ObjectType에 해당하는 풀 배열이 초기화되지 않았습니다."));
 
     int32 Index = static_cast<int32>(ObjectType);
 

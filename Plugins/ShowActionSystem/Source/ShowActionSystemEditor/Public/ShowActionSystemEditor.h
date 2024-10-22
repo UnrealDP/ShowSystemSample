@@ -25,6 +25,9 @@ public:
 	/* Called when the module is unloaded */
 	virtual void ShutdownModule() override;
 
+	void InitializeModule(TObjectPtr<AShowActionMakerGameMode> InShowActionMakerGameMode);
+	void ClearModule();
+
 	void RegisterSkillDataTab();
 	void RegisterShowKeyDetailsTab();
 	void RegisterShowActionControllPanelsTab();
@@ -37,12 +40,15 @@ public:
 	void OpenShowActionControllPanels();
 
 	void SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData);
-	void UpdateShowKeyDetails(TSharedPtr<FShowSequencerEditorHelper> EditorHelper);
+	void UpdateShowKeyDetails(UShowBase* InSelectedShowBasePtr);
 
 	void NotifyActionChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillData* SkillData);
 	void NotifyActionShowChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillShowData* SkillShowData);
 	void ChangeShow(EActionState ActionState, FSkillShowData* SkillShowData);
 
+private:
+	// ----------------------------------------------------------------------------------------------
+	// 편집 탭 윈도우 마지막 사용 도킹과 위치 등을 저장하게 하기 위해 StartupModule 에서 메인 탭에 등록
 	FTabId SkillDataTabId;
 	TObjectPtr<AShowActionMakerGameMode> ShowActionMakerGameMode = nullptr;
 
@@ -54,6 +60,8 @@ public:
 
 	FTabId ShowActionControllPanelsTabId;
 	TSharedPtr<SShowActionControllPanels> ShowActionControllPanels = nullptr;
+	// ----------------------------------------------------------------------------------------------
 	
 	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperSortMap;
+	UShowBase* SelectedShowBasePtr = nullptr;
 };

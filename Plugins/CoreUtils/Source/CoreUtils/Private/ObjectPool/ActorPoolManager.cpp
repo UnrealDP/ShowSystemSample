@@ -104,7 +104,11 @@ void UActorPoolManager::InitializePoolSettings(FString AssetPath)
 
 void UActorPoolManager::ReturnPooledObject(AActor* Object, EActorPoolType ActorType)
 {
-    EnsurePoolsInitialized(ActorType);
+    // ActorPools 배열이 초기화되었는지 확인
+    checkf(ActorPools.Num() > 0, TEXT("[UActorPoolManager] ActorPools 배열이 초기화되지 않았습니다. InitializePoolSettings 함수를 먼저 호출하세요."));
+
+    // 지정한 ActorType에 해당하는 풀 배열이 유효한지 확인
+    checkf(ActorPools.IsValidIndex(static_cast<int32>(ActorType)), TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀 배열이 초기화되지 않았습니다."));
 
     int32 Index = static_cast<int32>(ActorType);
     Object->SetActorHiddenInGame(true);  // 객체 비활성화

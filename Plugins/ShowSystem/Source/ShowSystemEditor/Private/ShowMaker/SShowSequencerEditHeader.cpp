@@ -16,6 +16,7 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowSequencerEditHeader::Construct(const FArguments& InArgs)
 {
+    Args = InArgs;
     TitleHeight = InArgs._TitleHeight;
     Height = InArgs._Height;
     Width = InArgs._Width;
@@ -105,24 +106,6 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TSortedPairArray<FString
 			.HAlign(HAlign_Fill)
 			[
                 ConstructShowSequencerHeaderWidget(Value)
-                /*SNew(SBox)
-                    .HeightOverride(Height.Get())
-                    [
-                        ConstructShowSequencerHeaderWidget(Value)
-                    ]*/
-                
-                /*SNew(SOverlay)
-                    + SOverlay::Slot()
-                    [
-                        SNew(SBorder)
-                            .HAlign(HAlign_Fill)
-                            .VAlign(VAlign_Fill)
-                            .BorderImage(FAppStyle::Get().GetBrush("ToolPanel.GroupBorder"))
-                    ]
-                    + SOverlay::Slot()
-                    [
-                        ConstructShowSequencerHeaderWidget(Value)
-                    ]*/
 			];
     }
 }
@@ -134,7 +117,7 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
 		return SNullWidget::NullWidget;
 	}
 
-    TArray<UShowBase*>* RuntimeShowKeysPtr = ShowSequencerEditorHelper->RuntimeShowKeysPtr();
+    const TArray<UShowBase*>* RuntimeShowKeysPtr = ShowSequencerEditorHelper->RuntimeShowKeysPtr();
     if (!RuntimeShowKeysPtr)
     {
         return SNullWidget::NullWidget;
@@ -169,12 +152,56 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
                                             .Image(FAppStyle::Get().GetBrush("Icons.Minus"))
                                     ]
                             ]
-                            + SHorizontalBox::Slot()
+                            /*+ SHorizontalBox::Slot()
                             .HAlign(HAlign_Fill)
                             .AutoWidth()
                             [
                                 SNew(STextBlock).Text(FText::FromString(ShowBasePtr->GetClass()->GetName()))
+                                    .ColorAndOpacity_Lambda([this, ShowBasePtr]() -> FSlateColor
+                                        {
+                                            if (Args._IsShowKeySelected.IsBound() && Args._IsShowKeySelected.Execute(ShowBasePtr))
+                                            {
+                                                return FSlateColor(FLinearColor::Green);
+                                            }
+                                            else
+                                            {
+                                                return FSlateColor(FLinearColor::White);
+                                            }
+                                        })
+                            ]*/
+                            +SHorizontalBox::Slot()
+                            .HAlign(HAlign_Fill)
+                            .AutoWidth()
+                            [
+                                SNew(SButton)
+                                    .HAlign(HAlign_Fill)
+                                    .OnClicked_Lambda([this, ShowSequencerEditorHelper, ShowBasePtr]()
+                                        {
+                                            // 클릭 이벤트 처리
+                                            if (Args._OnShowKeyClicked.IsBound())
+                                            {
+                                                Args._OnShowKeyClicked.Execute(ShowSequencerEditorHelper, ShowBasePtr);
+                                            }
+
+                                            return FReply::Handled();
+                                        })
+                                    [
+                                        SNew(STextBlock)
+                                            .Text(FText::FromString(ShowBasePtr->GetClass()->GetName()))
+                                            .ColorAndOpacity_Lambda([this, ShowBasePtr]() -> FSlateColor
+                                                {
+                                                    if (Args._IsShowKeySelected.IsBound() && Args._IsShowKeySelected.Execute(ShowBasePtr))
+                                                    {
+                                                        return FSlateColor(FLinearColor(0.0f, 0.5f, 0.0f));
+                                                    }
+                                                    else
+                                                    {
+                                                        return FSlateColor(FLinearColor::White);
+                                                    }
+                                                })
+                                    ]
                             ]
+
                     ]
 			];
 	}
