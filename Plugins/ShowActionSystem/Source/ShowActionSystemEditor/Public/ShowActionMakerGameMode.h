@@ -4,11 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "Data/ActionBaseData.h"
 #include "ShowActionMakerGameMode.generated.h"
 
 struct FSkillData;
 struct FSkillShowData;
 class UActionBase;
+class UActionServerExecutor;
+class UShowSequencer;
 
 /**
  * 
@@ -33,7 +36,16 @@ public:
     // Enabling Tick for GameMode
     virtual void Tick(float DeltaSeconds) override;
 
-    UActionBase* SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData);
+    UActionBase* SelectAction(
+        FName InSelectedActionName, 
+        FSkillData* InSkillData, 
+        FSkillShowData* InSkillShowData,
+        UShowSequencer*& OutCastShowSequencer,
+        UShowSequencer*& OutExecShowSequencer,
+        UShowSequencer*& OutFinishShowSequencer);
+
+    void DisposeAction();
+    UShowSequencer* ChangeShow(EActionState ActionState, FSoftObjectPath* NewShowPath);
     void DoAction();
 
 public:
@@ -41,7 +53,11 @@ public:
     TSubclassOf<AActor> DefaultActorClass = nullptr;
     
 private:
+
+    UPROPERTY()
     TObjectPtr<AActor> Caster = nullptr;
+
+    UPROPERTY()
     TArray<TObjectPtr<AActor>> Targets;
 
     FName SelectedActionName;
@@ -49,7 +65,7 @@ private:
     FSkillShowData* SkillShowData = nullptr;
 
 public:
-    UActionBase* CrrActionPtr = nullptr;
+    UActionServerExecutor* CrrActionPtr = nullptr;
 };
 
 

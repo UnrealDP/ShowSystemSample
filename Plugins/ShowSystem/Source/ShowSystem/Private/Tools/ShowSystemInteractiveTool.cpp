@@ -43,7 +43,7 @@ UShowSystemInteractiveToolProperties::UShowSystemInteractiveToolProperties()
 void UShowSystemInteractiveTool::SetWorld(UWorld* World)
 {
 	check(World);
-	this->TargetWorld = World;
+	TargetWorld = World;
 }
 
 

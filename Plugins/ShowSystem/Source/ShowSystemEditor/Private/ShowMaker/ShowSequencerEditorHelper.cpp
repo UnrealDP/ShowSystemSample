@@ -25,23 +25,26 @@ void FShowSequencerEditorHelper::SetShowMakerWidget(TSharedPtr<SShowMakerWidget>
 
 void FShowSequencerEditorHelper::Tick(float DeltaTime)
 {
-	if (EditShowSequencerPtr && EditShowSequencerPtr->GetOwner())
+	if (bIsCreatedFromHlper)
 	{
-		EShowSequencerState ShowSequencerState = EditShowSequencerPtr->GetShowSequencerState();
-		switch (ShowSequencerState)
+		if (EditShowSequencerPtr && EditShowSequencerPtr->GetOwner())
 		{
-		case EShowSequencerState::ShowSequencer_Wait:
-			break;
-		case EShowSequencerState::ShowSequencer_Playing:
-			EditShowSequencerPtr->Tick(DeltaTime);
-			break;
-		case EShowSequencerState::ShowSequencer_Pause:
-			break;
-		case EShowSequencerState::ShowSequencer_End:
-			ShowSequencerReset();
-			break;
-		default:
-			break;
+			EShowSequencerState ShowSequencerState = EditShowSequencerPtr->GetShowSequencerState();
+			switch (ShowSequencerState)
+			{
+			case EShowSequencerState::ShowSequencer_Wait:
+				break;
+			case EShowSequencerState::ShowSequencer_Playing:
+				EditShowSequencerPtr->Tick(DeltaTime);
+				break;
+			case EShowSequencerState::ShowSequencer_Pause:
+				break;
+			case EShowSequencerState::ShowSequencer_End:
+				ShowSequencerReset();
+				break;
+			default:
+				break;
+			}
 		}
 	}
 }
@@ -74,7 +77,7 @@ void FShowSequencerEditorHelper::Dispose()
 {
 	if (EditShowSequencerPtr)
 	{
-		if (!bIsCreateObjectPool)
+		if (bIsCreatedFromHlper)
 		{
 			EditShowSequencerPtr->ReleaseDontDestroy();
 			ShowSequencerClearShowObjects();
@@ -90,14 +93,14 @@ void FShowSequencerEditorHelper::Dispose()
 	SelectedShowBasePtr = nullptr;
 }
 
-void FShowSequencerEditorHelper::NewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
+void FShowSequencerEditorHelper::HelperNewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
 {
 	checkf(InShowSequenceAsset, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize InShowSequenceAsset is nullptr."));
 	checkf(!EditShowSequencerPtr, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize EditShowSequencerPtr is already initialized."));
 
 	EditShowSequencerPtr = NewObject<UShowSequencer>(GetTransientPackage(), UShowSequencer::StaticClass());
 	checkf(EditShowSequencerPtr, TEXT("FShowSequencerEditorHelper::ShowSequencerInitialize EditShowSequencerPtr is nullptr."));
-	bIsCreateObjectPool = false;
+	bIsCreatedFromHlper = true;
 
 	EditShowSequencerPtr->AddToRoot();
 	EditShowSequencerPtr->SetDontDestroy();
@@ -134,6 +137,7 @@ void FShowSequencerEditorHelper::NewShowSequencer(TObjectPtr<UShowSequenceAsset>
 		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(ShowKey->KeyType);
 		int32 Index = static_cast<int32>(PoolType);
 		UShowBase* ShowBasePtr = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
+		ShowBasePtr->AddToRoot();
 		ShowBasePtr->InitShowKey(EditShowSequencerPtr, ShowKey);
 		EditShowSequencerPtr->RuntimeShowKeys[i] = ShowBasePtr;
 	}
@@ -400,13 +404,8 @@ UShowBase* FShowSequencerEditorHelper::AddKey(FInstancedStruct& NewKey)
 	AActor* Owner = EditShowSequencerPtr->GetOwner();
 	UWorld* World = Owner->GetWorld();
 	UShowBase* NewShowBasePtr = nullptr;
-	UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
-	if (PoolManager)
-	{
-		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
-		NewShowBasePtr = PoolManager->GetPooledObject<UShowBase>(PoolType);
-	}
-	else
+
+	if (bIsCreatedFromHlper)
 	{
 		if (EditorPoolSettings.Num() == 0)
 		{
@@ -417,6 +416,14 @@ UShowBase* FShowSequencerEditorHelper::AddKey(FInstancedStruct& NewKey)
 		int32 Index = static_cast<int32>(PoolType);
 		NewShowBasePtr = NewObject<UShowBase>((UObject*)GetTransientPackage(), EditorPoolSettings[Index].ObjectClass);
 		NewShowBasePtr->AddToRoot();
+	}	
+	else
+	{
+		UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
+		checkf(PoolManager, TEXT("FShowSequencerEditorHelper::EditorAddKey: PoolManager is nullptr."));
+
+		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(NewShowKey->KeyType);
+		NewShowBasePtr = PoolManager->GetPooledObject<UShowBase>(PoolType);
 	}
 
 	checkf(NewShowBasePtr, TEXT("FShowSequencerEditorHelper::EditorAddKey: NewShowBase is nullptr."));
@@ -441,16 +448,19 @@ bool FShowSequencerEditorHelper::RemoveKey(UShowBase* RemoveShowBasePtr)
 
 	AActor* Owner = EditShowSequencerPtr->GetOwner();
 	UWorld* World = Owner->GetWorld();
-	UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
-	if (PoolManager)
-	{
-		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(RemoveShowBasePtr->ShowKey->KeyType);
-		PoolManager->ReturnPooledObject(RemoveShowBasePtr, PoolType);
-	}
-	else
+
+	if (bIsCreatedFromHlper)
 	{
 		RemoveShowBasePtr->Dispose();
 		RemoveShowBasePtr->RemoveFromRoot();
+	}
+	else
+	{
+		UObjectPoolManager* PoolManager = World->GetSubsystem<UObjectPoolManager>();
+		checkf(PoolManager, TEXT("FShowSequencerEditorHelper::RemoveKey: PoolManager is nullptr."));
+
+		EObjectPoolType PoolType = ShowSystem::GetShowKeyPoolType(RemoveShowBasePtr->ShowKey->KeyType);
+		PoolManager->ReturnPooledObject(RemoveShowBasePtr, PoolType);
 	}
 
 	EditShowSequencerPtr->RuntimeShowKeys.Remove(RemoveShowBasePtr);

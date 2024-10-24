@@ -52,7 +52,6 @@ protected:
     virtual void Initialize() override;
     virtual void Dispose() override;
     virtual void Play() override;
-    virtual void Stop() override {};
     virtual void Reset();
     virtual void Pause() override {};
     virtual void UnPause() override {};
@@ -63,9 +62,14 @@ private:
 private:
     const FShowAnimStaticKey* AnimStaticKeyPtr;
 
+    UPROPERTY()
     TObjectPtr<UAnimSequenceBase> AnimSequenceBase = nullptr;
-    TObjectPtr<UAnimMontage> AnimMontage = nullptr;
-    float OriginalLength = 0.0f;
-
+    
+    UPROPERTY()
+    TObjectPtr<UAnimMontage> AnimMontage = nullptr;    
+    
+    UPROPERTY()
     TObjectPtr<UAnimInstance> AnimInstance = nullptr;
+
+    float OriginalLength = 0.0f;
 };

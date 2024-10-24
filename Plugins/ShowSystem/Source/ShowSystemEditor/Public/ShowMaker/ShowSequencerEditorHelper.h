@@ -47,7 +47,7 @@ public:
 	}
 
 	void Dispose();
-	void NewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
+	void HelperNewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
 	void SetShowSequencerOwner(AActor* InOwner) { EditShowSequencerPtr->Owner = InOwner; }
 	void Play();
 	void ShowSequencerReset();
@@ -72,6 +72,6 @@ public:
 	UShowBase* SelectedShowBasePtr = nullptr;
 	TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 
-	bool bIsCreateObjectPool = true;
+	bool bIsCreatedFromHlper = false;
 };
 

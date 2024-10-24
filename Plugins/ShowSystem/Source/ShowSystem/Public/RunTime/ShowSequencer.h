@@ -43,7 +43,7 @@ public:
 
 private:
     void Play();
-    void Stop();
+    void Reset();
     void Pause();
     void UnPause();
 
@@ -76,12 +76,15 @@ private:
     void ClearShowObjects();
         
 private:
-    TObjectPtr<UShowSequenceAsset> ShowSequenceAsset;
+    UPROPERTY()
+    TObjectPtr<UShowSequenceAsset> ShowSequenceAsset = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<AActor> Owner = nullptr;
 
     bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
-    float PassedTime = 0.0f;
-    TObjectPtr<AActor> Owner;
+    float PassedTime = 0.0f;    
     TArray<UShowBase*> RuntimeShowKeys;
     float TimeScale = 1.0f;
 };

@@ -97,13 +97,8 @@ void UShowSequencer::Play()
     PassedTime = 0.0f;
 }
 
-void UShowSequencer::Stop()
+void UShowSequencer::Reset()
 {
-    if (ShowSequencerState == EShowSequencerState::ShowSequencer_End)
-	{
-		return;
-	}
-
     for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
         if (!ShowBasePtr)
@@ -111,10 +106,11 @@ void UShowSequencer::Stop()
             continue;
         }
 
-        ShowBasePtr->ExecuteStop();
+        ShowBasePtr->ExecuteReset();
     }
 
-    ShowSequencerState = EShowSequencerState::ShowSequencer_End;
+    PassedTime = 0.0f;
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 }
 
 void UShowSequencer::Pause()
@@ -184,15 +180,6 @@ void UShowSequencer::Tick(float DeltaTime)
             if (!ShowBasePtr)
             {
                 continue;
-            }
-
-            if (ShowBasePtr->IsEnd())
-            {
-                UE_LOG(LogTemp, Warning, TEXT("UShowSequencer::Tick: TTT"));
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("UShowSequencer::Tick: FFF"));
             }
 
             if (bIsAllEnd && !ShowBasePtr->IsEnd())

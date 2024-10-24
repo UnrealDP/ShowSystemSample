@@ -118,15 +118,6 @@ public:
         ShowKeyState = EShowKeyState::ShowKey_Playing;
 		Play();
     }
-    void ExecuteStop()
-    {
-        if (ShowKeyState == EShowKeyState::ShowKey_End)
-        {
-            return;
-        }
-        ShowKeyState = EShowKeyState::ShowKey_End;
-        Stop();
-    }
     void ExecuteReset()
     {
         ShowKeyState = EShowKeyState::ShowKey_Wait;

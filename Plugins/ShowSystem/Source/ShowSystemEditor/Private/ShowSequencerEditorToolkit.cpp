@@ -107,7 +107,7 @@ TSharedRef<SDockTab> FShowSequencerEditorToolkit::SpawnShowMakerTab(const FSpawn
 void FShowSequencerEditorToolkit::InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UShowSequenceAsset* InShowSequenceAsset)
 {
     EditorHelper = MakeShared<FShowSequencerEditorHelper>();
-    EditorHelper->NewShowSequencer(InShowSequenceAsset);
+    EditorHelper->HelperNewShowSequencer(InShowSequenceAsset);
 
     // 기본 에디터 레이아웃 설정
     const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("Standalone_ShowSequencerEditor_Layout")

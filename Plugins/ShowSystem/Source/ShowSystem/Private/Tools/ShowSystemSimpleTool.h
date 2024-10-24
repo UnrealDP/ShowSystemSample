@@ -63,7 +63,7 @@ public:
 
 protected:
 	UPROPERTY()
-	TObjectPtr<UShowSystemSimpleToolProperties> Properties;
+	TObjectPtr<UShowSystemSimpleToolProperties> Properties = nullptr;
 
 
 protected:

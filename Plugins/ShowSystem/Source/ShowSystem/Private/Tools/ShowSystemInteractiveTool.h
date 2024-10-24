@@ -81,7 +81,7 @@ public:
 protected:
 	/** Properties of the tool are stored here */
 	UPROPERTY()
-	TObjectPtr<UShowSystemInteractiveToolProperties> Properties;
+	TObjectPtr<UShowSystemInteractiveToolProperties> Properties = nullptr;
 
 
 protected:

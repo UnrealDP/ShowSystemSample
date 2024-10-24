@@ -19,8 +19,8 @@ struct FActionBaseShowData;
 /**
  * 액션의 기본 기능을 정의한 클래스
  * 하나의 액션을 정의함
- * 액션을 진행하는 서버 시뮬레이션 로직은 ActionExecutor 에 구현
- * 데디케이트 서버를 사용한다면 ActionExecutor 로 가능할지 구조를 다시 고려해야함
+ * TODO: (DIPI) 액션을 진행하는 서버 시뮬레이션 로직은 ActionServerExecutor 에 구현
+ * 데디케이트 서버를 사용한다면 ActionServerExecutor 로 가능할지 구조를 다시 고려해야함
  */
 UCLASS(Abstract)
 class SHOWACTIONSYSTEM_API UActionBase : public UObject, public IPooled
@@ -28,7 +28,8 @@ class SHOWACTIONSYSTEM_API UActionBase : public UObject, public IPooled
 	GENERATED_BODY()
 
 #if WITH_EDITOR
-	friend class FShowActionSystemEditor;
+	//friend class FShowActionSystemEditor;
+	friend class AShowActionMakerGameMode;	
 #endif
 
 public:
@@ -44,47 +45,44 @@ public:
 		checkf(InOwner != nullptr, TEXT("UActionBase::Initialize InOwner is invalid"));
 		checkf(InActionBaseData != nullptr, TEXT("UActionBase::Initialize InActionBaseData is invalid"));
 
-		ActionName = &InActionName;
+		ActionName = InActionName;
 		Owner = InOwner;
 		ActionBaseData = InActionBaseData;
 		ActionBaseShowData = InActionBaseShowData;
 		State = EActionState::Wait;
 		StepPassedTime = 0.0f;
 		RemainCoolDown = 0.0f;
-		bIsComplete = false;
 
 		ObjectPoolType = ObjectPoolTypeIndex<TActionObject>::GetType();
 		ShowPlayer = Owner->GetWorld()->GetSubsystem<UShowPlayer>();
 
 		return static_cast<TActionObject*>(this);
 	}
-	virtual void Casting(TArray<TObjectPtr<AActor>> Targets);
-	virtual void Exec(TArray<TObjectPtr<AActor>> Targets);
+	virtual void Casting(TArray<TObjectPtr<AActor>>* TargetsPtr = nullptr);
+	virtual void Exec(TArray<TObjectPtr<AActor>>* TargetsPtr = nullptr);
 	virtual void ExecInterval();
-	virtual void Finish(TArray<TObjectPtr<AActor>> Targets);
+	virtual void Finish(TArray<TObjectPtr<AActor>>* TargetsPtr = nullptr);
 	virtual void Cooldown();
 	virtual void Complete();	
 	virtual void Cancel();
+	virtual void Reset();
 
 	AActor* GetOwner() const { return Owner.Get(); }
 	EActionState GetState() const { return State; }
-	const FName& GetActionName() const { return *ActionName; }
-	const struct FActionBaseData* GetActionBaseData() const { return ActionBaseData; }	
+	const FName& GetActionName() const { return ActionName; }
+	const struct FActionBaseData* GetActionBaseData() const { return ActionBaseData; }
 	const EObjectPoolType GetObjectPoolType() const { return ObjectPoolType; }
 	const EDataTable GetDataType() const { return DataType; }
 	const EDataTable GetShowDataType() const { return ShowDataType; }
 
+	void SetDontDestroy() { bIsDontDestroy = true; }
+	void ReleaseDontDestroy() { bIsDontDestroy = false; }
+	bool IsDontDestroy() const { return bIsDontDestroy; }
+
 	virtual void OnPooled() override;
 	virtual void OnReturnedToPool() override;
 
-	bool IsCompleted() const 
-	{ 
-		checkf(!(bIsComplete && State != EActionState::Wait), TEXT("UActionBase::bIsComplete State [ %d ]"), static_cast<int32>(State));
-		return bIsComplete; 
-	}
-
-	// 외부로직으로 액션을 사용할지 여부를 결정하는 필터
-	typedef void (*StepNotiFuncPtr)(const UActionBase*, EActionState);
+	bool IsCompleted() const { return State == EActionState::Complete; }
 
 protected:
 	UShowSequencer* NewShowSequencer(EActionState ActionStatem);
@@ -93,8 +91,13 @@ protected:
 	EActionState State = EActionState::Wait;
 
 protected:
+	
+	UPROPERTY()
 	TObjectPtr<UShowPlayer> ShowPlayer = nullptr;
+
+	UPROPERTY()
 	TObjectPtr<AActor> Owner = nullptr;
+
 	const FActionBaseData* ActionBaseData = nullptr;
 	const FActionBaseShowData* ActionBaseShowData = nullptr;
 
@@ -105,14 +108,9 @@ protected:
 	float StepPassedTime = 0.0f;
 	float RemainCoolDown = 0.0f;
 
-	const FName* ActionName;
-	bool bIsComplete = false;
-
+	bool bIsDontDestroy = false;
+	FName ActionName = NAME_None;
 	EObjectPoolType ObjectPoolType = EObjectPoolType::Max;
 	EDataTable DataType = EDataTable::Max;
 	EDataTable ShowDataType = EDataTable::Max;
-
-public:
-	StepNotiFuncPtr StepNotiFunc = nullptr;
-
 };

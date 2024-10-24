@@ -215,10 +215,13 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
 								})
                     ];
 
+                FSlateApplication::Get().SetKeyboardFocus(ShowActionControllPanels);
+
                 return NewTab;
             }))
         .SetDisplayName(NSLOCTEXT("ShowActionSystem", "ShowActionControllPanelsTab", "Action Controll"))
         .SetMenuType(ETabSpawnerMenuType::Hidden);
+    
 }
 
 void FShowActionSystemEditor::UpdateShowKeyDetails(UShowBase* InSelectedShowBasePtr)
@@ -320,7 +323,17 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
 {
     if (ShowActionMakerGameMode)
     {
-        if (UActionBase* Action = ShowActionMakerGameMode->SelectAction(InSelectedActionName, InSkillData, InSkillShowData))
+        UShowSequencer* OutCastShowSequencer = nullptr;
+        UShowSequencer* OutExecShowSequencer = nullptr;
+        UShowSequencer* OutFinishShowSequencer = nullptr;
+
+        if (UActionBase* Action = ShowActionMakerGameMode->SelectAction(
+            InSelectedActionName, 
+            InSkillData, 
+            InSkillShowData,
+            OutCastShowSequencer,
+            OutExecShowSequencer,
+            OutFinishShowSequencer))
         {
             for (auto& Elem : ShowSequencerEditorHelperSortMap)
             {
@@ -329,32 +342,20 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
             }
             ShowSequencerEditorHelperSortMap.Empty();
 
-            if (Action->ActionBaseShowData)
+            if (OutCastShowSequencer)
             {
-                if (Action->ActionBaseShowData->CastShow.IsValid())
-                {
-                    if (UShowSequencer* NewShowSequencer = Action->NewShowSequencer(EActionState::Cast))
-                    {
-                        ShowSequencerEditorHelperSortMap["Cast"] = MakeShared<FShowSequencerEditorHelper>();
-                        ShowSequencerEditorHelperSortMap["Cast"]->EditShowSequencerPtr = NewShowSequencer;
-                    }
-                }
-                if (Action->ActionBaseShowData->ExecShow.IsValid())
-                {
-                    if (UShowSequencer* NewShowSequencer = Action->NewShowSequencer(EActionState::Exec))
-                    {
-                        ShowSequencerEditorHelperSortMap["Exec"] = MakeShared<FShowSequencerEditorHelper>();
-                        ShowSequencerEditorHelperSortMap["Exec"]->EditShowSequencerPtr = NewShowSequencer;
-                    }
-                }
-                if (Action->ActionBaseShowData->FinishShow.IsValid())
-                {
-                    if (UShowSequencer* NewShowSequencer = Action->NewShowSequencer(EActionState::Finish))
-                    {
-                        ShowSequencerEditorHelperSortMap["Finish"] = MakeShared<FShowSequencerEditorHelper>();
-                        ShowSequencerEditorHelperSortMap["Finish"]->EditShowSequencerPtr = NewShowSequencer;
-                    }
-                }
+                ShowSequencerEditorHelperSortMap["Cast"] = MakeShared<FShowSequencerEditorHelper>();
+                ShowSequencerEditorHelperSortMap["Cast"]->EditShowSequencerPtr = OutCastShowSequencer;
+            }
+            if (OutExecShowSequencer)
+            {
+                ShowSequencerEditorHelperSortMap["Exec"] = MakeShared<FShowSequencerEditorHelper>();
+                ShowSequencerEditorHelperSortMap["Exec"]->EditShowSequencerPtr = OutExecShowSequencer;
+            }
+            if (OutFinishShowSequencer)
+            {
+                ShowSequencerEditorHelperSortMap["Finish"] = MakeShared<FShowSequencerEditorHelper>();
+                ShowSequencerEditorHelperSortMap["Finish"]->EditShowSequencerPtr = OutFinishShowSequencer;
             }
 
             if (ShowActionControllPanels)
@@ -444,72 +445,102 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
             return;
         }
 
-        UShowSequencer* NewShowSequencerPtr = nullptr;
-        UActionBase* ActionBasePtr = ShowActionMakerGameMode ? ShowActionMakerGameMode->CrrActionPtr : nullptr;
-        if (ActionBasePtr)
+        if (ShowActionMakerGameMode)
         {
-            if (NewShowPath->IsValid())
+            FString StepStr = StaticEnum<EActionState>()->GetNameStringByValue(static_cast<int64>(ActionState));
+            UShowSequencer* NewShowSequencerPtr = ShowActionMakerGameMode->ChangeShow(ActionState, NewShowPath);
+            if (NewShowSequencerPtr)
             {
-                NewShowSequencerPtr = ActionBasePtr->NewShowSequencer(ActionState);
-                if (NewShowSequencerPtr)
+                if (ShowSequencerEditorHelperSortMap.ContainsKey(StepStr))
                 {
-                    FString StepStr = StaticEnum<EActionState>()->GetNameStringByValue(static_cast<int64>(ActionState));
-                    if (ShowSequencerEditorHelperSortMap.ContainsKey(StepStr))
+                    if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperSortMap.Find(StepStr))
                     {
-                        if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperSortMap.Find(StepStr))
-                        {
-                            // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
-                            (*ExistingHelper)->EditShowSequencerPtr = NewShowSequencerPtr;
-                        }
+                        // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
+                        (*ExistingHelper)->EditShowSequencerPtr = NewShowSequencerPtr;
                     }
-                    else
-                    {
-                        ShowSequencerEditorHelperSortMap[StepStr] = MakeShared<FShowSequencerEditorHelper>();
-                        ShowSequencerEditorHelperSortMap[StepStr]->EditShowSequencerPtr = NewShowSequencerPtr;
-                    }
+                }
+                else
+                {
+                    ShowSequencerEditorHelperSortMap[StepStr] = MakeShared<FShowSequencerEditorHelper>();
+                    ShowSequencerEditorHelperSortMap[StepStr]->EditShowSequencerPtr = NewShowSequencerPtr;
                 }
             }
             else
             {
-                AActor* Owner = ActionBasePtr->GetOwner();
-                UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
-                switch (ActionState)
+                if (ShowSequencerEditorHelperSortMap.ContainsKey(StepStr))
                 {
-                case EActionState::Cast:
-                    if (ShowSequencerEditorHelperSortMap.ContainsKey("Cast"))
-                    {
-                        ShowSequencerEditorHelperSortMap["Cast"]->Dispose();
-                        ShowSequencerEditorHelperSortMap.Remove("Cast");
-                    }
-                    
-                    ShowSequencerComponent->DisposeShow(ActionBasePtr->CastShowPtr);
-                    ActionBasePtr->CastShowPtr = nullptr;
-                    break;
-                case EActionState::Exec:
-                    if (ShowSequencerEditorHelperSortMap.ContainsKey("Exec"))
-                    {
-                        ShowSequencerEditorHelperSortMap["Exec"]->Dispose();
-                        ShowSequencerEditorHelperSortMap.Remove("Exec");
-                    }
-
-                    ShowSequencerComponent->DisposeShow(ActionBasePtr->ExecShowPtr);
-                    ActionBasePtr->ExecShowPtr = nullptr;
-                    break;
-                case EActionState::Finish:
-                    if (ShowSequencerEditorHelperSortMap.ContainsKey("Finish"))
-					{
-						ShowSequencerEditorHelperSortMap["Finish"]->Dispose();
-						ShowSequencerEditorHelperSortMap.Remove("Finish");
-					}
-
-                    ShowSequencerComponent->DisposeShow(ActionBasePtr->FinishShowPtr);
-                    ActionBasePtr->FinishShowPtr = nullptr;
-                    break;
-                default:
-                    break;
+                    ShowSequencerEditorHelperSortMap[StepStr]->Dispose();
+                    ShowSequencerEditorHelperSortMap.Remove(StepStr);
                 }
             }
         }
+
+     //   UShowSequencer* NewShowSequencerPtr = nullptr;
+     //   UActionBase* ActionBasePtr = ShowActionMakerGameMode ? ShowActionMakerGameMode->CrrActionPtr : nullptr;
+     //   if (ActionBasePtr)
+     //   {
+     //       if (NewShowPath->IsValid())
+     //       {
+     //           NewShowSequencerPtr = ActionBasePtr->NewShowSequencer(ActionState);
+     //           if (NewShowSequencerPtr)
+     //           {
+     //               FString StepStr = StaticEnum<EActionState>()->GetNameStringByValue(static_cast<int64>(ActionState));
+     //               if (ShowSequencerEditorHelperSortMap.ContainsKey(StepStr))
+     //               {
+     //                   if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperSortMap.Find(StepStr))
+     //                   {
+     //                       // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
+     //                       (*ExistingHelper)->EditShowSequencerPtr = NewShowSequencerPtr;
+     //                   }
+     //               }
+     //               else
+     //               {
+     //                   ShowSequencerEditorHelperSortMap[StepStr] = MakeShared<FShowSequencerEditorHelper>();
+     //                   ShowSequencerEditorHelperSortMap[StepStr]->EditShowSequencerPtr = NewShowSequencerPtr;
+     //               }
+     //           }
+     //       }
+     //       else
+     //       {
+     //           AActor* Owner = ActionBasePtr->GetOwner();
+     //           UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+     //           switch (ActionState)
+     //           {
+     //           case EActionState::Cast:
+     //               if (ShowSequencerEditorHelperSortMap.ContainsKey("Cast"))
+     //               {
+     //                   ShowSequencerEditorHelperSortMap["Cast"]->Dispose();
+     //                   ShowSequencerEditorHelperSortMap.Remove("Cast");
+     //               }
+     //               
+     //               ShowSequencerComponent->DisposeShow(ActionBasePtr->CastShowPtr);
+     //               ActionBasePtr->CastShowPtr = nullptr;
+     //               break;
+     //           case EActionState::Exec:
+     //               if (ShowSequencerEditorHelperSortMap.ContainsKey("Exec"))
+     //               {
+     //                   ShowSequencerEditorHelperSortMap["Exec"]->Dispose();
+     //                   ShowSequencerEditorHelperSortMap.Remove("Exec");
+     //               }
+
+     //               ShowSequencerComponent->DisposeShow(ActionBasePtr->ExecShowPtr);
+     //               ActionBasePtr->ExecShowPtr = nullptr;
+     //               break;
+     //           case EActionState::Finish:
+     //               if (ShowSequencerEditorHelperSortMap.ContainsKey("Finish"))
+					//{
+					//	ShowSequencerEditorHelperSortMap["Finish"]->Dispose();
+					//	ShowSequencerEditorHelperSortMap.Remove("Finish");
+					//}
+
+     //               ShowSequencerComponent->DisposeShow(ActionBasePtr->FinishShowPtr);
+     //               ActionBasePtr->FinishShowPtr = nullptr;
+     //               break;
+     //           default:
+     //               break;
+     //           }
+     //       }
+     //   }
 
         ShowSequencerEditorHelperSortMap.Sort(
             [](const TPair<FString, TSharedPtr<FShowSequencerEditorHelper>>& A, const TPair<FString, TSharedPtr<FShowSequencerEditorHelper>>& B)

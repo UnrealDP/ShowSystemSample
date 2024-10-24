@@ -102,7 +102,7 @@ void UActorPoolManager::InitializePoolSettings(FString AssetPath)
     }
 }
 
-void UActorPoolManager::ReturnPooledObject(AActor* Object, EActorPoolType ActorType)
+void UActorPoolManager::ReturnPooledObject(AActor* Actor, EActorPoolType ActorType)
 {
     // ActorPools 배열이 초기화되었는지 확인
     checkf(ActorPools.Num() > 0, TEXT("[UActorPoolManager] ActorPools 배열이 초기화되지 않았습니다. InitializePoolSettings 함수를 먼저 호출하세요."));
@@ -111,24 +111,28 @@ void UActorPoolManager::ReturnPooledObject(AActor* Object, EActorPoolType ActorT
     checkf(ActorPools.IsValidIndex(static_cast<int32>(ActorType)), TEXT("[UActorPoolManager] 지정된 ActorType에 해당하는 풀 배열이 초기화되지 않았습니다."));
 
     int32 Index = static_cast<int32>(ActorType);
-    Object->SetActorHiddenInGame(true);  // 객체 비활성화
-    Object->SetActorTickEnabled(false);  // 객체의 틱 비활성화
+    Actor->SetActorHiddenInGame(true);  // 객체 비활성화
+    Actor->SetActorTickEnabled(false);  // 객체의 틱 비활성화
 
-    // Object가 PoolSettings[Index].ActorClass 의 인스턴스인지 확인
-    checkf(Object->IsA(PoolSettings[Index].ActorClass),
-        TEXT("The pooled Object is not an instance of the expected class type."));
+    // Actor가 PoolSettings[Index].ActorClass 의 인스턴스인지 확인
+    checkf(Actor->IsA(PoolSettings[Index].ActorClass),
+        TEXT("The pooled Actor is not an instance of the expected class type."));
 
     // 객체가 IPooled 인터페이스를 구현했는지 확인
-    checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
+    checkf(Actor->GetClass()->ImplementsInterface(UPooled::StaticClass()),
         TEXT("The pooled actor does not implement the IPooled interface."));
 
-    IPooled* PooledInterface = Cast<IPooled>(Object);
+    // 이미 풀에 추가된 객체인지 확인
+    checkf(!ActorPools[Index].Contains(Actor),
+        TEXT("The Actor is already in the pool. Duplicate return is not allowed."));
+
+    IPooled* PooledInterface = Cast<IPooled>(Actor);
     if (PooledInterface)
     {
         PooledInterface->OnReturnedToPool();
     }
 
-    ActorPools[Index].Add(Object);  // 풀에 객체를 다시 추가
+    ActorPools[Index].Add(Actor);  // 풀에 객체를 다시 추가
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

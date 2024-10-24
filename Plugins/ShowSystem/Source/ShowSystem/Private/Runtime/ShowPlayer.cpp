@@ -87,14 +87,14 @@ void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
     ShowSequencerComponent->PlayShow(ShowSequencerPtr);
 }
 
-void UShowPlayer::StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
+void UShowPlayer::ResetSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
 {
-    checkf(Owner, TEXT("UShowPlayer::StopSoloShow: The Owner provided is invalid or null."));
+    checkf(Owner, TEXT("UShowPlayer::ResetSoloShow: The Owner provided is invalid or null."));
 
     UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
-    checkf(ShowSequencerComponent, TEXT("UShowPlayer::StopSoloShow: The ShowSequencerComponent provided is invalid or null."));
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::ResetSoloShow: The ShowSequencerComponent provided is invalid or null."));
 
-    ShowSequencerComponent->StopShow(ShowSequencerPtr);
+    ShowSequencerComponent->ResetShow(ShowSequencerPtr);
 }
 
 void UShowPlayer::DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)

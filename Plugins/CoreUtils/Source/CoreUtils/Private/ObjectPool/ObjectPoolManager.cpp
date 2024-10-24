@@ -44,7 +44,6 @@ void UObjectPoolManager::Deinitialize()
             {
                 // 가비지 컬렉션을 위한 참조 해제
                 Object->RemoveFromRoot();
-                Object = nullptr;
             }
         }
     }
@@ -128,6 +127,10 @@ void UObjectPoolManager::ReturnPooledObject(UObject* Object, EObjectPoolType Obj
     // 객체가 IPooled 인터페이스를 구현했는지 확인
     checkf(Object->GetClass()->ImplementsInterface(UPooled::StaticClass()),
         TEXT("The pooled Object does not implement the IPooled interface."));
+
+    // 이미 풀에 추가된 객체인지 확인
+    checkf(!ObjectPools[Index].Contains(Object),
+        TEXT("The object is already in the pool. Duplicate return is not allowed."));
 
     IPooled* PooledInterface = Cast<IPooled>(Object);
     if (PooledInterface)

@@ -84,6 +84,7 @@ void UShowAnimStatic::Play()
 
     if (!SkeletalMeshComp->AnimClass)
     {
+        UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play SkeletalMeshComp->AnimClass is invalid"));
         ShowKeyState = EShowKeyState::ShowKey_End;
         return;
     }
@@ -101,9 +102,19 @@ void UShowAnimStatic::Play()
             AnimStaticKeyPtr->InTimeToStartMontageAt,
             PlayRate);
 
-        ShowAnimInstance->OnMontageEnded.AddDynamic(this, &UShowAnimStatic::OnMontageEnded);
+        if (AnimMontage)
+        {
+            ShowAnimInstance->OnMontageEnded.AddDynamic(this, &UShowAnimStatic::OnMontageEnded);
+            return;
+		}
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play ShowAnimInstance->PlayAnimation is invalid"));
+        }
     }
-    else if (AnimInstance = SkeletalMeshComp->GetAnimInstance())
+
+    AnimInstance = SkeletalMeshComp->GetAnimInstance();
+    if (!AnimMontage && AnimInstance)
     {
         checkf(!AnimInstance->OnMontageEnded.IsAlreadyBound(this, &UShowAnimStatic::OnMontageEnded), TEXT("UShowAnimStatic::Play MontageEndedHandler need reset"));
 
@@ -117,11 +128,21 @@ void UShowAnimStatic::Play()
             AnimStaticKeyPtr->BlendOutTriggerTime,
             AnimStaticKeyPtr->InTimeToStartMontageAt);
 
-        AnimInstance->OnMontageEnded.AddDynamic(this, &UShowAnimStatic::OnMontageEnded);
+        if (AnimMontage)
+        {
+            AnimInstance->OnMontageEnded.AddDynamic(this, &UShowAnimStatic::OnMontageEnded);
+            return;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play AnimInstance->PlaySlotAnimationAsDynamicMontage is invalid"));
+        }
     }
-    else
+    
+    if (!AnimMontage)
     { 
         UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play AnimInstance is invalid"));
+        ShowKeyState = EShowKeyState::ShowKey_End;
     }
 }
 

@@ -9,50 +9,19 @@
 
 void UActionBase::OnPooled()
 {
-	ActionName = nullptr;
+	ActionName = NAME_None;
 	Owner = nullptr;
 	ActionBaseData = nullptr;
 	ActionBaseShowData = nullptr;
 	State = EActionState::Wait;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
-	bIsComplete = false;
 }
 
 void UActionBase::OnReturnedToPool()
 {
 	if (ShowPlayer)
 	{
-
-		// 에디터에서는 UActionBase::EditorLoadAllShow 로 PlayShow 하지 않고 Load를 먼저 해두기 때문에
-#if WITH_EDITOR		
-		if (CastShowPtr)
-		{
-			if (ShowPlayer->HasShowSequencer(Owner, CastShowPtr))
-			{
-				ShowPlayer->DisposeSoloShow(Owner, CastShowPtr);
-			}
-			CastShowPtr = nullptr;
-		}
-
-		if (ExecShowPtr)
-		{
-			if (ShowPlayer->HasShowSequencer(Owner, ExecShowPtr))
-			{
-				ShowPlayer->DisposeSoloShow(Owner, ExecShowPtr);
-			}
-			ExecShowPtr = nullptr;
-		}
-
-		if (FinishShowPtr)
-		{
-			if (ShowPlayer->HasShowSequencer(Owner, FinishShowPtr))
-			{
-				ShowPlayer->DisposeSoloShow(Owner, FinishShowPtr);
-			}
-			FinishShowPtr = nullptr;
-		}
-#else
 		if (CastShowPtr)
 		{
 			ShowPlayer->DisposeSoloShow(Owner, CastShowPtr);
@@ -70,17 +39,15 @@ void UActionBase::OnReturnedToPool()
 			ShowPlayer->DisposeSoloShow(Owner, FinishShowPtr);
 			FinishShowPtr = nullptr;
 		}
-#endif
 	}
 
-	ActionName = nullptr;
+	ActionName = NAME_None;
 	Owner = nullptr;
 	ActionBaseData = nullptr;
 	ActionBaseShowData = nullptr;
 	State = EActionState::Wait;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
-	bIsComplete = false;
 }
 
 void UActionBase::Tick(float DeltaTime)
@@ -89,18 +56,47 @@ void UActionBase::Tick(float DeltaTime)
 	if (State != EActionState::Wait)
 	{
 		StepPassedTime += DeltaTime;
-
-		if (RemainCoolDown > 0.0f)
+		switch (State)
 		{
-			RemainCoolDown -= DeltaTime;
-
-			// 쿨타임은 어느 스탭에서 시작할지 옵션이다.
-			// 쿨타임이 끝났다고 스킬이 끝난 것은 아님
-			if (RemainCoolDown <= 0.0f)
+		case EActionState::Cast:
+			if (StepPassedTime > ActionBaseData->CastDuration)
 			{
-				RemainCoolDown = 0.0f;
+				StepPassedTime = ActionBaseData->CastDuration;
+			}
+			break;
+		case EActionState::Exec:
+			if (StepPassedTime > ActionBaseData->ExecDuration)
+			{
+				StepPassedTime = ActionBaseData->ExecDuration;
+			}
+			break;
+		case EActionState::Finish:
+			if (RemainCoolDown > 0.0f)
+			{
+				Cooldown();
+			}
+			else
+			{
 				Complete();
 			}
+			break;
+		case EActionState::Cooldown:
+			if (RemainCoolDown > 0.0f)
+			{
+				RemainCoolDown -= DeltaTime;
+
+				// 쿨타임은 어느 스탭에서 시작할지 옵션이다.
+				// 쿨타임이 끝났다고 스킬이 끝난 것은 아님
+				if (RemainCoolDown < 0.0f)
+				{
+					StepPassedTime = 0.0f;
+					RemainCoolDown = 0.0f;
+					Complete();
+				}
+			}
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -166,7 +162,7 @@ void UActionBase::PlayShow(UShowSequencer* ShowSequencerPtr)
 	}
 }
 
-void UActionBase::Casting(TArray<TObjectPtr<AActor>> Targets)
+void UActionBase::Casting(TArray<TObjectPtr<AActor>>* TargetsPtr)
 {
 	checkf(Owner != nullptr, TEXT("UActionBase::Cast Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Cast ActionBaseData is invalid"));
@@ -189,11 +185,10 @@ void UActionBase::Casting(TArray<TObjectPtr<AActor>> Targets)
 
 	StepPassedTime = 0.0f;
 	State = EActionState::Cast;
-	bIsComplete = false;
 }
 
 // Exec 가 존재하지 않는 액션은 없음 (Cast는 0일 경우 스킵될 수도 있음)
-void UActionBase::Exec(TArray<TObjectPtr<AActor>> Targets)
+void UActionBase::Exec(TArray<TObjectPtr<AActor>>* TargetsPtr)
 {
 	checkf(Owner != nullptr, TEXT("UActionBase::Exec Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Exec ActionBaseData is invalid"));
@@ -228,7 +223,6 @@ void UActionBase::Exec(TArray<TObjectPtr<AActor>> Targets)
 
 	StepPassedTime = 0.0f;
 	State = EActionState::Exec;
-	bIsComplete = false;
 
 	if (ActionBaseData->CooldownStart == EActionState::Exec)
 	{
@@ -242,11 +236,11 @@ void UActionBase::ExecInterval()
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::ExecInterval ActionBaseData is invalid"));
 }
 
-// 서버에서 Finish를 명시적으로 패킷 전송해줘야 하는가??
+// TODO: (DIPI) 서버에서 Finish를 명시적으로 패킷 전송해줘야 하는가??
 // 이건 서버 구조에 따라 달라질 수 있으니 서버와 협의 필요
 // 지금은 서버에서 Finish를 보내준다고 가정하고 만들겠음
-// 가상 서버 로직은 ActionExecutor 에서 구현하겠음
-void UActionBase::Finish(TArray<TObjectPtr<AActor>> Targets)
+// 가상 서버 로직은 ActionServerExecutor 에서 구현하겠음
+void UActionBase::Finish(TArray<TObjectPtr<AActor>>* TargetsPtr)
 {
 	checkf(Owner != nullptr, TEXT("UActionBase::Finish Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Finish ActionBaseData is invalid"));
@@ -284,15 +278,7 @@ void UActionBase::Cooldown()
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Cooldown ActionBaseData is invalid"));
 
 	StepPassedTime = 0.0f;
-
-	if (RemainCoolDown > 0.0f)
-	{
-		State = EActionState::Cooldown;
-	}
-	else
-	{
-		Complete();
-	}
+	State = EActionState::Cooldown;
 }
 
 void UActionBase::Complete()
@@ -302,8 +288,7 @@ void UActionBase::Complete()
 
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
-	State = EActionState::Wait;
-	bIsComplete = true;
+	State = EActionState::Complete;
 }
 
 void UActionBase::Cancel()
@@ -315,22 +300,49 @@ void UActionBase::Cancel()
 	{
 		if (CastShowPtr)
 		{
-			ShowPlayer->StopSoloShow(Owner, CastShowPtr);
+			ShowPlayer->DisposeSoloShow(Owner, CastShowPtr);
 		}
 
 		if (ExecShowPtr)
 		{
-			ShowPlayer->StopSoloShow(Owner, ExecShowPtr);
+			ShowPlayer->DisposeSoloShow(Owner, ExecShowPtr);
 		}
 
 		if (FinishShowPtr)
 		{
-			ShowPlayer->StopSoloShow(Owner, FinishShowPtr);
+			ShowPlayer->DisposeSoloShow(Owner, FinishShowPtr);
+		}
+	}
+
+	StepPassedTime = 0.0f;
+	RemainCoolDown = 0.0f;
+	State = EActionState::Complete;
+}
+
+void UActionBase::Reset()
+{
+	checkf(Owner != nullptr, TEXT("UActionBase::Reset Owner is invalid"));
+	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Reset ActionBaseData is invalid"));
+
+	if (ShowPlayer)
+	{
+		if (CastShowPtr)
+		{
+			ShowPlayer->ResetSoloShow(Owner, CastShowPtr);
+		}
+
+		if (ExecShowPtr)
+		{
+			ShowPlayer->ResetSoloShow(Owner, ExecShowPtr);
+		}
+
+		if (FinishShowPtr)
+		{
+			ShowPlayer->ResetSoloShow(Owner, FinishShowPtr);
 		}
 	}
 
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 	State = EActionState::Wait;
-	bIsComplete = true;
 }

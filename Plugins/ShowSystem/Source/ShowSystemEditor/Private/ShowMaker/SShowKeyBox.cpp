@@ -41,15 +41,17 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
 {
     if (ShowBasePtr)
     {
-        const float StartX = ShowBasePtr->GetStartTime() * SecondToWidthRatio.Get();
-        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowBasePtr->GetShowLength() * SecondToWidthRatio.Get());
+        const float StartTime = ShowBasePtr->GetStartTime();
+        const float ShowLength = ShowBasePtr->GetShowLength();
+        const float StartX = StartTime * SecondToWidthRatio.Get();
+        const float KeyWidth = FMath::Max(MinWidth.Get(), ShowLength * SecondToWidthRatio.Get());
 
         // 클릭 영역을 저장
         ClickableBox = FSlateRect(StartX, 0, StartX + KeyWidth, Height.Get());
 
         bool IsSelected = false;
-        FLinearColor BoxColor = FLinearColor(0.2f, 0.2f, 0.2f);
-        FLinearColor TextColor = FLinearColor::Gray;
+        FLinearColor BoxColor = FLinearColor(0.15f, 0.15f, 0.15f);
+        FLinearColor TextColor = FLinearColor(0.6f, 0.6f, 0.6f);
         if (IsShowKeySelected.IsBound())
         {
             IsSelected = IsShowKeySelected.Execute(ShowBasePtr);
@@ -73,7 +75,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
 
         // 폰트 설정
         FSlateFontInfo FontInfo = FCoreStyle::Get().GetFontStyle("Regular");
-        FontInfo.Size = 12;
+        FontInfo.Size = 10;
         FontInfo.TypefaceFontName = FName("Bold");
 
         // 텍스트 높이 측정
@@ -104,7 +106,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
             OutDrawElements,
             ++LayerId,
             AllottedGeometry.ToPaintGeometry(FVector2D(KeyWidth, TextSize.Y), FSlateLayoutTransform(FVector2D(StartX + 5, TextPosY))),
-            ShowBasePtr->GetTitle(),
+            FString::Printf(TEXT("%s (%.2f / %.2f)"), *ShowBasePtr->GetTitle(), StartTime, ShowLength),
             FontInfo,
             ESlateDrawEffect::None,
             TextColor

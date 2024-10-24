@@ -21,7 +21,7 @@ public:
 	void PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
-	void StopSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
+	void ResetSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 
 	UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
 	void DisposeSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);

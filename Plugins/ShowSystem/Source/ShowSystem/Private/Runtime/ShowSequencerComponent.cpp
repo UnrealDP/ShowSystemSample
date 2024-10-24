@@ -32,10 +32,9 @@ void UShowSequencerComponent::BeginDestroy()
 	{
 		checkf(PoolManager, TEXT("UShowSequencerComponent::NewShowSequencer: The PoolManager is invalid."));
 
-		for (UShowSequencer*& ShowSequencerPtr : ShowSequencers)
+		for (UShowSequencer* ShowSequencerPtr : ShowSequencers)
 		{
 			PoolManager->ReturnPooledObject(ShowSequencerPtr, EObjectPoolType::ObjectPool_ShowSequencer);
-			ShowSequencerPtr = nullptr;
 		}
 		ShowSequencers.Empty();
 	}
@@ -77,17 +76,14 @@ void UShowSequencerComponent::PlayShow(UShowSequencer* InShowSequencer)
 	InShowSequencer->Play();
 }
 
-void UShowSequencerComponent::StopShow(UShowSequencer* InShowSequencer) const
+void UShowSequencerComponent::ResetShow(UShowSequencer* InShowSequencer) const
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::StopShow: InShowSequencer is invalid or null"));
 
-	InShowSequencer->Stop();
-	// InShowSequencer->Dispose(); 를 안하는 이유는 Stop은 다시 재생할 수도 있음
-	// 완전히 삭제하고 싶으면 DisposeShow를 사용해야함
-	// 특히나 자주 사용되는 Show 같은 경우에는 DontDestroy를 사용하여 DisposeShow를 사용하지 않는 것이 좋음
-	InShowSequencer->ClearOwner();
+	InShowSequencer->Reset();
 }
 
+// 자주 사용되는 Show 같은 경우에는 DontDestroy를 사용하여 DisposeShow를 사용하지 않는 것이 좋음
 void UShowSequencerComponent::DisposeShow(UShowSequencer* InShowSequencer)
 {
 	checkf(InShowSequencer, TEXT("UShowSequencerComponent::DisposeShow: InShowSequencer is invalid or null"));

@@ -8,6 +8,7 @@
 #include "ShowAnimInstance.generated.h"
 
 class UShowAnimStatic;
+class UCharacterMovementComponent;
 
 /**
  * class FShowAnimInstanceProxy : public FAnimSingleNodeInstanceProxy 프록시 같은건 안만들었다!!
@@ -28,11 +29,18 @@ public:
 public:
     // 애니메이션 정보 (애니메이션 정보만 담고 있음)
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TObjectPtr<UAnimContainer> AnimContainer;
+    TObjectPtr<UAnimContainer> AnimContainer = nullptr;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+    TObjectPtr<UCharacterMovementComponent> MovementComponent = nullptr;
 
 private:
-    TObjectPtr<USkeletalMeshComponent> OwnerComponent;
-    TObjectPtr<USkeleton> Skeleton;
-    TObjectPtr<AActor> OwnerActor;
-    TObjectPtr<class UCharacterMovementComponent> MovementComponent;
+    UPROPERTY()
+    TObjectPtr<USkeletalMeshComponent> OwnerComponent = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<USkeleton> Skeleton = nullptr;
+
+    UPROPERTY()
+    TObjectPtr<AActor> OwnerActor = nullptr;
 };

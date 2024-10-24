@@ -4,7 +4,7 @@
 #include "ActionComponent.h"
 #include "Data/SkillData.h"
 #include "Data/SkillShowData.h"
-
+#include "ActionServerExecutor.h"
 
 // Sets default values for this component's properties
 UActionComponent::UActionComponent()
@@ -27,26 +27,7 @@ void UActionComponent::BeginPlay()
 
 void UActionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	MainActionPtr = nullptr;
-
-	UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-
-	for (auto& Pair : ActionPool)
-	{
-		UActionBase* Value = Pair.Value;
-		PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
-		Pair.Value = nullptr;
-	}
-	ActionPool.Empty();
-
-	for (auto& Pair : OneShotActions)
-	{
-		UActionBase* Value = Pair.Value;
-		PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
-		Pair.Value = nullptr;
-	}
-	OneShotActions.Empty();
-
+	Dispose();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -55,19 +36,7 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	TArray<UActionBase*> Values;
-	ActionPool.GenerateValueArray(Values);
-	for (UActionBase* Value : Values)
-	{
-		if (!Value)
-		{
-			continue;
-		}
-
-		Value->Tick(DeltaTime);
-	}
-
-	for (TMap<FName, UActionBase*>::TIterator It = OneShotActions.CreateIterator(); It; ++It)
+	for (TMap<FName, UActionBase*>::TIterator It = ActiveActions.CreateIterator(); It; ++It)
 	{
 		UActionBase* ActionBasePtr = It.Value();
 
@@ -76,11 +45,13 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			// 액션 완료 여부 확인
 			if (ActionBasePtr->IsCompleted())
 			{
-				UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-				PoolManager->ReturnPooledObject(ActionBasePtr, ActionBasePtr->GetObjectPoolType());
-				ActionBasePtr = nullptr;
+				if (!ActionBasePtr->IsDontDestroy())
+				{
+					UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
+					PoolManager->ReturnPooledObject(ActionBasePtr, ActionBasePtr->GetObjectPoolType());
 
-				It.RemoveCurrent();
+					It.RemoveCurrent();
+				}
 			}
 			else
 			{
@@ -105,8 +76,10 @@ void UActionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	}
 }
 
-bool UActionComponent::DefaultFilterRule(const FName& ActionName, const FActionBaseData* InActionBaseData)
+bool UActionComponent::DefaultFilterRule(const FActionBaseData* ActionBaseData)
 {
+	checkf(ActionBaseData != nullptr, TEXT("UActionComponent::DefaultFilterRule ActionBaseData is nullptr"));
+
 	if (!MainActionPtr)
 	{
 		return true;
@@ -117,7 +90,7 @@ bool UActionComponent::DefaultFilterRule(const FName& ActionName, const FActionB
 		return false;
 	}
 
-	if (MainActionPtr->GetActionBaseData()->Priority > InActionBaseData->Priority)
+	if (MainActionPtr->GetActionBaseData()->Priority > ActionBaseData->Priority)
 	{
 		return false;
 	}
@@ -125,52 +98,107 @@ bool UActionComponent::DefaultFilterRule(const FName& ActionName, const FActionB
 	return true;
 }
 
-void UActionComponent::ClearActionPool()
+void UActionComponent::Dispose()
 {
-	if (ActionPool.Num() == 0)
+	MainActionPtr = nullptr;
+
+	if (ActiveActions.Num() > 0)
+	{
+		UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
+
+		TArray<UActionBase*> Values;
+		ActiveActions.GenerateValueArray(Values);
+		for (UActionBase* Value : Values)
+		{
+			PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
+		}
+		ActiveActions.Empty();
+	}
+}
+
+bool UActionComponent::CanUseAction(const FActionBaseData* ActionBaseData, ActionFilterFuncPtr ActionFilter)
+{
+	checkf(ActionBaseData != nullptr, TEXT("UActionComponent::CanUseActionFromPool ActionBaseData is nullptr"));
+
+	if (ActionFilter)
+	{
+		if (!ActionFilter(ActionBaseData))
+		{
+			return false;
+		}
+	}
+	else if (!DefaultFilterRule(ActionBaseData))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool UActionComponent::CanUseAction(UActionBase* ActionBasePtr, ActionFilterFuncPtr ActionFilter)
+{
+	checkf(ActionBasePtr != nullptr, TEXT("UActionComponent::CanUseActionFromPool ActionBasePtr is nullptr"));
+	return CanUseAction(ActionBasePtr->GetActionBaseData(), ActionFilter);
+}
+
+void UActionComponent::CancelAction(const FName& ActionName)
+{
+	UActionBase** ActionBasePtrAddress = ActiveActions.Find(ActionName);
+	if (!ActionBasePtrAddress)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UActionComponent::CancelAction ActionBase is nullptr [ %s ]"), *ActionName.ToString());
+		return;
+	}
+
+	UActionBase* ActionPtr = *ActionBasePtrAddress;
+	ActionPtr->Cancel();
+
+	if (ActionPtr == MainActionPtr)
+	{
+		MainActionPtr = nullptr;
+	}
+
+	UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
+	PoolManager->ReturnPooledObject(ActionPtr, ActionPtr->GetObjectPoolType());
+
+	ActiveActions.Remove(ActionName);
+}
+
+void UActionComponent::CancelAction(UActionBase* ActionPtr)
+{
+	checkf(ActionPtr != nullptr, TEXT("UActionComponent::CancelAction ActionPtr is nullptr"));
+
+	FName ActionName = ActionPtr->GetActionName();
+	CancelAction(ActionName);
+}
+
+void UActionComponent::CancelMainAction()
+{
+	if (!MainActionPtr)
 	{
 		return;
 	}
 
-	UObjectPoolManager* PoolManager = GetOwner()->GetWorld()->GetSubsystem<UObjectPoolManager>();
-
-	TArray<UActionBase*> Values;
-	ActionPool.GenerateValueArray(Values);
-	for (UActionBase* Value : Values)
-	{
-		PoolManager->ReturnPooledObject(Value, Value->GetObjectPoolType());
-	}
-	ActionPool.Empty();
+	CancelAction(MainActionPtr);
 }
 
-UActionBase* UActionComponent::DoActionPool(const FName& ActionName, ActionFilterFuncPtr ActionFilter)
-{
-	UActionBase** ActionBasePtrAddress = ActionPool.Find(ActionName);
-	if (!ActionBasePtrAddress)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UActionComponent::DoActionPool ActionBase is nullptr [ %s ]"), *ActionName.ToString());
-		return nullptr;
-	}
-
-	UActionBase* ActionBasePtr = *ActionBasePtrAddress;
-	if (ActionFilter)
-	{
-		if (!ActionFilter(this, ActionName, ActionBasePtr->GetActionBaseData()))
-		{
-			return nullptr;
-		}
-	}
-	else if (!DefaultFilterRule(ActionName, ActionBasePtr->GetActionBaseData()))
-	{
-		return nullptr;
-	}
-
-	if(MainActionPtr)
-	{
-		MainActionPtr->Cancel();
-	}
-
-	MainActionPtr = ActionBasePtr;
-	return ActionBasePtr;
-}
-
+//void UActionComponent::DoAction(UActionBase* ActionBasePtr)
+//{
+//	checkf(ActionBasePtr != nullptr, TEXT("UActionComponent::DoAction ActionBasePtr is nullptr"));
+//
+//	if (MainActionPtr && MainActionPtr != ActionBasePtr)
+//	{
+//		MainActionPtr->Cancel();
+//	}
+//	else
+//	{
+//		FName ActionName = ActionBasePtr->GetActionName();
+//		if (!ActiveActions.Contains(ActionName))
+//		{
+//			ActiveActions.Add(ActionName, ActionBasePtr);
+//		}
+//	}
+//
+//	ActionBasePtr->Casting();
+//	MainActionPtr = ActionBasePtr;
+//}

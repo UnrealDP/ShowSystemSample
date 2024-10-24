@@ -50,6 +50,7 @@ private:
 	// ----------------------------------------------------------------------------------------------
 	// 편집 탭 윈도우 마지막 사용 도킹과 위치 등을 저장하게 하기 위해 StartupModule 에서 메인 탭에 등록
 	FTabId SkillDataTabId;
+	UPROPERTY()
 	TObjectPtr<AShowActionMakerGameMode> ShowActionMakerGameMode = nullptr;
 
 	TSharedPtr<SSkillDataDetailsWidget> SkillDataDetailsWidget = nullptr;

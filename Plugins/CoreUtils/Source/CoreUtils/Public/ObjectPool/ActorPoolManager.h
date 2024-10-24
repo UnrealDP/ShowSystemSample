@@ -124,7 +124,7 @@ public:
     }
 
     // 객체를 풀로 반환하는 메서드
-    void ReturnPooledObject(AActor* Object, EActorPoolType ActorType);
+    void ReturnPooledObject(AActor* Actor, EActorPoolType ActorType);
 
 private:
 

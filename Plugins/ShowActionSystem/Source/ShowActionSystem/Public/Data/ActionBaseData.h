@@ -12,6 +12,7 @@ enum class EActionState : uint8
 	Exec		UMETA(DisplayName = "Action State Exec"),
 	Finish		UMETA(DisplayName = "Action State Finish"),
 	Cooldown	UMETA(DisplayName = "Action State Cooldown"),
+	Complete	UMETA(DisplayName = "Action State Complete"),
 	Max			UMETA(DisplayName = "Max Types")
 };
 

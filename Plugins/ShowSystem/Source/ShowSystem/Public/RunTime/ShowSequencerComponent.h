@@ -39,7 +39,7 @@ public:
     void PlayShow(UShowSequencer* InShowSequencer);
 
     UFUNCTION(BlueprintCallable, Category = "Show")
-    void StopShow(UShowSequencer* InShowSequencer) const;
+    void ResetShow(UShowSequencer* InShowSequencer) const;
 
     UFUNCTION(BlueprintCallable, Category = "Show")
     void DisposeShow(UShowSequencer* InShowSequencer);

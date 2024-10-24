@@ -127,7 +127,6 @@ void SShowActionControllPanels::ConstructRightWidget(const FArguments& InArgs)
         HorizontalBox->AddSlot()
             .FillWidth(EqualWidth)
             .HAlign(HAlign_Fill)
-            .Padding(2.0f)
             [
                 ConstructShowSequencerWidget(InArgs, (*ShowSequencerEditorHelperSortMapPtr)["Exec"], ExHeight)
             ];
@@ -224,4 +223,19 @@ void SShowActionControllPanels::Tick(const FGeometry& AllottedGeometry, const do
         }
         IsUpdateKey = false;
     }
+}
+
+FReply SShowActionControllPanels::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
+{
+    if (InKeyEvent.GetKey() == EKeys::SpaceBar)
+    {
+        if (Args._OnPlay.IsBound())
+        {
+            Args._OnPlay.Execute();
+        }
+        return FReply::Handled();
+    }
+
+    // 스페이스바가 아닌 경우 부모 클래스 처리로 전달
+    return SCompoundWidget::OnKeyDown(MyGeometry, InKeyEvent);
 }

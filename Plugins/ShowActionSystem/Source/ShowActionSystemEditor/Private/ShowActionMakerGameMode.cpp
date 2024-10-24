@@ -9,10 +9,12 @@
 #include "ActionComponent.h"
 #include "DataTableManager.h"
 #include "ShowActionSystemEditor.h"
-#include "ActionSkill.h"
+#include "ActionServerExecutor.h"
 #include "ShowActionSystemEditor.h"
 #include "RunTime/ShowSequencerComponent.h"
 #include "SSkillDataDetailsWidget.h"
+#include "RunTime/ShowSequencer.h"
+#include "ActionServerExecutor.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -92,13 +94,18 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
         ShowActionSystemEditorModulePtr->ClearModule();
     }
 
+    if (CrrActionPtr)
+    {
+        DisposeAction();
+    }
+
     if (Caster && !Caster->IsPendingKillPending())
     {
         Caster->Destroy();
         Caster = nullptr;
     }
 
-    for (AActor* Target : Targets)
+    for (TObjectPtr<AActor>& Target : Targets)
     {
         if (Target && !Target->IsPendingKillPending())
         {
@@ -107,6 +114,9 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
         }
     }
     Targets.Empty();
+
+    SkillData = nullptr;
+    SkillShowData = nullptr;
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }
@@ -180,7 +190,13 @@ void AShowActionMakerGameMode::SaveActorPositions()
     }
 }
 
-UActionBase* AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData)
+UActionBase* AShowActionMakerGameMode::SelectAction(
+    FName InSelectedActionName, 
+    FSkillData* InSkillData, 
+    FSkillShowData* InSkillShowData,
+    UShowSequencer*& OutCastShowSequencer,
+    UShowSequencer*& OutExecShowSequencer,
+    UShowSequencer*& OutFinishShowSequencer)
 {
     SelectedActionName = InSelectedActionName;
     SkillData = InSkillData;
@@ -188,19 +204,184 @@ UActionBase* AShowActionMakerGameMode::SelectAction(FName InSelectedActionName, 
 
     if (Caster)
     {
-        UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
-        ActionComponent->InitializeActionPool<UActionSkill, FSkillData, FSkillShowData>({ SelectedActionName });
-        CrrActionPtr = ActionComponent->GetAction(SelectedActionName);
+        if (CrrActionPtr)
+        {
+            if (CrrActionPtr->GetActionName().IsEqual(InSelectedActionName))
+            {
+                return CrrActionPtr;
+            }
+			else
+			{
+				DisposeAction();
+			}
+        }
+
+        UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();       
+        CrrActionPtr = NewObject<UActionServerExecutor>(ActionComponent);
+        CrrActionPtr->ActionName = SelectedActionName;
+        CrrActionPtr->Owner = Caster;
+        CrrActionPtr->ActionBaseData = SkillData;
+        CrrActionPtr->ActionBaseShowData = SkillShowData;
+        CrrActionPtr->State = EActionState::Wait;
+        CrrActionPtr->StepPassedTime = 0.0f;
+        CrrActionPtr->RemainCoolDown = 0.0f;
+        CrrActionPtr->ShowPlayer = Caster->GetWorld()->GetSubsystem<UShowPlayer>();
+        CrrActionPtr->SetDontDestroy();
+        CrrActionPtr->AddToRoot();
+
+        OutCastShowSequencer = CrrActionPtr->NewShowSequencer(EActionState::Cast);
+        OutExecShowSequencer = CrrActionPtr->NewShowSequencer(EActionState::Exec);
+        OutFinishShowSequencer = CrrActionPtr->NewShowSequencer(EActionState::Finish);
+
+        if (OutCastShowSequencer)
+        {
+            OutCastShowSequencer->SetDontDestroy();
+        }
+        if (OutExecShowSequencer)
+        {
+            OutExecShowSequencer->SetDontDestroy();
+        }
+        if (OutFinishShowSequencer)
+        {
+            OutFinishShowSequencer->SetDontDestroy();
+        }
+
+        ActionComponent->ActiveActions.Add(CrrActionPtr->GetActionName(), CrrActionPtr);
     }
 
     return CrrActionPtr;
 }
 
+void AShowActionMakerGameMode::DisposeAction()
+{
+    if (!CrrActionPtr)
+    {
+        return;
+    }
+
+    if (!Caster)
+    {
+        return;
+    }
+    
+    if (CrrActionPtr->ShowPlayer)
+    {
+        if (CrrActionPtr->CastShowPtr)
+        {
+            if (CrrActionPtr->ShowPlayer->HasShowSequencer(CrrActionPtr->Owner, CrrActionPtr->CastShowPtr))
+            {
+                CrrActionPtr->ShowPlayer->DisposeSoloShow(CrrActionPtr->Owner, CrrActionPtr->CastShowPtr);
+            }
+            CrrActionPtr->CastShowPtr = nullptr;
+        }
+
+        if (CrrActionPtr->ExecShowPtr)
+        {
+            if (CrrActionPtr->ShowPlayer->HasShowSequencer(CrrActionPtr->Owner, CrrActionPtr->ExecShowPtr))
+            {
+                CrrActionPtr->ShowPlayer->DisposeSoloShow(CrrActionPtr->Owner, CrrActionPtr->ExecShowPtr);
+            }
+            CrrActionPtr->ExecShowPtr = nullptr;
+        }
+
+        if (CrrActionPtr->FinishShowPtr)
+        {
+            if (CrrActionPtr->ShowPlayer->HasShowSequencer(CrrActionPtr->Owner, CrrActionPtr->FinishShowPtr))
+            {
+                CrrActionPtr->ShowPlayer->DisposeSoloShow(CrrActionPtr->Owner, CrrActionPtr->FinishShowPtr);
+            }
+            CrrActionPtr->FinishShowPtr = nullptr;
+        }
+    }
+
+    UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
+    if (CrrActionPtr == ActionComponent->MainActionPtr)
+    {
+        ActionComponent->MainActionPtr = nullptr;
+    }
+
+    UActionBase** ActionBasePtrAddress = ActionComponent->ActiveActions.Find(CrrActionPtr->GetActionName());
+    if (ActionBasePtrAddress)
+    {
+        UActionBase* ActionPtr = *ActionBasePtrAddress;
+        ActionComponent->ActiveActions.Remove(ActionPtr->GetActionName());
+
+        ActionPtr->Cancel();        
+        ActionPtr->OnReturnedToPool();
+        ActionPtr->RemoveFromRoot();
+    }
+    CrrActionPtr = nullptr;
+}
+
+UShowSequencer* AShowActionMakerGameMode::ChangeShow(EActionState ActionState, FSoftObjectPath* NewShowPath)
+{
+    if (!CrrActionPtr)
+    {
+        return nullptr;
+    }
+
+    AActor* ActionOwner = CrrActionPtr->GetOwner();
+    UShowSequencerComponent* ShowSequencerComponent = ActionOwner->FindComponentByClass<UShowSequencerComponent>();
+    switch (ActionState)
+    {
+    case EActionState::Cast:
+        if (CrrActionPtr->CastShowPtr)
+        {
+            if (CrrActionPtr->ShowPlayer->HasShowSequencer(ActionOwner, CrrActionPtr->CastShowPtr))
+            {
+                CrrActionPtr->ShowPlayer->DisposeSoloShow(ActionOwner, CrrActionPtr->CastShowPtr);
+            }
+            CrrActionPtr->CastShowPtr = nullptr;
+        }
+        break;
+    case EActionState::Exec:
+        if (CrrActionPtr->ExecShowPtr)
+        {
+            if (CrrActionPtr->ShowPlayer->HasShowSequencer(ActionOwner, CrrActionPtr->ExecShowPtr))
+            {
+                CrrActionPtr->ShowPlayer->DisposeSoloShow(ActionOwner, CrrActionPtr->ExecShowPtr);
+            }
+            CrrActionPtr->ExecShowPtr = nullptr;
+        }
+        break;
+    case EActionState::Finish:
+        if (CrrActionPtr->FinishShowPtr)
+        {
+            if (CrrActionPtr->ShowPlayer->HasShowSequencer(ActionOwner, CrrActionPtr->FinishShowPtr))
+            {
+                CrrActionPtr->ShowPlayer->DisposeSoloShow(ActionOwner, CrrActionPtr->FinishShowPtr);
+            }
+            CrrActionPtr->FinishShowPtr = nullptr;
+        }
+        break;
+    default:
+        break;
+    }
+
+    UShowSequencer* NewShowSequencerPtr = nullptr;
+    if (NewShowPath && NewShowPath->IsValid())
+    {
+        NewShowSequencerPtr = CrrActionPtr->NewShowSequencer(ActionState);
+    }
+    return NewShowSequencerPtr;
+}
+
 void AShowActionMakerGameMode::DoAction()
 {
-	if (Caster && SelectedActionName.IsValid())
+	if (Caster && CrrActionPtr)
 	{
 		UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
-		ActionComponent->DoActionPool(SelectedActionName);
+        ActionComponent->MainActionPtr = nullptr;
+
+        if (UActionBase* Action = ActionComponent->GetActiveAction(CrrActionPtr->GetActionName()))
+        {
+            Action->Reset();
+        }
+        else
+        {
+            ActionComponent->ActiveActions.Add(CrrActionPtr->GetActionName(), CrrActionPtr);
+        }
+            	
+        CrrActionPtr->DoAction();
 	}
 }
