@@ -105,12 +105,11 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
         Caster = nullptr;
     }
 
-    for (TObjectPtr<AActor>& Target : Targets)
+    for (AActor* Target : Targets)
     {
         if (Target && !Target->IsPendingKillPending())
         {
             Target->Destroy();
-            Target = nullptr;
         }
     }
     Targets.Empty();

@@ -50,7 +50,7 @@ private:
 public:
     // setter getter
     void ClearOwner() { Owner = nullptr; }
-    AActor* GetOwner() { return Owner.Get(); }
+    AActor* GetOwner() { return Owner; }
 
     void SetDontDestroy() { bIsDontDestroy = true; }
     void ReleaseDontDestroy() { bIsDontDestroy = false; }
@@ -79,8 +79,7 @@ private:
     UPROPERTY()
     TObjectPtr<UShowSequenceAsset> ShowSequenceAsset = nullptr;
 
-    UPROPERTY()
-    TObjectPtr<AActor> Owner = nullptr;
+    AActor* Owner = nullptr;
 
     bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;

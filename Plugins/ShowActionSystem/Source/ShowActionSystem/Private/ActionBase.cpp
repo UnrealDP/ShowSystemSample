@@ -162,7 +162,7 @@ void UActionBase::PlayShow(UShowSequencer* ShowSequencerPtr)
 	}
 }
 
-void UActionBase::Casting(TArray<TObjectPtr<AActor>>* TargetsPtr)
+void UActionBase::Casting(TArray<AActor*>* TargetsPtr)
 {
 	checkf(Owner != nullptr, TEXT("UActionBase::Cast Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Cast ActionBaseData is invalid"));
@@ -188,7 +188,7 @@ void UActionBase::Casting(TArray<TObjectPtr<AActor>>* TargetsPtr)
 }
 
 // Exec 가 존재하지 않는 액션은 없음 (Cast는 0일 경우 스킵될 수도 있음)
-void UActionBase::Exec(TArray<TObjectPtr<AActor>>* TargetsPtr)
+void UActionBase::Exec(TArray<AActor*>* TargetsPtr)
 {
 	checkf(Owner != nullptr, TEXT("UActionBase::Exec Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Exec ActionBaseData is invalid"));
@@ -240,7 +240,7 @@ void UActionBase::ExecInterval()
 // 이건 서버 구조에 따라 달라질 수 있으니 서버와 협의 필요
 // 지금은 서버에서 Finish를 보내준다고 가정하고 만들겠음
 // 가상 서버 로직은 ActionServerExecutor 에서 구현하겠음
-void UActionBase::Finish(TArray<TObjectPtr<AActor>>* TargetsPtr)
+void UActionBase::Finish(TArray<AActor*>* TargetsPtr)
 {
 	checkf(Owner != nullptr, TEXT("UActionBase::Finish Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Finish ActionBaseData is invalid"));

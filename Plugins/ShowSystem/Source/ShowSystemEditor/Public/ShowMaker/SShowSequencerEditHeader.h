@@ -22,7 +22,6 @@ public:
 	SLATE_BEGIN_ARGS(SShowSequencerEditHeader) {}
 		SLATE_ATTRIBUTE(float, TitleHeight)
 		SLATE_ATTRIBUTE(float, Height)
-		SLATE_ATTRIBUTE(float, Width)
 		SLATE_EVENT(FOnShowBaseEditEvent, OnShowKeyClicked)
 		SLATE_EVENT(FOnShowBaseEditEvent, OnAddShowKeyEvent)
 		SLATE_EVENT(FOnShowSequencerRemoveEvent, OnRemoveShowKeyEvent)
@@ -48,7 +47,6 @@ private:
 	FArguments Args;
 	TAttribute<float> TitleHeight = 30.0f;
 	TAttribute<float> Height = 30.0f;
-	TAttribute<float> Width = 100.0f;
 	FOnShowBaseEditEvent OnAddShowKeyEvent = nullptr;
 	FOnShowSequencerRemoveEvent OnRemoveShowKeyEvent = nullptr;
 

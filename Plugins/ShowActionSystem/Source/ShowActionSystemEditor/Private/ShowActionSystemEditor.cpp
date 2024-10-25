@@ -51,7 +51,7 @@ void FShowActionSystemEditor::ShutdownModule()
     UE_LOG(ShowActionSystemEditor, Warning, TEXT("ShowActionSystemEditor module has been unloaded"));
 }
 
-void FShowActionSystemEditor::InitializeModule(TObjectPtr<AShowActionMakerGameMode> InShowActionMakerGameMode)
+void FShowActionSystemEditor::InitializeModule(AShowActionMakerGameMode* InShowActionMakerGameMode)
 {
     ShowActionMakerGameMode = InShowActionMakerGameMode;
     OpenSkillDataDetails();
@@ -204,7 +204,7 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                 })
                             .OnPlay_Lambda([this]()
 								{
-									if (ShowActionMakerGameMode)
+									if (ShowActionMakerGameMode.IsValid())
 									{
 										ShowActionMakerGameMode->DoAction();
 									}
@@ -321,7 +321,7 @@ void FShowActionSystemEditor::OpenShowActionControllPanels()
 
 void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillData* InSkillData, FSkillShowData* InSkillShowData)
 {
-    if (ShowActionMakerGameMode)
+    if (ShowActionMakerGameMode.IsValid())
     {
         UShowSequencer* OutCastShowSequencer = nullptr;
         UShowSequencer* OutExecShowSequencer = nullptr;
@@ -390,7 +390,7 @@ void FShowActionSystemEditor::NotifyActionChange(const FPropertyChangedEvent& Pr
 
 void FShowActionSystemEditor::NotifyActionShowChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillShowData* SkillShowData)
 {
-    if (ShowActionMakerGameMode)
+    if (ShowActionMakerGameMode.IsValid())
     {
         if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
         {
@@ -445,7 +445,7 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
             return;
         }
 
-        if (ShowActionMakerGameMode)
+        if (ShowActionMakerGameMode.IsValid())
         {
             FString StepStr = StaticEnum<EActionState>()->GetNameStringByValue(static_cast<int64>(ActionState));
             UShowSequencer* NewShowSequencerPtr = ShowActionMakerGameMode->ChangeShow(ActionState, NewShowPath);

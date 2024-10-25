@@ -36,7 +36,7 @@ public:
 	virtual void Tick(float DeltaTime);
 
 	template<typename TActionObject, typename TActionData, typename TActionShowData>
-	TActionObject* Initialize(TObjectPtr<AActor> InOwner, const FName& InActionName, const TActionData* InActionBaseData, const TActionShowData* InActionBaseShowData)
+	TActionObject* Initialize(AActor* InOwner, const FName& InActionName, const TActionData* InActionBaseData, const TActionShowData* InActionBaseShowData)
 	{
 		static_assert(TIsDerivedFrom<TActionObject, UActionBase>::IsDerived, "TActionObject must be derived from UActionBase");
 		static_assert(TIsDerivedFrom<TActionData, FActionBaseData>::IsDerived, "TActionData must be derived from FActionBaseData");
@@ -58,16 +58,16 @@ public:
 
 		return static_cast<TActionObject*>(this);
 	}
-	virtual void Casting(TArray<TObjectPtr<AActor>>* TargetsPtr = nullptr);
-	virtual void Exec(TArray<TObjectPtr<AActor>>* TargetsPtr = nullptr);
+	virtual void Casting(TArray<AActor*>* TargetsPtr = nullptr);
+	virtual void Exec(TArray<AActor*>* TargetsPtr = nullptr);
 	virtual void ExecInterval();
-	virtual void Finish(TArray<TObjectPtr<AActor>>* TargetsPtr = nullptr);
+	virtual void Finish(TArray<AActor*>* TargetsPtr = nullptr);
 	virtual void Cooldown();
 	virtual void Complete();	
 	virtual void Cancel();
 	virtual void Reset();
 
-	AActor* GetOwner() const { return Owner.Get(); }
+	AActor* GetOwner() const { return Owner; }
 	EActionState GetState() const { return State; }
 	const FName& GetActionName() const { return ActionName; }
 	const struct FActionBaseData* GetActionBaseData() const { return ActionBaseData; }
@@ -92,11 +92,9 @@ protected:
 
 protected:
 	
-	UPROPERTY()
-	TObjectPtr<UShowPlayer> ShowPlayer = nullptr;
+	UShowPlayer* ShowPlayer = nullptr;
 
-	UPROPERTY()
-	TObjectPtr<AActor> Owner = nullptr;
+	AActor* Owner = nullptr;
 
 	const FActionBaseData* ActionBaseData = nullptr;
 	const FActionBaseShowData* ActionBaseShowData = nullptr;

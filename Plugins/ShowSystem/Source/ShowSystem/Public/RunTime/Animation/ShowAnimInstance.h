@@ -41,6 +41,5 @@ private:
     UPROPERTY()
     TObjectPtr<USkeleton> Skeleton = nullptr;
 
-    UPROPERTY()
-    TObjectPtr<AActor> OwnerActor = nullptr;
+    AActor* OwnerActor = nullptr;
 };

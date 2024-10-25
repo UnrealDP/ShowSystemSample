@@ -19,7 +19,6 @@ void SShowSequencerEditHeader::Construct(const FArguments& InArgs)
     Args = InArgs;
     TitleHeight = InArgs._TitleHeight;
     Height = InArgs._Height;
-    Width = InArgs._Width;
     OnAddShowKeyEvent = InArgs._OnAddShowKeyEvent;
     OnRemoveShowKeyEvent = InArgs._OnRemoveShowKeyEvent;
     
@@ -72,13 +71,15 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TSortedPairArray<FString
 
     VerticalBox->ClearChildren();
 
+    float AddButtonSpace = 3.0f;
+
     // 'Add' 버튼 다시 추가
     VerticalBox->AddSlot()
         .AutoHeight()
         .HAlign(HAlign_Left)
         [
             SNew(SBox)
-                .HeightOverride(TitleHeight.Get())
+                .HeightOverride(TitleHeight.Get() - AddButtonSpace)
                 [
                     SNew(SPositiveActionButton)
                         .Text(LOCTEXT("AddButton", "Add"))
@@ -92,7 +93,7 @@ void SShowSequencerEditHeader::RefreshShowKeyHeaderBoxs(TSortedPairArray<FString
 		.AutoHeight()
 		.HAlign(HAlign_Fill)
 		[
-            SNew(SSpacer).Size(FVector2D(0.0f, 3.0f))
+            SNew(SSpacer).Size(FVector2D(0.0f, AddButtonSpace))
 		];
 
     // ShowSequencerEditorHelper의 ShowKeys 배열을 통해 새로운 위젯 생성
@@ -152,23 +153,7 @@ TSharedRef<SWidget> SShowSequencerEditHeader::ConstructShowSequencerHeaderWidget
                                             .Image(FAppStyle::Get().GetBrush("Icons.Minus"))
                                     ]
                             ]
-                            /*+ SHorizontalBox::Slot()
-                            .HAlign(HAlign_Fill)
-                            .AutoWidth()
-                            [
-                                SNew(STextBlock).Text(FText::FromString(ShowBasePtr->GetClass()->GetName()))
-                                    .ColorAndOpacity_Lambda([this, ShowBasePtr]() -> FSlateColor
-                                        {
-                                            if (Args._IsShowKeySelected.IsBound() && Args._IsShowKeySelected.Execute(ShowBasePtr))
-                                            {
-                                                return FSlateColor(FLinearColor::Green);
-                                            }
-                                            else
-                                            {
-                                                return FSlateColor(FLinearColor::White);
-                                            }
-                                        })
-                            ]*/
+
                             +SHorizontalBox::Slot()
                             .HAlign(HAlign_Fill)
                             .AutoWidth()

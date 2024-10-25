@@ -222,7 +222,7 @@ float FShowSequencerEditorHelper::GetWidgetLengthAlignedToInterval(float Interva
 		}
 
 		float StartTime = ShowBasePtr->GetStartTime();
-		float ShowLength = ShowBasePtr->EditorInitializeAssetLength();
+		float ShowLength = ShowBasePtr->GetShowLength();
 
 		TotalLength = FMath::Max(TotalLength, StartTime + ShowLength);
 	}

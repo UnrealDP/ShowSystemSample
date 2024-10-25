@@ -41,7 +41,7 @@ void SShowActionControllPanels::Construct(const FArguments& InArgs)
                             }
                         )
                         .InitialRatios(
-                            { 0.1f, 0.9f }
+                            { 0.12f, 0.88f }
                         )
                 ]
         ];
@@ -62,7 +62,6 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
                     SAssignNew(ShowSequencerEditHeader, SShowSequencerEditHeader)
                         .TitleHeight(30)
                         .Height(20)
-                        .Width(100)
                         .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
                             {
                                 if (OnAddKey.IsBound())

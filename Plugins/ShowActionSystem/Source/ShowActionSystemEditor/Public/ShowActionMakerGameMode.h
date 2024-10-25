@@ -54,11 +54,9 @@ public:
     
 private:
 
-    UPROPERTY()
-    TObjectPtr<AActor> Caster = nullptr;
+    AActor*  Caster = nullptr;
 
-    UPROPERTY()
-    TArray<TObjectPtr<AActor>> Targets;
+    TArray<AActor*> Targets;
 
     FName SelectedActionName;
     FSkillData* SkillData = nullptr;

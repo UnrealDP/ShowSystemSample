@@ -90,7 +90,7 @@ public:
     {
         PassedTime += (DeltaTime * CachedTimeScale);
 
-        // 키의 종류에 따라서 시간이 아닌 이벤트 같은거로 처리할 수 있음 (예시: UShowAnimStatic)
+        // TODO: (DIPI) 키의 종류에 따라서 시간이 아닌 이벤트 같은거로 처리할 수 있음 (예시: UShowAnimStatic)
         /*if (CachedTimeScale > 0)
         {
             if (Length <= PassedTime)
@@ -194,16 +194,11 @@ public:
     }
 
     const FShowKey* GetShowKey() const { return ShowKey; }
-
-#if WITH_EDITOR
-    float EditorInitializeAssetLength()
-	{
-		return GetShowLength();
-	}
-#endif
      
 public:
     virtual FString GetTitle() PURE_VIRTUAL(UShowBase::GetTitle, return "ShowBase";);
+
+    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
     virtual float GetShowLength() PURE_VIRTUAL(UShowBase::GetShowLength, return 0.f;);
 
 protected:
@@ -213,8 +208,6 @@ protected:
     }
 
     virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
-    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
-    // Initialize 된 후에 호출된다
     virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );
     virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
     virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );

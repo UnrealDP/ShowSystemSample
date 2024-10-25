@@ -37,7 +37,7 @@ void SShowSequencerEditor::Construct(const FArguments& InArgs)
                         }
                         )
                     .InitialRatios(
-                        { 0.1f, 0.9f }
+                        { 0.13f, 0.87f }
                     )
             ]
 	];
@@ -49,7 +49,6 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
     ShowSequencerEditHeader = SNew(SShowSequencerEditHeader)
         .TitleHeight(30)
         .Height(20)
-        .Width(100)
         .OnAddShowKeyEvent_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
             {
                 if (OnAddKey.IsBound())
@@ -79,7 +78,6 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
 
     return SNew(SVerticalBox)
         + SVerticalBox::Slot()
-        .Padding(2.0f)
         .FillHeight(1.0f)
         [
             ShowSequencerEditHeader.ToSharedRef()
