@@ -6,17 +6,15 @@
 #include "RunTime/ShowSystem.h"
 
 // Sets default values for this component's properties
-UShowSequencerComponent::UShowSequencerComponent()
+UShowSequencerComponent::UShowSequencerComponent() : Super()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UShowSequencerComponent::BeginPlay()
+void UShowSequencerComponent::Initialize()
 {
-	Super::BeginPlay();
-
 	AActor* Owner = GetOwner();
 	checkf(Owner, TEXT("UShowSequencerComponent::BeginPlay: The Owner is invalid."));
 
@@ -24,6 +22,12 @@ void UShowSequencerComponent::BeginPlay()
 	checkf(World, TEXT("UShowSequencerComponent::BeginPlay: The World is invalid."));
 
 	PoolManager = World->GetSubsystem<UObjectPoolManager>();
+}
+
+void UShowSequencerComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	Initialize();
 }
 
 void UShowSequencerComponent::BeginDestroy()

@@ -23,7 +23,6 @@ public:
     virtual void BeginDestroy() override;
     virtual void NativeInitializeAnimation() override;
 
-    void PlayAnimation(const UShowAnimStatic& ShowAnimStatic, float PlayRate);
     UAnimMontage* PlayAnimation(UAnimSequenceBase* NewAsset, int32 LoopCount, float BlendOutTriggerTime = -1.0f, float InTimeToStartMontageAt = 0.0f, float PlayRate = 1.0f);
     
 public:

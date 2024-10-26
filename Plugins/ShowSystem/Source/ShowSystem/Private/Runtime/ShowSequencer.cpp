@@ -12,10 +12,10 @@ void UShowSequencer::OnPooled()
 void UShowSequencer::OnReturnedToPool()
 {
     // Owner 를 null 먼저 하면 ClearShowObjects 에서 checkf(Owner) 에서 에러 발생
-    if (Owner)
+    if (ShowOwner)
     {
         ClearShowObjects();
-        Owner = nullptr;
+        ShowOwner = nullptr;
     }
 
     ShowSequenceAsset = nullptr;
@@ -25,9 +25,9 @@ void UShowSequencer::OnReturnedToPool()
     TimeScale = 1.0f;
 }
 
-void UShowSequencer::Initialize(AActor* InOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
+void UShowSequencer::Initialize(AActor* InShowOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset)
 {
-    Owner = InOwner;
+    ShowOwner = InShowOwner;
     ShowSequenceAsset = InShowSequenceAsset;
     GenerateShowBase();
 }
@@ -55,9 +55,9 @@ void UShowSequencer::GenerateShowBase()
 UShowBase* UShowSequencer::CreateShowObject(const FShowKey* InShowKey)
 {
     checkf(InShowKey, TEXT("UShowSequencer::CreateShowObject: InShowKey is Invalid."));
-    checkf(Owner, TEXT("UShowSequencer::CreateShowObject: Owner is Invalid."));
+    checkf(ShowOwner, TEXT("UShowSequencer::CreateShowObject: Owner is Invalid."));
 
-    UWorld* World = Owner->GetWorld();
+    UWorld* World = ShowOwner->GetWorld();
     if (!World)
 	{
 		return nullptr;
@@ -72,9 +72,9 @@ UShowBase* UShowSequencer::CreateShowObject(const FShowKey* InShowKey)
 
 void UShowSequencer::ClearShowObjects()
 {
-    checkf(Owner, TEXT("UShowSequencer::ClearShowObjects: Owner is Invalid."));
+    checkf(ShowOwner, TEXT("UShowSequencer::ClearShowObjects: ShowOwner is Invalid."));
 
-    UWorld* World = Owner->GetWorld();
+    UWorld* World = ShowOwner->GetWorld();
     if (!World)
     {
         return;
@@ -91,7 +91,7 @@ void UShowSequencer::ClearShowObjects()
 
 void UShowSequencer::Play()
 {
-    checkf(Owner, TEXT("UShowSequencer::Play: Owner is invalid"));
+    checkf(ShowOwner, TEXT("UShowSequencer::Play: ShowOwner is invalid"));
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
     PassedTime = 0.0f;

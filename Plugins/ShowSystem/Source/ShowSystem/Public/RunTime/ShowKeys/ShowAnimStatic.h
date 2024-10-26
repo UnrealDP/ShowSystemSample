@@ -17,7 +17,7 @@ struct FShowAnimStaticKey : public FShowKey
     }
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimStaticKey")
-    TSoftObjectPtr<UAnimSequenceBase> AnimSequenceAsset;
+    TSoftObjectPtr<UAnimSequenceBase> AnimSequenceAsset = nullptr;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AnimStaticKey")
     float BlendOutTriggerTime = -1.0f;
@@ -38,15 +38,13 @@ class SHOWSYSTEM_API UShowAnimStatic : public UShowBase
 	GENERATED_BODY()
 
 public:
-    const FShowAnimStaticKey* GetAnimStaticKey() const { return AnimStaticKeyPtr; }
-    UAnimSequenceBase* GetAnimSequenceBase() const { return AnimSequenceBase; }
-	
-    UFUNCTION()
-    void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+    TWeakObjectPtr<UAnimSequenceBase> GetAnimSequenceBase() const
+    {
+        return TWeakObjectPtr<UAnimSequenceBase>(AnimSequenceBase.Get());
+    }
 
-public:
     virtual FString GetTitle() override;
-    virtual float GetShowLength() override;
+    virtual float GetLength() override;
 
 protected:
     virtual void Initialize() override;
@@ -56,11 +54,14 @@ protected:
     virtual void Pause() override {};
     virtual void UnPause() override {};
 
+    UFUNCTION()
+    void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 private:
     virtual void Tick(float DeltaTime, float BasePassedTime) override;
 
 private:
-    const FShowAnimStaticKey* AnimStaticKeyPtr;
+    const FShowAnimStaticKey* AnimStaticKeyPtr = nullptr;
 
     UPROPERTY()
     TObjectPtr<UAnimSequenceBase> AnimSequenceBase = nullptr;

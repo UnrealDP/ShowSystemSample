@@ -44,26 +44,6 @@ void UShowAnimInstance::NativeInitializeAnimation()
     MovementComponent = OwnerActor->FindComponentByClass<UCharacterMovementComponent>();
 }
 
-void UShowAnimInstance::PlayAnimation(const UShowAnimStatic& ShowAnimStatic, float PlayRate)
-{
-    UAnimSequenceBase* AnimSequenceBase = ShowAnimStatic.GetAnimSequenceBase();
-    checkf(AnimSequenceBase, TEXT("UShowAnimInstance::PlayAnimation AnimSequenceBase is invalid"));
-
-    const FShowAnimStaticKey* ShowAnimStaticKey = ShowAnimStatic.GetAnimStaticKey();
-    checkf(ShowAnimStaticKey, TEXT("UShowAnimInstance::PlayAnimation ShowAnimStaticKey is invalid"));
-
-    UAnimMontage* AnimMontage = PlayAnimation(
-        AnimSequenceBase, 
-        ShowAnimStaticKey->LoopCount, 
-        ShowAnimStaticKey->BlendOutTriggerTime, 
-        ShowAnimStaticKey->InTimeToStartMontageAt, 
-        PlayRate);
-
-    if (AnimMontage)
-    {
-    }
-}
-
 UAnimMontage* UShowAnimInstance::PlayAnimation(UAnimSequenceBase* NewAsset, int32 LoopCount, float BlendOutTriggerTime, float InTimeToStartMontageAt, float PlayRate)
 {
     checkf(NewAsset, TEXT("UShowAnimInstance::PlayAnimation NewAsset is invalid"));

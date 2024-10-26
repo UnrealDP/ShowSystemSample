@@ -27,7 +27,7 @@ void FShowSequencerEditorHelper::Tick(float DeltaTime)
 {
 	if (bIsCreatedFromHlper)
 	{
-		if (EditShowSequencerPtr && EditShowSequencerPtr->GetOwner())
+		if (EditShowSequencerPtr && EditShowSequencerPtr->GetShowOwner())
 		{
 			EShowSequencerState ShowSequencerState = EditShowSequencerPtr->GetShowSequencerState();
 			switch (ShowSequencerState)
@@ -49,30 +49,6 @@ void FShowSequencerEditorHelper::Tick(float DeltaTime)
 	}
 }
 
-void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged)
-{
-	FFieldVariant FieldVariant = PropertyChangedEvent.Property->Owner;
-
-	if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
-	{
-		if (SelectedShowBasePtr)
-		{
-			FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
-			FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
-
-			if (SelectedShowBasePtr->IsA<UShowAnimStatic>())
-			{
-				if (PropertyName.IsEqual("AnimSequenceAsset"))
-				{
-					SelectedShowBasePtr->ExecuteReset();
-				}
-			}
-		}
-	}
-
-	EditShowSequencerPtr->ShowSequenceAsset->MarkPackageDirty();
-}
-
 void FShowSequencerEditorHelper::Dispose()
 {
 	if (EditShowSequencerPtr)
@@ -82,7 +58,7 @@ void FShowSequencerEditorHelper::Dispose()
 			EditShowSequencerPtr->ReleaseDontDestroy();
 			ShowSequencerClearShowObjects();
 			EditShowSequencerPtr->RemoveFromRoot();
-			EditShowSequencerPtr->Owner = nullptr;
+			EditShowSequencerPtr->ShowOwner = nullptr;
 		}
 		
 		EditShowSequencerPtr = nullptr;
@@ -145,10 +121,10 @@ void FShowSequencerEditorHelper::HelperNewShowSequencer(TObjectPtr<UShowSequence
 
 void FShowSequencerEditorHelper::Play()
 {
-	AActor* Owner = EditShowSequencerPtr->GetOwner();
-	if (!Owner)
+	AActor* ShowOwner = EditShowSequencerPtr->GetShowOwner();
+	if (!ShowOwner)
 	{
-		UE_LOG(LogTemp, Error, TEXT("FShowSequencerEditorHelper::Play: Owner is Invalid."));
+		UE_LOG(LogTemp, Error, TEXT("FShowSequencerEditorHelper::Play: ShowOwner is Invalid."));
 		return;
 	}
 
@@ -222,7 +198,7 @@ float FShowSequencerEditorHelper::GetWidgetLengthAlignedToInterval(float Interva
 		}
 
 		float StartTime = ShowBasePtr->GetStartTime();
-		float ShowLength = ShowBasePtr->GetShowLength();
+		float ShowLength = ShowBasePtr->GetLength();
 
 		TotalLength = FMath::Max(TotalLength, StartTime + ShowLength);
 	}
@@ -401,8 +377,8 @@ UShowBase* FShowSequencerEditorHelper::AddKey(FInstancedStruct& NewKey)
 	FShowKey* NewShowKey = EditShowSequencerPtr->ShowSequenceAsset->ShowKeys.Last().GetMutablePtr<FShowKey>();
 	EditShowSequencerPtr->ShowSequenceAsset->MarkPackageDirty();
 
-	AActor* Owner = EditShowSequencerPtr->GetOwner();
-	UWorld* World = Owner->GetWorld();
+	AActor* ShowOwner = EditShowSequencerPtr->GetShowOwner();
+	UWorld* World = ShowOwner->GetWorld();
 	UShowBase* NewShowBasePtr = nullptr;
 
 	if (bIsCreatedFromHlper)
@@ -446,8 +422,8 @@ bool FShowSequencerEditorHelper::RemoveKey(UShowBase* RemoveShowBasePtr)
 	int32 KeyIndex = FindShowKeyIndex(RemoveShowBasePtr->ShowKey);
 	checkf(KeyIndex != INDEX_NONE, TEXT("FShowSequencerEditorHelper::RemoveKey: ShowKey not found in ShowKeys."));
 
-	AActor* Owner = EditShowSequencerPtr->GetOwner();
-	UWorld* World = Owner->GetWorld();
+	AActor* ShowOwner = EditShowSequencerPtr->GetShowOwner();
+	UWorld* World = ShowOwner->GetWorld();
 
 	if (bIsCreatedFromHlper)
 	{
@@ -511,10 +487,10 @@ UShowBase* FShowSequencerEditorHelper::CheckGetSelectedShowBase()
 
 bool FShowSequencerEditorHelper::ValidateRuntimeShowKeys()
 {
- 	AActor* Owner = EditShowSequencerPtr->GetOwner();
-	if (!Owner)
+ 	AActor* ShowOwner = EditShowSequencerPtr->GetShowOwner();
+	if (!ShowOwner)
 	{
-		FText txt = LOCTEXT("ShowSequencerNoneOwner", "[UShowSequencer] None Owner Actor");
+		FText txt = LOCTEXT("ShowSequencerNoneOwner", "[UShowSequencer] None ShowOwner Actor");
 		FMessageDialog::Open(EAppMsgType::Ok, txt);
 		return false;
 	}
@@ -526,51 +502,32 @@ bool FShowSequencerEditorHelper::ValidateRuntimeShowKeys()
 			return false;
 		}
 
-		if (ShowBasePtr->IsA(UShowAnimStatic::StaticClass()))
+		FText ErrTxt;
+		if (!ShowSystem::ValidateRuntimeShowKey(ShowOwner, ShowBasePtr, ErrTxt))
 		{
-			if (!ValidateShowAnimStatic(Owner, ShowBasePtr))
-			{
-				return false;
-			}
+			FMessageDialog::Open(EAppMsgType::Ok, ErrTxt);
+			return false;
 		}
 	}
 	return true;
 }
 
-bool FShowSequencerEditorHelper::ValidateShowAnimStatic(AActor* Owner, UShowBase* ShowBasePtr)
+void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged)
 {
-	UShowAnimStatic* ShowAnimStatic = Cast<UShowAnimStatic>(ShowBasePtr);
-	if (!ShowAnimStatic->GetAnimSequenceBase())
+	FFieldVariant FieldVariant = PropertyChangedEvent.Property->Owner;
+
+	if (UStruct* Struct = PropertyChangedEvent.Property->GetOwnerStruct())
 	{
-		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] An animation is missing for one or more keys.");
-		FMessageDialog::Open(EAppMsgType::Ok, txt);
-		return false;
+		if (SelectedShowBasePtr)
+		{
+			FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+			FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+			ShowSystem::NotifyShowKeyChange(SelectedShowBasePtr, PropertyName);
+		}
 	}
 
-	USkeletalMeshComponent* SkeletalMeshComp = Owner->FindComponentByClass<USkeletalMeshComponent>();
-	if (!SkeletalMeshComp)
-	{
-		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] None SkeletalMeshComp");
-		FMessageDialog::Open(EAppMsgType::Ok, txt);
-		return false;
-	}
-
-	if (!SkeletalMeshComp->AnimClass)
-	{
-		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] None SkeletalMeshComp->AnimClass");
-		FMessageDialog::Open(EAppMsgType::Ok, txt);
-		return false;
-	}
-
-	UAnimInstance* AnimInstance = SkeletalMeshComp->GetAnimInstance();
-	if (!AnimInstance)
-	{
-		FText txt = LOCTEXT("ShowBaseNoneAnim", "[UShowAnimStatic] None AnimInstance");
-		FMessageDialog::Open(EAppMsgType::Ok, txt);
-		return false;
-	}
-
-	return true;
+	EditShowSequencerPtr->ShowSequenceAsset->MarkPackageDirty();
 }
 
 #undef LOCTEXT_NAMESPACE

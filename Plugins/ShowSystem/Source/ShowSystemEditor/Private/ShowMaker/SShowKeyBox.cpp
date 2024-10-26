@@ -42,7 +42,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
     if (ShowBasePtr)
     {
         const float StartTime = ShowBasePtr->GetStartTime();
-        const float ShowLength = ShowBasePtr->GetShowLength();
+        const float ShowLength = ShowBasePtr->GetLength();
         const float StartX = StartTime * SecondToWidthRatio.Get();
         const float KeyWidth = FMath::Max(MinWidth.Get(), ShowLength * SecondToWidthRatio.Get());
 

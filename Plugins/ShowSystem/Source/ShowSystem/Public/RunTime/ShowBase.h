@@ -31,8 +31,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
     float StartTime = 0.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowKey")
-    float Length = 0.0f;
+    UPROPERTY(EditAnywhere, Category = "ShowKey")
+    float PlayRate = 1.0f;
 };
 
 /**
@@ -60,7 +60,6 @@ public:
         ShowSequencerPtr = nullptr;
         ShowKey = nullptr;
 
-        Length = FLT_MAX;
         PassedTime = 0.0f;
         KeyTimeScale = 1.0f;
         CachedTimeScale = 1.0f;
@@ -80,10 +79,7 @@ public:
         CachedTimeScale = ShowSequencerPtr->GetTimeScale();
 
         ShowKey = InShowKey;
-        Length = InShowKey->Length;
-
         Initialize();
-        Length = GetShowLength();
     }
 
     void BaseTick(float DeltaTime)
@@ -121,12 +117,8 @@ public:
     void ExecuteReset()
     {
         ShowKeyState = EShowKeyState::ShowKey_Wait;
-
         PassedTime = 0.0f;
-
-        Length = ShowKey->Length;
         Reset();
-        Length = GetShowLength();
     }
     void ExecutePause()
     {
@@ -184,27 +176,19 @@ public:
 		}
         return ShowKey->StartTime;
     }
-    float GetLength() 
-    { 
-        if (Length == FLT_MAX)
-		{
-			Length = GetShowLength();
-		}
-        return Length;
-    }
 
     const FShowKey* GetShowKey() const { return ShowKey; }
      
 public:
     virtual FString GetTitle() PURE_VIRTUAL(UShowBase::GetTitle, return "ShowBase";);
 
-    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
-    virtual float GetShowLength() PURE_VIRTUAL(UShowBase::GetShowLength, return 0.f;);
+    // 툴이나 혹은 전체 시간이 필요한 경우 사용되는 함수
+    virtual float GetLength() PURE_VIRTUAL(UShowBase::GetLength, return 0.f;);
 
 protected:
-    AActor* GetOwner() const
+    AActor* GetShowOwner() const
     {
-        return ShowSequencerPtr->GetOwner();
+        return ShowSequencerPtr->GetShowOwner();
     }
 
     virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
@@ -225,8 +209,6 @@ protected:
 
     EShowKeyState ShowKeyState = EShowKeyState::ShowKey_Wait;
 
-    // 여기 있는 Length 는 실제 리소스의 Length와 ShowKey에 설정한 Length로 플레이해야할 Length를 구한 값이다.
-    float Length = FLT_MAX;
     float PassedTime = 0.0f;
     float KeyTimeScale = 1.0f;
     float CachedTimeScale = 1.0f;

@@ -8,6 +8,6 @@ UENUM(BlueprintType)
 enum class EShowKeyType : uint8
 {
     ShowKey_Anim UMETA(DisplayName = "Animation Key"),
-    ShowKey_Particle UMETA(DisplayName = "Particle Key"),
+    ShowKey_Cascade UMETA(DisplayName = "Cascade Key"),
     Max   UMETA(DisplayName = "Max Types")
 };

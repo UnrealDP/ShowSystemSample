@@ -48,7 +48,7 @@ public:
 
 	void Dispose();
 	void HelperNewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
-	void SetShowSequencerOwner(AActor* InOwner) { EditShowSequencerPtr->Owner = InOwner; }
+	void SetShowSequencerOwner(AActor* InShowOwner) { EditShowSequencerPtr->ShowOwner = InShowOwner; }
 	void Play();
 	void ShowSequencerReset();
 	void ShowSequencerStop();
@@ -57,7 +57,6 @@ public:
 
 	UShowBase* CheckGetSelectedShowBase();
 	bool ValidateRuntimeShowKeys();
-	bool ValidateShowAnimStatic(AActor* Owner, UShowBase* ShowBasePtr);
 
 	UClass* GetLastSelectedActorClass();
 	USkeletalMesh* LoadLastSelectedOrDefaultSkeletalMesh();	

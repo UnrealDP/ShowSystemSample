@@ -15,6 +15,7 @@
 #include "SSkillDataDetailsWidget.h"
 #include "RunTime/ShowSequencer.h"
 #include "ActionServerExecutor.h"
+#include "Kismet/GameplayStatics.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -36,12 +37,34 @@ void AShowActionMakerGameMode::BeginPlay()
         FActorSpawnParameters CasterSpawnParams;
         CasterSpawnParams.Name = FName(TEXT("ActionMaker Caster"));
 
-        Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator, CasterSpawnParams);
+        if (GEngine->GetWorldContextFromWorldChecked(GetWorld()).WorldType == EWorldType::PIE)
+        {
+            // 현재 플레이어의 Actor 가져오기
+            APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+            if (PlayerController)
+            {
+                PlayerController->InputComponent->BindAction("FKeyAction", IE_Pressed, this, &AShowActionMakerGameMode::DoAction);
+                APawn* PlayerPawn = PlayerController->GetPawn();
+                if (PlayerPawn)
+                {
+                    Caster = Cast<AActor>(PlayerPawn);
+                    Caster->Rename(*CasterSpawnParams.Name.ToString());
+                    Caster->SetActorLocation(CasterPos);
+                }
+            }
+        }
+        if (!Caster)
+        {
+            Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator, CasterSpawnParams);
+            Caster->SetActorLabel(CasterSpawnParams.Name.ToString());
+        }
+
         if (!Caster->FindComponentByClass<UShowSequencerComponent>())
         {
             UShowSequencerComponent* ShowSequencerComponent = NewObject<UShowSequencerComponent>(Caster, UShowSequencerComponent::StaticClass());
             Caster->AddInstanceComponent(ShowSequencerComponent);
             ShowSequencerComponent->RegisterComponent();
+            ShowSequencerComponent->Initialize();
         }
         if (!Caster->FindComponentByClass<UActionComponent>())
         {
@@ -119,7 +142,6 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }
-
 
 void AShowActionMakerGameMode::Tick(float DeltaSeconds)
 {

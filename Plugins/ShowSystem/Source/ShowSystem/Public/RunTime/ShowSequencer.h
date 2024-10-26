@@ -49,8 +49,8 @@ private:
 
 public:
     // setter getter
-    void ClearOwner() { Owner = nullptr; }
-    AActor* GetOwner() { return Owner; }
+    void ClearShowOwner() { ShowOwner = nullptr; }
+    AActor* GetShowOwner() { return ShowOwner; }
 
     void SetDontDestroy() { bIsDontDestroy = true; }
     void ReleaseDontDestroy() { bIsDontDestroy = false; }
@@ -59,7 +59,7 @@ public:
     float GetPassedTime() const { return PassedTime; }
     // end of setter getter
 
-    void Initialize(AActor* InOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
+    void Initialize(AActor* InShowOwner, TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);
     void Tick(float DeltaTime);
 
     EShowSequencerState GetShowSequencerState() const { return ShowSequencerState; }
@@ -79,7 +79,7 @@ private:
     UPROPERTY()
     TObjectPtr<UShowSequenceAsset> ShowSequenceAsset = nullptr;
 
-    AActor* Owner = nullptr;
+    AActor* ShowOwner = nullptr;
 
     bool bIsDontDestroy = false;
     EShowSequencerState ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;

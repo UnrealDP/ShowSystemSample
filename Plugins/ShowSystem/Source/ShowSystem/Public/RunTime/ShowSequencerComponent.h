@@ -17,9 +17,10 @@ class SHOWSYSTEM_API UShowSequencerComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UShowSequencerComponent();
+    void Initialize();
 
 protected:
-	// Called when the game starts
+	// Called when the game starts    
 	virtual void BeginPlay() override;
     virtual void BeginDestroy() override;
 

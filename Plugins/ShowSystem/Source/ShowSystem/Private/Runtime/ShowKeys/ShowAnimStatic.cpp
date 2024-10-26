@@ -18,7 +18,7 @@ void UShowAnimStatic::Initialize()
     checkf(ShowKey, TEXT("UShowAnimStatic::Initialize ShowKey is invalid"));
 
     AnimStaticKeyPtr = static_cast<const FShowAnimStaticKey*>(ShowKey);
-    checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKey is invalid [ %d ]"), static_cast<int>(ShowKey->KeyType));
+    checkf(AnimStaticKeyPtr, TEXT("UShowAnimStatic::Initialize AnimStaticKeyPtr is invalid [ %d ]"), static_cast<int>(ShowKey->KeyType));
 
     if (!AnimSequenceBase)
     {
@@ -30,32 +30,27 @@ void UShowAnimStatic::Initialize()
 
         if (!AnimStaticKeyPtr->AnimSequenceAsset.IsValid())
         {
-            // 필요한 경우 로드
             AnimStaticKeyPtr->AnimSequenceAsset.LoadSynchronous();
         }
-
-        // AnimSequenceClass로부터 UAnimSequenceBase 인스턴스 생성
+        
         AnimSequenceBase = AnimStaticKeyPtr->AnimSequenceAsset.Get();
-        checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
+        if (!AnimSequenceBase)
+        {
+            checkf(false, TEXT("UShowAnimStatic::Initialize AnimSequence is invalid"));
+            ShowKeyState = EShowKeyState::ShowKey_End;
+            return;
+        }
     }
 }
 
-// Initialize 된 후에 호출된다
-float UShowAnimStatic::GetShowLength()
+float UShowAnimStatic::GetLength()
 {
     if (!AnimSequenceBase)
 	{
-		return ShowKey->Length;
+		return 0.0f;
 	}
 
-    OriginalLength = AnimSequenceBase->GetPlayLength();
-
-    if (ShowKey->Length > 0.0f)
-	{
-		return ShowKey->Length;
-	}
-
-	return OriginalLength;
+    return AnimSequenceBase->GetPlayLength() / ShowKey->PlayRate;
 }
 
 void UShowAnimStatic::Dispose()
@@ -72,14 +67,20 @@ void UShowAnimStatic::Dispose()
     OriginalLength = 0.0f;
 }
 
+void UShowAnimStatic::Reset()
+{
+    Dispose();
+    Initialize();
+}
+
 void UShowAnimStatic::Play() 
 {
-    AActor* Owner = GetOwner();
-    checkf(Owner, TEXT("UShowAnimStatic::Play Owner is invalid"));
+    AActor* ShowOwner = GetShowOwner();
+    checkf(ShowOwner, TEXT("UShowAnimStatic::Play ShowOwner is invalid"));
     checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Play AnimSequence is invalid"));
     checkf(!AnimInstance, TEXT("UShowAnimStatic::Play AnimInstance need reset"));
 
-    USkeletalMeshComponent* SkeletalMeshComp = Owner->FindComponentByClass<USkeletalMeshComponent>();
+    USkeletalMeshComponent* SkeletalMeshComp = ShowOwner->FindComponentByClass<USkeletalMeshComponent>();
     checkf(SkeletalMeshComp, TEXT("UShowAnimStatic::Play SkeletalMeshComponent is invalid"));
 
     if (!SkeletalMeshComp->AnimClass)
@@ -89,7 +90,6 @@ void UShowAnimStatic::Play()
         return;
     }
 
-    float PlayRate = OriginalLength / Length;
     if (UShowAnimInstance* ShowAnimInstance = Cast<UShowAnimInstance>(SkeletalMeshComp->GetAnimInstance()))
     {
         AnimInstance = ShowAnimInstance;
@@ -100,7 +100,7 @@ void UShowAnimStatic::Play()
             AnimStaticKeyPtr->LoopCount,
             AnimStaticKeyPtr->BlendOutTriggerTime,
             AnimStaticKeyPtr->InTimeToStartMontageAt,
-            PlayRate);
+            ShowKey->PlayRate);
 
         if (AnimMontage)
         {
@@ -123,7 +123,7 @@ void UShowAnimStatic::Play()
             TEXT("DefaultSlot"), 
             0.25f,
             0.25f,
-            PlayRate,
+            ShowKey->PlayRate,
             AnimStaticKeyPtr->LoopCount,
             AnimStaticKeyPtr->BlendOutTriggerTime,
             AnimStaticKeyPtr->InTimeToStartMontageAt);
@@ -146,22 +146,6 @@ void UShowAnimStatic::Play()
     }
 }
 
-void UShowAnimStatic::Reset() 
-{
-    if (AnimInstance && AnimInstance->OnMontageEnded.IsAlreadyBound(this, &UShowAnimStatic::OnMontageEnded))
-    {
-        AnimInstance->OnMontageEnded.RemoveDynamic(this, &UShowAnimStatic::OnMontageEnded);
-    }
-
-    AnimStaticKeyPtr = nullptr;
-    AnimSequenceBase = nullptr;
-    AnimMontage = nullptr;
-    AnimInstance = nullptr;
-    OriginalLength = 0.0f;
-
-    Initialize();
-}
-
 void UShowAnimStatic::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
     if (!AnimMontage)
@@ -170,15 +154,14 @@ void UShowAnimStatic::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
         return;
     }
 
-    if (ShowKeyState != EShowKeyState::ShowKey_Playing &&
-        ShowKeyState != EShowKeyState::ShowKey_Pause)
-    {
-        AnimMontage = nullptr;
-        return;
-    }
-
     if (AnimMontage == Montage)
     {
+        if (ShowKeyState != EShowKeyState::ShowKey_Playing &&
+            ShowKeyState != EShowKeyState::ShowKey_Pause)
+        {
+            checkf(false, TEXT("UShowAnimStatic::OnMontageEnded ShowKeyState is not Playing"));
+        }
+
         if (AnimInstance && AnimInstance->OnMontageEnded.IsAlreadyBound(this, &UShowAnimStatic::OnMontageEnded))
         {
             AnimInstance->OnMontageEnded.RemoveDynamic(this, &UShowAnimStatic::OnMontageEnded);

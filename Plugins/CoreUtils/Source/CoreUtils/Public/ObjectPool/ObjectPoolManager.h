@@ -18,6 +18,7 @@ class COREUTILS_API UObjectPoolManager : public UWorldSubsystem
 	GENERATED_BODY()
 	
 public:
+    void Test() {}
     virtual void Initialize(FSubsystemCollectionBase& Collection);
     virtual void Deinitialize() override;
 

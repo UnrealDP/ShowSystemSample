@@ -27,14 +27,13 @@ public:
 private:
     void GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& TargetRotator);
     void SaveActorPositions();
+    virtual void Tick(float DeltaSeconds) override;
 
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
 public:
-    // Enabling Tick for GameMode
-    virtual void Tick(float DeltaSeconds) override;
 
     UActionBase* SelectAction(
         FName InSelectedActionName, 
