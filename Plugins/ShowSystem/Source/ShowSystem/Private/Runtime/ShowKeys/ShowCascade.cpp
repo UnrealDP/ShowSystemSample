@@ -196,6 +196,8 @@ void UShowCascade::DefaultEngineAttach(AActor* ShowOwner)
         TEXT("UShowCascade::DefaultEngineAttach AttachBone '%s' does not exist on SkeletalMeshComponent"),
         *CascadeKeyPtr->AttachBone.ToString());
 
+    // TODO: (DIPI) 파티클 옵션 적용 확인필요
+    // 원하는대로 안나오고 있음
     FAttachmentTransformRules AttachmentRules(
         static_cast<EAttachmentRule>(CascadeKeyPtr->LocationRule),
         static_cast<EAttachmentRule>(CascadeKeyPtr->RotationRule),
@@ -217,10 +219,7 @@ void UShowCascade::DefaultEngineAttach(AActor* ShowOwner)
         AttachmentRules,
         CascadeKeyPtr->AttachBone
     );
-    
-
-
-
+    // TODO: (DIPI) 파티클 옵션 적용 확인필요
 
     ParticleComponent->SetRelativeLocation(CascadeKeyPtr->LocalLocation);
     ParticleComponent->SetRelativeRotation(CascadeKeyPtr->LocalRotation);

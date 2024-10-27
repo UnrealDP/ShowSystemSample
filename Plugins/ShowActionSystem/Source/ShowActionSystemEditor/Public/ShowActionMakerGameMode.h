@@ -25,9 +25,12 @@ public:
     AShowActionMakerGameMode();
 
 private:
-    void GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& TargetRotator);
+    void GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& CasterRotator, FRotator& TargetRotator);
     void SaveActorPositions();
     virtual void Tick(float DeltaSeconds) override;
+    
+    UFUNCTION()
+    void OnActorDestroyed(AActor* DestroyedActor);
 
 protected:
     virtual void BeginPlay() override;

@@ -4,6 +4,7 @@
 #include "InstancedStruct.h"
 #include "RunTime/ShowKeys/ShowAnimStatic.h"
 #include "RunTime/ShowKeys/ShowCascade.h"
+#include "RunTime/ShowKeys/ShowCamSequence.h"
 
 #define LOCTEXT_NAMESPACE "ShowSystem"
 
@@ -15,6 +16,8 @@ EObjectPoolType ShowSystem::GetShowKeyPoolType(EShowKeyType InShowKeyType)
         return EObjectPoolType::ObjectPool_ShowKeyAnim;
     case EShowKeyType::ShowKey_Cascade:
         return EObjectPoolType::ObjectPool_ShowKeyCascade;
+    case EShowKeyType::ShowKey_CamSequence:
+        return EObjectPoolType::ObjectPool_ShowCamSequenceKey;
     default:
         checkf(false, TEXT("ShowSystem::GetShowKeyPoolType Invalid EShowKeyType: [ %d ]"), static_cast<int32>(InShowKeyType));
         return EObjectPoolType::Max;
@@ -29,6 +32,8 @@ UScriptStruct* ShowSystem::GetShowKeyStaticStruct(EShowKeyType InShowKeyType)
         return FShowAnimStaticKey::StaticStruct();
     case EShowKeyType::ShowKey_Cascade:
         return FShowCascadeKey::StaticStruct();
+    case EShowKeyType::ShowKey_CamSequence:
+        return FShowCamSequenceKey::StaticStruct();
     default:
         checkf(false, TEXT("ShowSystem::GetShowKeyStaticStruct Invalid EShowKeyType: [ %d ]"), static_cast<int32>(InShowKeyType));
         return nullptr;
@@ -68,6 +73,10 @@ bool ShowSystem::ValidateRuntimeShowKey(AActor* Owner, UShowBase* ShowBasePtr, F
 	{
 		return ValidateShowCascade(Owner, ShowBasePtr, ErrTxt);
 	}
+    else if (ShowBasePtr->IsA(UShowCamSequence::StaticClass()))
+    {
+        return ValidateShowCamSequence(Owner, ShowBasePtr, ErrTxt);
+    }
 
     FString ClassName = ShowBasePtr->GetClass() ? ShowBasePtr->GetClass()->GetName() : TEXT("Unknown");
     ErrTxt = FText::Format(
@@ -122,6 +131,11 @@ bool ShowSystem::ValidateShowCascade(AActor* Owner, UShowBase* ShowBasePtr, FTex
         return false;
     }
 
+    return true;
+}
+
+bool ShowSystem::ValidateShowCamSequence(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt)
+{
     return true;
 }
 

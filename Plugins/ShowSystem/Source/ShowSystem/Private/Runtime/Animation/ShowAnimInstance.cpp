@@ -55,34 +55,30 @@ UAnimMontage* UShowAnimInstance::PlayAnimation(UAnimSequenceBase* NewAsset, int3
     {
         checkf(Skeleton->ContainsSlotName(FoundData->Slot), TEXT("UShowAnimInstance::PlayAnimation -> Slot [ %s ] not exist"), *FoundData->Slot.ToString());
 
-        const FMontageBlendSettings* BlendInSettings = nullptr;
-        const FMontageBlendSettings* BlendOutSettings = nullptr;
+        const FMontageBlendSettings* BlendInSettingsPtr = nullptr;
+        const FMontageBlendSettings* BlendOutSettingsPtr = nullptr;
         if (const FAnimBlendData* FoundBlendData = AnimContainer->FindAnimBlendData(NewAssetPath))
         {
-            BlendInSettings = &FoundBlendData->BlendInSettings;
-            BlendOutSettings = &FoundBlendData->BlendOutSettings;
+            BlendInSettingsPtr = &FoundBlendData->BlendInSettings;
+            BlendOutSettingsPtr = &FoundBlendData->BlendOutSettings;
         }
         else
         {
-            BlendInSettings = &AnimContainer->DefaultAnimBlendData.BlendInSettings;
-            BlendOutSettings = &AnimContainer->DefaultAnimBlendData.BlendOutSettings;
+            BlendInSettingsPtr = &AnimContainer->DefaultAnimBlendData.BlendInSettings;
+            BlendOutSettingsPtr = &AnimContainer->DefaultAnimBlendData.BlendOutSettings;
         }
 
         UAnimMontage* DynamicMontage = PlaySlotAnimationAsDynamicMontage_WithBlendSettings(
             NewAsset,
             FoundData->Slot,
-            *BlendInSettings,
-            *BlendOutSettings,
+            *BlendInSettingsPtr,
+            *BlendOutSettingsPtr,
+            PlayRate,
             LoopCount,
             BlendOutTriggerTime,
             InTimeToStartMontageAt);
         
-        if (DynamicMontage)
-        {
-            Montage_SetPlayRate(DynamicMontage, PlayRate);
-            UE_LOG(LogTemp, Log, TEXT("UShowAnimInstance::PlayAnimation Play DynamicMontage [ %s ]"), *NewAsset->GetFName().ToString());
-        }
-        else
+        if (!DynamicMontage)
         {
             UE_LOG(LogTemp, Error, TEXT("UShowAnimInstance::PlayAnimation DynamicMontage is null [ %s ]"), *NewAsset->GetFName().ToString());
         }

@@ -30,9 +30,10 @@ void AShowActionMakerGameMode::BeginPlay()
     if (DefaultActorClass)
     {
         FVector CasterPos;
-        FVector TargetPos;
+        FVector TargetPos;        
+        FRotator CasterRotator;
         FRotator TargetRotator;
-        GetPos(CasterPos, TargetPos, TargetRotator);
+        GetPos(CasterPos, TargetPos, CasterRotator, TargetRotator);
 
         FActorSpawnParameters CasterSpawnParams;
         CasterSpawnParams.Name = FName(TEXT("ActionMaker Caster"));
@@ -50,12 +51,13 @@ void AShowActionMakerGameMode::BeginPlay()
                     Caster = Cast<AActor>(PlayerPawn);
                     Caster->Rename(*CasterSpawnParams.Name.ToString());
                     Caster->SetActorLocation(CasterPos);
+                    Caster->SetActorRotation(CasterRotator);
                 }
             }
         }
         if (!Caster)
         {
-            Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, FRotator::ZeroRotator, CasterSpawnParams);
+            Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, CasterRotator, CasterSpawnParams);
             Caster->SetActorLabel(CasterSpawnParams.Name.ToString());
         }
 
@@ -72,6 +74,7 @@ void AShowActionMakerGameMode::BeginPlay()
             Caster->AddInstanceComponent(ActionComponent);
 			ActionComponent->RegisterComponent();
         }
+        Caster->OnDestroyed.AddDynamic(this, &AShowActionMakerGameMode::OnActorDestroyed);
 
         FActorSpawnParameters TargetSpawnParams;
         TargetSpawnParams.Name = FName(TEXT("ActionMaker Target"));
@@ -91,6 +94,7 @@ void AShowActionMakerGameMode::BeginPlay()
                 SpawnedTarget->AddInstanceComponent(ActionComponent);
                 ActionComponent->RegisterComponent();
             }
+            SpawnedTarget->OnDestroyed.AddDynamic(this, &AShowActionMakerGameMode::OnActorDestroyed);
 
             Targets.Add(SpawnedTarget);
         }
@@ -148,23 +152,29 @@ void AShowActionMakerGameMode::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
 }
 
-void AShowActionMakerGameMode::GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& TargetRotator)
+void AShowActionMakerGameMode::GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& CasterRotator, FRotator& TargetRotator)
 {
     FString ConfigFilePath = PathsUtil::PluginConfigPath(TEXT("ShowActionSystem"), TEXT("Config/ShowActionMaker.ini"));
 
-    if (!GConfig->GetVector(TEXT("AShowActionMakerGameMode"), TEXT("CasterDefaultLocation"), CasterPos, *ConfigFilePath))
+    //if (!GConfig->GetVector(TEXT("AShowActionMakerGameMode"), TEXT("CasterDefaultLocation"), CasterPos, *ConfigFilePath))
     {
         // 기본 위치값 설정 (최초 실행 시)
         CasterPos = FVector(500.0f, 1000.0f, 50.0f);
     }
 
-    if (!GConfig->GetVector(TEXT("AShowActionMakerGameMode"), TEXT("TargetDefaultLocation"), TargetPos, *ConfigFilePath))
+    //if (!GConfig->GetVector(TEXT("AShowActionMakerGameMode"), TEXT("TargetDefaultLocation"), TargetPos, *ConfigFilePath))
     {
         // 기본 타겟 위치값 설정 (최초 실행 시)
         TargetPos = FVector(500.0f, 1500.0f, 50.0f);
     }
 
-    if (!GConfig->GetRotator(TEXT("AShowActionMakerGameMode"), TEXT("TargetDefaultRotation"), TargetRotator, *ConfigFilePath))
+    //if (!GConfig->GetRotator(TEXT("AShowActionMakerGameMode"), TEXT("CasterDefaultRotation"), CasterRotator, *ConfigFilePath))
+    {
+        // 기본 타겟 회전값 설정 (최초 실행 시)
+        CasterRotator = FRotator(0.0f, 0.0f, 0.0f);
+    }
+
+    //if (!GConfig->GetRotator(TEXT("AShowActionMakerGameMode"), TEXT("TargetDefaultRotation"), TargetRotator, *ConfigFilePath))
     {
         // 기본 타겟 회전값 설정 (최초 실행 시)
         TargetRotator = FRotator(0.0f, 180.0f, 0.0f);
@@ -208,6 +218,14 @@ void AShowActionMakerGameMode::SaveActorPositions()
     if (bIsUpdate)
     {
         GConfig->Flush(false, *ConfigFilePath);
+    }
+}
+
+void AShowActionMakerGameMode::OnActorDestroyed(AActor* DestroyedActor)
+{
+    if (DestroyedActor == Caster)
+    {
+        DisposeAction();
     }
 }
 
