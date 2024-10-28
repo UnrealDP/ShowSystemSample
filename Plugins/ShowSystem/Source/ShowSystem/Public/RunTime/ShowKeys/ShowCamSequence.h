@@ -108,9 +108,9 @@ private:
     FVector InitialLocalCharacterLocation;
     FRotator InitialLocalCharacterRotation;
 
-    // 연출 시작 시의 카메라 위치 저장
-    FVector InitialCameraRelativePosition;
-    FVector InitialLookAtRelativeTarget;
+    // 연출 시작 시 카메라 위치와 USpringArmComponent 소켓 위치의 오프셋 저장
+    FVector InitialCameraOffset;
+    FVector InitialLookAtOffset;
     float InitialFOV;
 
     float CurrentBlendTime = 0.0f;
