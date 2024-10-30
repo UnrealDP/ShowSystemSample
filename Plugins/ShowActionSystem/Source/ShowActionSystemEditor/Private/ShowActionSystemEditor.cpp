@@ -80,6 +80,7 @@ void FShowActionSystemEditor::ClearModule()
     {
         ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
     }
+    UpdateShowKeyDetails(nullptr);
 }
 
 void FShowActionSystemEditor::RegisterSkillDataTab()

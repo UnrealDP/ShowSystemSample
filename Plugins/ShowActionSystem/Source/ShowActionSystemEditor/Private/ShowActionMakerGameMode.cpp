@@ -159,13 +159,13 @@ void AShowActionMakerGameMode::GetPos(FVector& CasterPos, FVector& TargetPos, FR
     //if (!GConfig->GetVector(TEXT("AShowActionMakerGameMode"), TEXT("CasterDefaultLocation"), CasterPos, *ConfigFilePath))
     {
         // 기본 위치값 설정 (최초 실행 시)
-        CasterPos = FVector(500.0f, 1000.0f, 50.0f);
+        CasterPos = FVector(1000.0f, 2000.0f, 80.0f);
     }
 
     //if (!GConfig->GetVector(TEXT("AShowActionMakerGameMode"), TEXT("TargetDefaultLocation"), TargetPos, *ConfigFilePath))
     {
         // 기본 타겟 위치값 설정 (최초 실행 시)
-        TargetPos = FVector(500.0f, 1500.0f, 50.0f);
+        TargetPos = FVector(1500.0f, 2000.0f, 80.0f);
     }
 
     //if (!GConfig->GetRotator(TEXT("AShowActionMakerGameMode"), TEXT("CasterDefaultRotation"), CasterRotator, *ConfigFilePath))

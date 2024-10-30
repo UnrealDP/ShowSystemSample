@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
@@ -26,12 +25,8 @@ float UShowCamSequence::GetLength()
     {
         Length += CameraPathPoint.Duration;
     }
-    
-    if (ShowCamSequenceKeyPtr->bReturnToStartPosition)
-	{
-        Length += ShowCamSequenceKeyPtr->FadeOutBlendTime;
-	}
 
+    Length += ShowCamSequenceKeyPtr->FadeOutBlendTime;
     return Length / ShowKey->PlayRate;
 }
 
@@ -60,7 +55,7 @@ void UShowCamSequence::Play()
         UE_LOG(LogTemp, Error, TEXT("UShowCamSequence::Play PathPoints is empty"));
         return;
     }
-    
+
     PlayerController = GetWorld()->GetFirstPlayerController();
     if (PlayerController && PlayerController->PlayerCameraManager)
     {
@@ -72,32 +67,23 @@ void UShowCamSequence::Play()
 
             if (SpringArmComponent && CameraComponent)
             {
-                // SpringArm의 소켓 위치를 가져와서 카메라 위치와 비교하여 오프셋 계산
-                FTransform SocketTransform = SpringArmComponent->GetSocketTransform(NAME_None, RTS_World);
-                FVector SocketWorldLocation = SocketTransform.GetLocation();
+                // 카메라의 현재 위치와 LookAt 을 캐릭터 기준으로 계산하고 저장
+                FVector ActorWorldPosition = OwnerActor->GetActorLocation();
+                PreviousLocation = GetCameraLocation();
+                InitialRelativeLocationFromSocket = PreviousLocation - ActorWorldPosition;
 
-                // 카메라 위치와 소켓 위치의 오프셋 저장
-                InitialCameraOffset = CameraComponent->GetComponentLocation() - SocketWorldLocation;
+                PreviousLookAt = GetCameraLookAt();
+                InitialRelativeLookAtFromSocket = PreviousLookAt - ActorWorldPosition;
+
                 InitialFOV = PlayerController->PlayerCameraManager->GetFOVAngle();
-                InitialFOVForBlend = InitialFOV;
 
-                // 카메라의 현재 LookAt 위치를 계산하고 소켓 기준으로 오프셋 저장
-                FVector CurrentLookAt = GetCameraLookAt();
-                InitialLookAtOffset = CurrentLookAt - SocketWorldLocation;
+                bInitialUsePawnControlRotation = SpringArmComponent->bUsePawnControlRotation;
 
                 // SpringArm 비활성화
                 SpringArmComponent->Activate(false);
-
-                // 시작 위치를 Actor의 상대 좌표로 저장
-                FVector ActorWorldPosition = OwnerActor->GetActorLocation();
-                InitialCameraRelativePositionForBlend = GetCameraLocation() - ActorWorldPosition;
-                InitialLookAtRelativeTargetForBlend = GetCameraLookAt() - ActorWorldPosition;
-
-                InitialLocalCharacterLocation = OwnerActor->GetActorTransform().InverseTransformPosition(SpringArmComponent->GetComponentLocation());
-                InitialLocalCharacterRotation = OwnerActor->GetActorTransform().InverseTransformRotation(SpringArmComponent->GetComponentRotation().Quaternion()).Rotator();
+                SpringArmComponent->bUsePawnControlRotation = false;
+                SpringArmComponent->SetComponentTickEnabled(false);
             }
-
-            PlayerController->SetIgnoreLookInput(true);
         }
     }
 
@@ -106,12 +92,30 @@ void UShowCamSequence::Play()
     CurrentPointIndex = 0;
 }
 
+FVector UShowCamSequence::CalculateRelativePositionForPlayback(const FVector& OriginVactor, const FVector& ActorWorldPosition, const FRotator& ActorWorldRotation, ECameraSequenceOption Option) const
+{
+    switch (Option)
+    {
+    case ECameraSequenceOption::PlayerForward:
+        return ActorWorldRotation.RotateVector(OriginVactor) + ActorWorldPosition;
+
+    case ECameraSequenceOption::Player:
+        return OriginVactor + ActorWorldPosition;
+
+    case ECameraSequenceOption::World:
+        return OriginVactor;
+
+    default:
+        return FVector::ZeroVector;
+    }
+}
+
 void UShowCamSequence::Tick(float DeltaTime, float BasePassedTime)
 {
     if (State == ECameraSequenceState::Wait)
-	{
-		return;
-	}
+    {
+        return;
+    }
 
     AActor* OwnerActor = GetShowOwner();
     if (!OwnerActor)
@@ -124,117 +128,90 @@ void UShowCamSequence::Tick(float DeltaTime, float BasePassedTime)
 
     switch (State)
     {
-        case ECameraSequenceState::Playing:
+    case ECameraSequenceState::Playing:
+    {
+        PathPointPlay(OwnerActor, DeltaTime);
+        break;
+    }
+    case ECameraSequenceState::ReturningToStart:
+    {
+        PathPointReturningToStart(OwnerActor, DeltaTime);
+        break;
+    }
+    case ECameraSequenceState::End:
+        if (SpringArmComponent)
         {
-            PathPointPlay(OwnerActor);
-            break;
+            SpringArmComponent->bUsePawnControlRotation = bInitialUsePawnControlRotation;
+            SpringArmComponent->Activate(true);
+            SpringArmComponent->SetComponentTickEnabled(true);
         }
-        case ECameraSequenceState::ReturningToStart:
-        {
-            PathPointReturningToStart(OwnerActor);
-            break;
-        }
-        case ECameraSequenceState::End:
-            if (SpringArmComponent)
-            {
-                PlayerController->SetIgnoreLookInput(false);
-                //ApplyCharacterOffsetToSpringArm();
-                SpringArmComponent->Activate(true);
-            }
-            ShowKeyState = EShowKeyState::ShowKey_End;
-            return;
+        ShowKeyState = EShowKeyState::ShowKey_End;
+        return;
 
-        default:
-            ShowKeyState = EShowKeyState::ShowKey_End;
-            return;
+    default:
+        ShowKeyState = EShowKeyState::ShowKey_End;
+        return;
     }
 }
 
-void UShowCamSequence::PathPointPlay(AActor* OwnerActor)
+void UShowCamSequence::PathPointPlay(AActor* OwnerActor, float DeltaTime)
 {
     const FCameraPathPoint& ArrivalPoint = ShowCamSequenceKeyPtr->PathPoints[CurrentPointIndex];
 
     // Actor의 현재 월드 위치 가져오기
     FVector ActorWorldPosition = OwnerActor->GetActorLocation();
+    FRotator ActorWorldRotation = OwnerActor->GetActorRotation();
 
-    // 보간 계산
-    float CurrentDuration = ArrivalPoint.Duration;
-    float Alpha = FMath::Clamp(CurrentBlendTime / CurrentDuration, 0.0f, 1.0f);
+    // 연출 남은시간
+    float RemainDuration = ArrivalPoint.Duration - CurrentBlendTime;
 
-    // Actor의 현재 위치를 기반으로 월드 좌표 계산
-    FVector ArrivalPositionWorld = ActorWorldPosition + ArrivalPoint.Position;
-    FVector InitialPositionWorld = ActorWorldPosition + InitialCameraRelativePositionForBlend;
-    FVector InterpolatedPosition = FMath::Lerp(InitialPositionWorld, ArrivalPositionWorld, Alpha);
+    // 목표 위치
+    FVector ArrivalPositionWorld = CalculateRelativePositionForPlayback(ArrivalPoint.Position, ActorWorldPosition, ActorWorldRotation, ShowCamSequenceKeyPtr->CameraSequenceOption);
 
-    FVector ArrivalLookAtWorld = ActorWorldPosition + ArrivalPoint.LookAtTarget.GetSafeNormal() * 1000.0f;
-    FVector InitialLookAtWorld = ActorWorldPosition + InitialLookAtRelativeTargetForBlend.GetSafeNormal() * 1000.0f;
-    FVector InterpolatedLookAt = FMath::Lerp(InitialLookAtWorld, ArrivalLookAtWorld, Alpha);
-    FRotator InterpolatedRotation = (InterpolatedLookAt - InterpolatedPosition).Rotation();
+    // 목표 LookAt
+    FVector ArrivalLookAtWorld = ArrivalPoint.LookAtTarget;
+    ArrivalLookAtWorld = CalculateRelativePositionForPlayback(ArrivalLookAtWorld, ActorWorldPosition, ActorWorldRotation, ShowCamSequenceKeyPtr->CameraSequenceOption);
 
     // 시간 증가 및 다음 포인트로 이동 처리
-    if (CurrentBlendTime >= CurrentDuration)
+    if (RemainDuration <= 0)
     {
-        FRotator EndRotation = (ArrivalLookAtWorld - InterpolatedPosition).Rotation();
         TOptional<float> InterpolatedFOV;
         if (ArrivalPoint.FieldOfView.IsSet())
         {
             InterpolatedFOV = ArrivalPoint.FieldOfView.GetValue();
         }
 
-        ApplyCameraSettings(ArrivalPositionWorld, EndRotation, InterpolatedFOV);
+        ApplyCameraSettings(ArrivalPositionWorld, ArrivalLookAtWorld, InterpolatedFOV, DeltaTime);
+
 
         CurrentBlendTime = 0.0f;
         CurrentPointIndex++;
-
-        // 모든 포인트를 다 이동하면 페이드 아웃으로 전환
         if (CurrentPointIndex >= ShowCamSequenceKeyPtr->PathPoints.Num())
         {
-            CurrentBlendTime = 0.0f;
-
-            if (ShowCamSequenceKeyPtr->bReturnToStartPosition)
-            {
-                State = ECameraSequenceState::ReturningToStart;
-
-                FVector InitialCameraLocationForBlend = GetCameraLocation();
-                InitialCameraRelativePositionForBlend = InitialCameraLocationForBlend - ActorWorldPosition;
-
-                FVector InitialLookAtTargetForBlend = GetCameraLookAt();
-                InitialLookAtRelativeTargetForBlend = InitialLookAtTargetForBlend - ActorWorldPosition;
-
-                InitialFOVForBlend = PlayerController->PlayerCameraManager->GetFOVAngle();
-            }
-            else
-            {
-                State = ECameraSequenceState::End;
-            }
-        }
-        else
-        {
-            // 새로운 PathPoint가 시작될 때마다 보간의 시작 지점을 Actor의 상대 좌표로 저장
-            FVector InitialCameraLocationForBlend = GetCameraLocation();
-            InitialCameraRelativePositionForBlend = InitialCameraLocationForBlend - ActorWorldPosition;
-
-            FVector InitialLookAtTargetForBlend = GetCameraLookAt();
-            InitialLookAtRelativeTargetForBlend = InitialLookAtTargetForBlend - ActorWorldPosition;
-
-            InitialFOVForBlend = PlayerController->PlayerCameraManager->GetFOVAngle();
+            State = ECameraSequenceState::ReturningToStart;
         }
     }
     else
     {
+        // 보간 계산
+        float Alpha = FMath::Clamp(DeltaTime / RemainDuration, 0.0f, 1.0f);
+
+        FVector InterpolatedPosition = FMath::Lerp(PreviousLocation, ArrivalPositionWorld, Alpha);
+        FVector InterpolatedLookAt = FMath::Lerp(PreviousLookAt, ArrivalLookAtWorld, Alpha);
+
         // FOV 보간 계산
         TOptional<float> InterpolatedFOV;
         if (ArrivalPoint.FieldOfView.IsSet())
         {
-            InterpolatedFOV = FMath::Lerp(InitialFOVForBlend, ArrivalPoint.FieldOfView.GetValue(), Alpha);
+            InterpolatedFOV = FMath::Lerp(PlayerController->PlayerCameraManager->GetFOVAngle(), ArrivalPoint.FieldOfView.GetValue(), Alpha);
         }
 
         // 카메라 설정 적용
-        ApplyCameraSettings(InterpolatedPosition, InterpolatedRotation, InterpolatedFOV);
+        ApplyCameraSettings(InterpolatedPosition, InterpolatedLookAt, InterpolatedFOV, DeltaTime);
     }
 }
 
-void UShowCamSequence::PathPointReturningToStart(AActor* OwnerActor)
+void UShowCamSequence::PathPointReturningToStart(AActor* OwnerActor, float DeltaTime)
 {
     if (!SpringArmComponent)
     {
@@ -243,45 +220,100 @@ void UShowCamSequence::PathPointReturningToStart(AActor* OwnerActor)
         return;
     }
 
-    // Actor의 현재 월드 위치 가져오기
-    FVector ActorWorldPosition = OwnerActor->GetActorLocation();
-    
-    float Alpha = FMath::Clamp(CurrentBlendTime / ShowCamSequenceKeyPtr->FadeOutBlendTime, 0.0f, 1.0f);
+    // 보간 계산
+    float RemainDuration = ShowCamSequenceKeyPtr->FadeOutBlendTime - CurrentBlendTime;
+    float Alpha = FMath::Clamp(DeltaTime / RemainDuration, 0.0f, 1.0f);
 
-    // Actor의 현재 위치를 기반으로 월드 좌표 계산
-    FTransform CurrentSocketTransform = SpringArmComponent->GetSocketTransform(NAME_None, RTS_World);
+    FVector InterpolatedPosition;
+    FVector ArrivalPositionWorld;
+    FVector ArrivalLookAtWorld;
+    FVector InterpolatedLookAt;
+    switch (ShowCamSequenceKeyPtr->CameraReturnOption)
+    {
+        case ECameraReturnOption::ReturnToStart:
+        {
+            // Actor의 현재 위치를 기반으로 월드 좌표 계산
+            FVector ActorWorldPosition = OwnerActor->GetActorLocation();
+            ArrivalPositionWorld = InitialRelativeLocationFromSocket + ActorWorldPosition;
+            InterpolatedPosition = FMath::Lerp(PreviousLocation, ArrivalPositionWorld, Alpha);
 
-    FVector CurrentSocketWorldLocation = CurrentSocketTransform.GetLocation();
-    FVector ArrivalPositionWorld = CurrentSocketWorldLocation + InitialCameraOffset;
-    FVector InitialPositionWorld = ActorWorldPosition + InitialCameraRelativePositionForBlend;
-    FVector InterpolatedPosition = FMath::Lerp(InitialPositionWorld, ArrivalPositionWorld, Alpha);
+            ArrivalLookAtWorld = InitialRelativeLookAtFromSocket + ActorWorldPosition;
+            InterpolatedLookAt = FMath::Lerp(PreviousLookAt, ArrivalLookAtWorld, Alpha);
+            break;
+        }
+        case ECameraReturnOption::MaintainEndPosition:
+        {
+            ArrivalPositionWorld = CameraComponent->GetComponentLocation();
+            ArrivalPositionWorld = GetCameraLocation();
+            InterpolatedPosition = FMath::Lerp(PreviousLocation, ArrivalPositionWorld, Alpha);
 
-    FVector ArrivalLookAtWorld = CurrentSocketWorldLocation + InitialLookAtOffset.GetSafeNormal() * 1000.0f;
-    FVector InitialLookAtWorld = ActorWorldPosition + InitialLookAtRelativeTargetForBlend.GetSafeNormal() * 1000.0f;
-    FVector InterpolatedLookAt = FMath::Lerp(InitialLookAtWorld, ArrivalLookAtWorld, Alpha);
-    FRotator InterpolatedRotation = (InterpolatedLookAt - InterpolatedPosition).Rotation();
+            ArrivalLookAtWorld = GetCameraLookAt();
+            InterpolatedLookAt = FMath::Lerp(PreviousLookAt, ArrivalLookAtWorld, Alpha);
+            break;
+        }
+        default:
+            break;
+    }
 
     // 복귀 완료 시 상태 종료
     if (CurrentBlendTime >= ShowCamSequenceKeyPtr->FadeOutBlendTime)
     {
-        FRotator EndRotation = (ArrivalLookAtWorld - InterpolatedPosition).Rotation();
         TOptional<float> InterpolatedFOV = InitialFOV;
-        ApplyCameraSettings(ArrivalPositionWorld, EndRotation, InterpolatedFOV);
+        ApplyCameraSettings(ArrivalPositionWorld, ArrivalLookAtWorld, InterpolatedFOV, DeltaTime);
+
+        switch (ShowCamSequenceKeyPtr->CameraReturnOption)
+        {
+            case ECameraReturnOption::ReturnToStart:
+            {
+                CameraComponent->SetRelativeLocation(FVector::ZeroVector);
+                CameraComponent->SetRelativeRotation(FRotator::ZeroRotator);
+                break;
+            }
+            case ECameraReturnOption::MaintainEndPosition:
+            {
+                if (CameraComponent)
+                {
+                    float NewTargetArmLength = FVector::Dist(ArrivalPositionWorld, OwnerActor->GetActorLocation());
+                    SpringArmComponent->TargetArmLength = NewTargetArmLength;
+
+                    FVector Direction = (OwnerActor->GetActorLocation() - ArrivalPositionWorld).GetSafeNormal();
+                    FRotator TargetRotation = Direction.Rotation();
+
+                    // PlayerController의 회전을 TargetRotation으로 설정
+                    if (PlayerController)
+                    {
+                        PlayerController->SetControlRotation(TargetRotation);
+                    }
+
+                    CameraComponent->SetRelativeLocation(FVector::ZeroVector);
+                    CameraComponent->SetRelativeRotation(FRotator::ZeroRotator);
+                    SpringArmComponent->bUsePawnControlRotation = bInitialUsePawnControlRotation;
+
+                    SpringArmComponent->TickComponent(0.0f, ELevelTick::LEVELTICK_TimeOnly, nullptr);
+                    SpringArmComponent->bUsePawnControlRotation = false;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+
         State = ECameraSequenceState::End;
     }
     else
     {
         // FOV 보간 계산
         TOptional<float> InterpolatedFOV;
-        if (InitialFOV != InitialFOVForBlend)
+        float CamaraFov = PlayerController->PlayerCameraManager->GetFOVAngle();
+        if (InitialFOV != CamaraFov)
         {
-            InterpolatedFOV = FMath::Lerp(InitialFOVForBlend, InitialFOV, Alpha);
+            InterpolatedFOV = FMath::Lerp(CamaraFov, InitialFOV, Alpha);
         }
-        ApplyCameraSettings(InterpolatedPosition, InterpolatedRotation, InterpolatedFOV);
+        ApplyCameraSettings(InterpolatedPosition, InterpolatedLookAt, InterpolatedFOV, DeltaTime);
     }
 }
 
-void UShowCamSequence::ApplyCameraSettings(const FVector& NewPosition, const FRotator& NewRotation, TOptional<float>& NewFOV)
+void UShowCamSequence::ApplyCameraSettings(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV, float DeltaTime)
 {
     if (PlayerController && PlayerController->PlayerCameraManager)
     {
@@ -291,10 +323,52 @@ void UShowCamSequence::ApplyCameraSettings(const FVector& NewPosition, const FRo
             PlayerController->PlayerCameraManager->SetFOV(NewFOV.GetValue());
         }
 
+        AActor* OwnerActor = GetShowOwner();
+        FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ShowCamSequence), false, OwnerActor);
+
+        PreviousLocation = NewPosition;
+        PreviousLookAt = NewLookAt;
+
+        FHitResult Result;
+        GetWorld()->SweepSingleByChannel(
+            Result, 
+            NewLookAt,
+            NewPosition,             
+            FQuat::Identity, 
+            SpringArmComponent->ProbeChannel, 
+            FCollisionShape::MakeSphere(SpringArmComponent->ProbeSize), 
+            QueryParams);
+
+        if (Result.bBlockingHit)
+        {
+            PreviousLocation = Result.Location;
+
+            // 시작 위치인 LookAt과 충돌 후 위치가 같으면 시작 지점과 종료 지점 모두 충돌 영역인거
+            if (NewLookAt.Equals(Result.Location))
+            {
+                // 바라볼 지점도 충돌 영역 안이기 떄문에 캐릭터에서 바라볼 지점으로 총돌 여역을 찾아서 위치 조정
+                GetWorld()->SweepSingleByChannel(
+                    Result,
+                    OwnerActor->GetActorLocation(),
+                    NewLookAt,
+                    FQuat::Identity,
+                    SpringArmComponent->ProbeChannel,
+                    FCollisionShape::MakeSphere(SpringArmComponent->ProbeSize),
+                    QueryParams);
+
+                if (Result.bBlockingHit)
+                {
+                    PreviousLocation = Result.Location;
+                }
+            }
+        }
+
+        FRotator Rotation = (PreviousLookAt - PreviousLocation).Rotation();
+
         if (CameraComponent)
         {
-            CameraComponent->SetWorldLocation(NewPosition);
-            CameraComponent->SetWorldRotation(NewRotation);
+            CameraComponent->SetWorldLocation(PreviousLocation);
+            CameraComponent->SetWorldRotation(Rotation);
         }
     }
 }
@@ -309,38 +383,15 @@ FVector UShowCamSequence::GetCameraLocation()
     return CameraComponent->GetComponentLocation();
 }
 
-FVector UShowCamSequence::GetCameraLookAt(float Distance)
+FVector UShowCamSequence::GetCameraLookAt()
 {
-    if (!CameraComponent)
+    if (!CameraComponent || !SpringArmComponent)
     {
         return FVector::ZeroVector;
     }
 
     FVector CameraLocation = CameraComponent->GetComponentLocation();
     FVector CameraDirection = CameraComponent->GetForwardVector();
-    FVector LookAtTarget = CameraLocation + (CameraDirection * Distance);
+    FVector LookAtTarget = CameraLocation + (CameraDirection * SpringArmComponent->TargetArmLength);
     return LookAtTarget;
-}
-
-void UShowCamSequence::ApplyCharacterOffsetToSpringArm()
-{
-    if (SpringArmComponent)
-    {
-        AActor* OwnerActor = GetShowOwner();
-        if (OwnerActor)
-        {
-            FVector CurrentLocalCharacterLocation = OwnerActor->GetActorTransform().InverseTransformPosition(SpringArmComponent->GetComponentLocation());
-            FRotator CurrentLocalCharacterRotation = OwnerActor->GetActorTransform().InverseTransformRotation(SpringArmComponent->GetComponentRotation().Quaternion()).Rotator();
-
-            FVector LocalLocationOffset = CurrentLocalCharacterLocation - InitialLocalCharacterLocation;
-            FRotator LocalRotationOffset = CurrentLocalCharacterRotation - InitialLocalCharacterRotation;
-
-            // 로컬 변화량을 현재 SpringArm의 로컬 위치에 더하기
-            FVector FinalLocalSpringArmLocation = SpringArmComponent->GetRelativeLocation() + LocalLocationOffset;
-            FRotator FinalLocalSpringArmRotation = SpringArmComponent->GetRelativeRotation() + LocalRotationOffset;
-
-            SpringArmComponent->SetRelativeLocation(FinalLocalSpringArmLocation);
-            SpringArmComponent->SetRelativeRotation(FinalLocalSpringArmRotation);
-        }
-    }
 }

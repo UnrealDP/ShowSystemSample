@@ -20,6 +20,25 @@ enum class ECameraSequenceState : uint8
     End,                // 연출 종료
 };
 
+// 카메라 연출 옵션
+UENUM(BlueprintType)
+enum class ECameraSequenceOption : uint8
+{
+    PlayerForward,  // 캐릭터의 방향 기준으로 상대 좌표로 카메라 연출
+    Player,         // 캐릭터의 방향은 무시하고 위치 기준으로 상대 좌표로 카메라 연출
+    World,          // 월드 좌표로 카메라 연출
+    MAX,
+};
+
+// 카메라 종료 시 옵션
+UENUM(BlueprintType)
+enum class ECameraReturnOption : uint8
+{
+    ReturnToStart,  // 연출 시작할 때의 상태로 돌아감
+    MaintainEndPosition,    // 종료될 때의 위치에서 원래의 타겟을 바라보도록
+    MAX,
+};
+
 // 카메라 이동 경로를 저장하는 구조체
 USTRUCT(BlueprintType)
 struct FCameraPathPoint
@@ -50,11 +69,14 @@ struct FShowCamSequenceKey : public FShowKey
         KeyType = EShowKeyType::ShowKey_CamSequence;
     }
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Path")
+    ECameraSequenceOption CameraSequenceOption = ECameraSequenceOption::PlayerForward;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Sequence")
     TArray<FCameraPathPoint> PathPoints; // 카메라 이동 경로 리스트
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Sequence")
-    bool bReturnToStartPosition = true; // 연출이 끝난 후 시작 위치로 돌아갈지 여부
+    ECameraReturnOption CameraReturnOption = ECameraReturnOption::ReturnToStart; // 연출이 끝난 후 시작 위치로 돌아갈지 여부
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Sequence")
     float FadeOutBlendTime = 0.3f; // 페이드 아웃 시간 및 설정
@@ -81,14 +103,15 @@ protected:
     virtual void UnPause() override {};
 
 private:
+    FVector CalculateRelativePositionForPlayback(const FVector& OriginVactor, const FVector& ActorWorldPosition, const FRotator& ActorWorldRotation, ECameraSequenceOption Option) const;
+
     virtual void Tick(float DeltaTime, float BasePassedTime) override;
-    void ApplyCameraSettings(const FVector& NewPosition, const FRotator& NewRotation, TOptional<float>& NewFOV);
-    void PathPointPlay(AActor* OwnerActor);
-    void PathPointReturningToStart(AActor* OwnerActor);
+    void ApplyCameraSettings(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV, float DeltaTime);
+    void PathPointPlay(AActor* OwnerActor, float DeltaTime);
+    void PathPointReturningToStart(AActor* OwnerActor, float DeltaTime);
 
     FVector GetCameraLocation();
-    FVector GetCameraLookAt(float Distance = 1000.0f);
-    void ApplyCharacterOffsetToSpringArm();
+    FVector GetCameraLookAt();
 
 private:
     const FShowCamSequenceKey* ShowCamSequenceKeyPtr = nullptr;
@@ -104,20 +127,16 @@ private:
 
     ECameraSequenceState State = ECameraSequenceState::Wait;
 
-    // 연출 시작 시의 캐릭터 위치 저장
-    FVector InitialLocalCharacterLocation;
-    FRotator InitialLocalCharacterRotation;
-
-    // 연출 시작 시 카메라 위치와 USpringArmComponent 소켓 위치의 오프셋 저장
-    FVector InitialCameraOffset;
-    FVector InitialLookAtOffset;
+    // 연출 시작 시 카메라 위치 LookAt 캐릭터 상대 좌표로 저장, FOV저장, 스프링암의 UsePawnControl 저장
+    FVector InitialRelativeLocationFromSocket;
+    FVector InitialRelativeLookAtFromSocket;
     float InitialFOV;
+    bool bInitialUsePawnControlRotation = false;
 
     float CurrentBlendTime = 0.0f;
     int32 CurrentPointIndex = 0;
 
-    float InitialTargetArmLength = 0.0f;
-    FVector InitialCameraRelativePositionForBlend;
-    FVector InitialLookAtRelativeTargetForBlend;
-    float InitialFOVForBlend;
+    // 이전 프레임의 카메라 위치와 LookAt
+    FVector PreviousLocation;
+    FVector PreviousLookAt;
 };
