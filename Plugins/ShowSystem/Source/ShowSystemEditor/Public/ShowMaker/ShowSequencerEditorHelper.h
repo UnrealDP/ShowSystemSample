@@ -41,10 +41,12 @@ public:
 	FShowKey* GetMutableShowKey(UShowBase* ShowBasePtr);
 
 	void NotifyShowKeyChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged);
-	void ShowSequenceAssetMarkPackageDirty()
+	bool ShowSequenceAssetMarkPackageDirty()
 	{
-		EditShowSequencerPtr->ShowSequenceAsset->MarkPackageDirty();
+		bool DirtyResult = EditShowSequencerPtr->ShowSequenceAsset->MarkPackageDirty();
+		return DirtyResult;
 	}
+	TObjectPtr<UShowSequenceAsset> GetShowSequenceAsset() { return EditShowSequencerPtr ? EditShowSequencerPtr->ShowSequenceAsset : nullptr; }
 
 	void Dispose();
 	void HelperNewShowSequencer(TObjectPtr<UShowSequenceAsset> InShowSequenceAsset);

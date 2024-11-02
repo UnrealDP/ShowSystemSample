@@ -16,6 +16,11 @@
 #include "RunTime/ShowSequencer.h"
 #include "ActionServerExecutor.h"
 #include "Kismet/GameplayStatics.h"
+#include "DebugCameraHelper.h"
+#include "RunTime/ShowBase.h"
+#include "RunTime/ShowKeys/ShowCamSequence.h"
+#include "ShowMaker/ShowSequencerEditorHelper.h"
+
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -27,7 +32,7 @@ void AShowActionMakerGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (DefaultActorClass)
+    if (DefaultPawnClass)
     {
         FVector CasterPos;
         FVector TargetPos;        
@@ -45,19 +50,30 @@ void AShowActionMakerGameMode::BeginPlay()
             if (PlayerController)
             {
                 PlayerController->InputComponent->BindAction("FKeyAction", IE_Pressed, this, &AShowActionMakerGameMode::DoAction);
+                PlayerController->InputComponent->BindAction("OnMouseLClick", IE_Pressed, this, &AShowActionMakerGameMode::OnMouseLClick);
+
                 APawn* PlayerPawn = PlayerController->GetPawn();
                 if (PlayerPawn)
                 {
-                    Caster = Cast<AActor>(PlayerPawn);
+                    Caster = PlayerPawn;
                     Caster->Rename(*CasterSpawnParams.Name.ToString());
                     Caster->SetActorLocation(CasterPos);
                     Caster->SetActorRotation(CasterRotator);
+                }
+                else
+                {
+                    Caster = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, CasterPos, CasterRotator, CasterSpawnParams);
+                    Caster->SetActorLabel(CasterSpawnParams.Name.ToString());
+                    Caster->Rename(*CasterSpawnParams.Name.ToString());
+                    Caster->SetActorLocation(CasterPos);
+                    Caster->SetActorRotation(CasterRotator);
+                    PlayerController->SetPawn(Caster);
                 }
             }
         }
         if (!Caster)
         {
-            Caster = GetWorld()->SpawnActor<AActor>(DefaultActorClass, CasterPos, CasterRotator, CasterSpawnParams);
+            Caster = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, CasterPos, CasterRotator, CasterSpawnParams);
             Caster->SetActorLabel(CasterSpawnParams.Name.ToString());
         }
 
@@ -79,7 +95,7 @@ void AShowActionMakerGameMode::BeginPlay()
         FActorSpawnParameters TargetSpawnParams;
         TargetSpawnParams.Name = FName(TEXT("ActionMaker Target"));
 
-        AActor* SpawnedTarget = GetWorld()->SpawnActor<AActor>(DefaultActorClass, TargetPos, TargetRotator, TargetSpawnParams);
+        APawn* SpawnedTarget = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, TargetPos, TargetRotator, TargetSpawnParams);
         if (SpawnedTarget)
         {
             if (!SpawnedTarget->FindComponentByClass<UShowSequencerComponent>())
@@ -143,6 +159,12 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
     SkillData = nullptr;
     SkillShowData = nullptr;
+
+    if (DebugCameraHelper)
+    {
+        DebugCameraHelper->Destroy();
+        DebugCameraHelper = nullptr;
+    }
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }
@@ -229,6 +251,47 @@ void AShowActionMakerGameMode::OnActorDestroyed(AActor* DestroyedActor)
     }
 }
 
+void AShowActionMakerGameMode::SelectKey(TSharedPtr<FShowSequencerEditorHelper> InSelectedShowSequencerEditorHelper, UShowBase* InSelectedShowBasePtr)
+{
+    SelectedShowSequencerEditorHelper = InSelectedShowSequencerEditorHelper;
+    SelectedShowBasePtr = InSelectedShowBasePtr;
+
+    if (DebugCameraHelper)
+    {
+        DebugCameraHelper->Destroy();
+        DebugCameraHelper = nullptr;
+    }
+
+    if (SelectedShowBasePtr && SelectedShowBasePtr->IsA(UShowCamSequence::StaticClass()))
+    {
+        DebugCameraHelper = GetWorld()->SpawnActor<ADebugCameraHelper>();
+        DebugCameraHelper->Initialize(Caster, Cast<UShowCamSequence>(SelectedShowBasePtr));
+        DebugCameraHelper->OnUpdate.BindUObject(this, &AShowActionMakerGameMode::ShowSequenceAssetMarkPackageDirty);
+    }
+}
+
+void AShowActionMakerGameMode::ShowSequenceAssetMarkPackageDirty()
+{
+    if (SelectedShowSequencerEditorHelper->ShowSequenceAssetMarkPackageDirty() == false)
+    {
+        TObjectPtr<UShowSequenceAsset> ShowSequenceAsset = SelectedShowSequencerEditorHelper->GetShowSequenceAsset();
+        UPackage* Package = ShowSequenceAsset->GetOutermost();
+
+        if (Package != NULL)
+        {
+            const bool bIsDirty = Package->IsDirty();
+
+            if (!bIsDirty)
+            {
+                Package->SetDirtyFlag(true);
+            }
+
+            Package->PackageMarkedDirtyEvent.Broadcast(Package, bIsDirty);
+        }
+    }
+    
+}
+
 UActionBase* AShowActionMakerGameMode::SelectAction(
     FName InSelectedActionName, 
     FSkillData* InSkillData, 
@@ -237,6 +300,12 @@ UActionBase* AShowActionMakerGameMode::SelectAction(
     UShowSequencer*& OutExecShowSequencer,
     UShowSequencer*& OutFinishShowSequencer)
 {
+    if (DebugCameraHelper)
+    {
+        DebugCameraHelper->Destroy();
+        DebugCameraHelper = nullptr;
+    }
+
     SelectedActionName = InSelectedActionName;
     SkillData = InSkillData;
     SkillShowData = InSkillShowData;
@@ -423,4 +492,12 @@ void AShowActionMakerGameMode::DoAction()
             	
         CrrActionPtr->DoAction();
 	}
+}
+
+void AShowActionMakerGameMode::OnMouseLClick()
+{
+    UE_LOG(LogTemp, Log, TEXT("OnMouseLClick"));
+    if (DebugCameraHelper)
+    {
+    }
 }

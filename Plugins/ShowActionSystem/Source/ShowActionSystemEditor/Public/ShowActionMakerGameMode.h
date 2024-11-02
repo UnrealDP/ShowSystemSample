@@ -12,6 +12,9 @@ struct FSkillShowData;
 class UActionBase;
 class UActionServerExecutor;
 class UShowSequencer;
+class ADebugCameraHelper;
+class UShowBase;
+class FShowSequencerEditorHelper;
 
 /**
  * 
@@ -28,16 +31,20 @@ private:
     void GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& CasterRotator, FRotator& TargetRotator);
     void SaveActorPositions();
     virtual void Tick(float DeltaSeconds) override;
-    
+    void ShowSequenceAssetMarkPackageDirty();
+
     UFUNCTION()
     void OnActorDestroyed(AActor* DestroyedActor);
 
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+    
+    void OnMouseLClick();
 
 public:
 
+    void SelectKey(TSharedPtr<FShowSequencerEditorHelper> InSelectedShowSequencerEditorHelper, UShowBase* InSelectedShowBasePtr);
     UActionBase* SelectAction(
         FName InSelectedActionName, 
         FSkillData* InSkillData, 
@@ -50,19 +57,21 @@ public:
     UShowSequencer* ChangeShow(EActionState ActionState, FSoftObjectPath* NewShowPath);
     void DoAction();
 
-public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ShowActionMakerGameMode")
-    TSubclassOf<AActor> DefaultActorClass = nullptr;
-    
+   
 private:
 
-    AActor*  Caster = nullptr;
+    APawn*  Caster = nullptr;
 
-    TArray<AActor*> Targets;
+    TArray<APawn*> Targets;
 
     FName SelectedActionName;
     FSkillData* SkillData = nullptr;
     FSkillShowData* SkillShowData = nullptr;
+
+    ADebugCameraHelper* DebugCameraHelper = nullptr;
+
+    TSharedPtr<FShowSequencerEditorHelper> SelectedShowSequencerEditorHelper = nullptr;
+    UShowBase* SelectedShowBasePtr = nullptr;
 
 public:
     UActionServerExecutor* CrrActionPtr = nullptr;

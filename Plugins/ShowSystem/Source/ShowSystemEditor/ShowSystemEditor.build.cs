@@ -33,6 +33,7 @@ public class ShowSystemEditor : ModuleRules
                 "EditorWidgets",                
                 "AnimGraph",                
                 "ToolWidgets",
+                "InteractiveToolsFramework"
             }
 			);
 	}

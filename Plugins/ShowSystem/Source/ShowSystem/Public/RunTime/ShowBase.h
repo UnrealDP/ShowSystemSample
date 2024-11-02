@@ -185,11 +185,12 @@ public:
     // 툴이나 혹은 전체 시간이 필요한 경우 사용되는 함수
     virtual float GetLength() PURE_VIRTUAL(UShowBase::GetLength, return 0.f;);
 
-protected:
     AActor* GetShowOwner() const
     {
         return ShowSequencerPtr->GetShowOwner();
     }
+
+protected:
 
     virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
     virtual void Dispose() PURE_VIRTUAL(UShowBase::Dispose, );

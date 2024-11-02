@@ -93,6 +93,7 @@ class SHOWSYSTEM_API UShowCamSequence : public UShowBase
 public:
     virtual FString GetTitle() override;
     virtual float GetLength() override;
+    const FShowCamSequenceKey* GetShowCamSequenceKeyPtr() const { return ShowCamSequenceKeyPtr; }
 
 protected:
     virtual void Initialize() override;
@@ -107,6 +108,10 @@ private:
 
     virtual void Tick(float DeltaTime, float BasePassedTime) override;
     void ApplyCameraSettings(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV, float DeltaTime);
+    void ApplyRunTimeCamera(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV);
+#if WITH_EDITOR
+    void ApplyEditorViewCamera(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV);
+#endif
     void PathPointPlay(AActor* OwnerActor, float DeltaTime);
     void PathPointReturningToStart(AActor* OwnerActor, float DeltaTime);
 

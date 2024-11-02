@@ -80,7 +80,7 @@ void FShowActionSystemEditor::ClearModule()
     {
         ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
     }
-    UpdateShowKeyDetails(nullptr);
+    UpdateShowKeyDetails(nullptr, nullptr);
 }
 
 void FShowActionSystemEditor::RegisterSkillDataTab()
@@ -180,7 +180,7 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                     {
                                         SelectedShowBasePtr = ShowBasePtr;
                                         ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper);
-                                        UpdateShowKeyDetails(SelectedShowBasePtr);
+                                        UpdateShowKeyDetails(EditorHelper, SelectedShowBasePtr);
                                     }
                                     
                                     if (EditorHelper->SelectedShowBasePtr != ShowBasePtr)
@@ -197,7 +197,7 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                         {
                                             SelectedShowBasePtr = CheckSelectedShowBasePtr;
                                             ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper);
-                                            UpdateShowKeyDetails(SelectedShowBasePtr);
+                                            UpdateShowKeyDetails(EditorHelper, SelectedShowBasePtr);
                                         }
 
                                         EditorHelper->SelectedShowBasePtr = CheckSelectedShowBasePtr;
@@ -225,8 +225,13 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
     
 }
 
-void FShowActionSystemEditor::UpdateShowKeyDetails(UShowBase* InSelectedShowBasePtr)
+void FShowActionSystemEditor::UpdateShowKeyDetails(TSharedPtr<FShowSequencerEditorHelper> InSelectedShowSequencerEditorHelper, UShowBase* InSelectedShowBasePtr)
 {
+    if (ShowActionMakerGameMode.IsValid())
+    {
+        ShowActionMakerGameMode->SelectKey(InSelectedShowSequencerEditorHelper, InSelectedShowBasePtr);
+    }
+
     if (InSelectedShowBasePtr)
     {
         UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(InSelectedShowBasePtr->GetShowKey()->KeyType);

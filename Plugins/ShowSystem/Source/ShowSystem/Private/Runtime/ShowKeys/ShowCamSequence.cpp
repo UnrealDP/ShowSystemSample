@@ -315,39 +315,57 @@ void UShowCamSequence::PathPointReturningToStart(AActor* OwnerActor, float Delta
 
 void UShowCamSequence::ApplyCameraSettings(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV, float DeltaTime)
 {
-    if (PlayerController && PlayerController->PlayerCameraManager)
+#if WITH_EDITOR
+    if (GEditor->bIsSimulatingInEditor)
     {
-        // FOV 설정
-        if (NewFOV.IsSet())
-        {
-            PlayerController->PlayerCameraManager->SetFOV(NewFOV.GetValue());
-        }
+        ApplyEditorViewCamera(NewPosition, NewLookAt, NewFOV);
+    }
+    else
+#endif
+    {
+        ApplyRunTimeCamera(NewPosition, NewLookAt, NewFOV);
+    }
+}
 
-        AActor* OwnerActor = GetShowOwner();
-        FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ShowCamSequence), false, OwnerActor);
+void UShowCamSequence::ApplyRunTimeCamera(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV)
+{
+    if (!PlayerController || !PlayerController->PlayerCameraManager)
+    {
+        return;
+    }
 
-        PreviousLocation = NewPosition;
-        PreviousLookAt = NewLookAt;
+    // FOV 설정
+    if (NewFOV.IsSet())
+    {
+        PlayerController->PlayerCameraManager->SetFOV(NewFOV.GetValue());
+    }
 
+    AActor* OwnerActor = GetShowOwner();
+    FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ShowCamSequence), false, OwnerActor);
+
+    PreviousLocation = NewPosition;
+    PreviousLookAt = NewLookAt;
+
+    UWorld* World = GetWorld();
+    if (World)
+    {
         FHitResult Result;
-        GetWorld()->SweepSingleByChannel(
-            Result, 
+        World->SweepSingleByChannel(
+            Result,
             NewLookAt,
-            NewPosition,             
-            FQuat::Identity, 
-            SpringArmComponent->ProbeChannel, 
-            FCollisionShape::MakeSphere(SpringArmComponent->ProbeSize), 
+            NewPosition,
+            FQuat::Identity,
+            SpringArmComponent->ProbeChannel,
+            FCollisionShape::MakeSphere(SpringArmComponent->ProbeSize),
             QueryParams);
-
         if (Result.bBlockingHit)
         {
             PreviousLocation = Result.Location;
-
             // 시작 위치인 LookAt과 충돌 후 위치가 같으면 시작 지점과 종료 지점 모두 충돌 영역인거
             if (NewLookAt.Equals(Result.Location))
             {
                 // 바라볼 지점도 충돌 영역 안이기 떄문에 캐릭터에서 바라볼 지점으로 총돌 여역을 찾아서 위치 조정
-                GetWorld()->SweepSingleByChannel(
+                World->SweepSingleByChannel(
                     Result,
                     OwnerActor->GetActorLocation(),
                     NewLookAt,
@@ -355,23 +373,51 @@ void UShowCamSequence::ApplyCameraSettings(const FVector& NewPosition, const FVe
                     SpringArmComponent->ProbeChannel,
                     FCollisionShape::MakeSphere(SpringArmComponent->ProbeSize),
                     QueryParams);
-
                 if (Result.bBlockingHit)
                 {
                     PreviousLocation = Result.Location;
                 }
             }
         }
+    }
 
-        FRotator Rotation = (PreviousLookAt - PreviousLocation).Rotation();
+    FRotator Rotation = (PreviousLookAt - PreviousLocation).Rotation();
 
-        if (CameraComponent)
+    if (CameraComponent)
+    {
+        CameraComponent->SetWorldLocation(PreviousLocation);
+        CameraComponent->SetWorldRotation(Rotation);
+    }
+}
+
+#if WITH_EDITOR
+void UShowCamSequence::ApplyEditorViewCamera(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV)
+{
+    PreviousLocation = NewPosition;
+    PreviousLookAt = NewLookAt;
+
+    FRotator Rotation = (PreviousLookAt - PreviousLocation).Rotation();
+
+    if (GEditor && GEditor->GetActiveViewport())
+    {
+        FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+
+        if (EditorViewportClient)
         {
-            CameraComponent->SetWorldLocation(PreviousLocation);
-            CameraComponent->SetWorldRotation(Rotation);
+            if (NewFOV.IsSet())
+			{
+				EditorViewportClient->ViewFOV = NewFOV.GetValue();
+			}
+
+            EditorViewportClient->SetViewLocation(PreviousLocation);
+            EditorViewportClient->SetViewRotation(Rotation);
+
+            // 즉시 업데이트
+            EditorViewportClient->Invalidate();
         }
     }
 }
+#endif
 
 FVector UShowCamSequence::GetCameraLocation()
 {
@@ -379,6 +425,14 @@ FVector UShowCamSequence::GetCameraLocation()
     {
         return FVector::ZeroVector;
     }
+
+#if WITH_EDITOR
+    if (GEditor->bIsSimulatingInEditor)
+    {
+        FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+        return EditorViewportClient->GetViewLocation();
+    }
+#endif    
 
     return CameraComponent->GetComponentLocation();
 }
@@ -390,8 +444,22 @@ FVector UShowCamSequence::GetCameraLookAt()
         return FVector::ZeroVector;
     }
 
-    FVector CameraLocation = CameraComponent->GetComponentLocation();
-    FVector CameraDirection = CameraComponent->GetForwardVector();
+    FVector CameraLocation;
+    FVector CameraDirection;
+#if WITH_EDITOR
+    if (GEditor->bIsSimulatingInEditor)
+    {
+        FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+        CameraLocation = EditorViewportClient->GetViewLocation();
+        CameraDirection = EditorViewportClient->GetViewRotation().Vector();
+    }
+#endif    
+    else
+    {
+        CameraLocation = CameraComponent->GetComponentLocation();
+        CameraDirection = CameraComponent->GetForwardVector().GetSafeNormal();
+    }
+    
     FVector LookAtTarget = CameraLocation + (CameraDirection * SpringArmComponent->TargetArmLength);
     return LookAtTarget;
 }
