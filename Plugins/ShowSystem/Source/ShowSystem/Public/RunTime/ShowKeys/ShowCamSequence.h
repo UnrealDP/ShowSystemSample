@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "RunTime/ShowBase.h"
+#include "Templates/SharedPointer.h"
 #include "ShowCamSequence.generated.h"
 
 class UCameraComponent;
@@ -56,6 +57,10 @@ struct FCameraPathPoint
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Path")
     TOptional<float> FieldOfView; // 카메라 FOV
+
+#if WITH_EDITOR
+    bool bIsSelected = false;
+#endif
 };
 
 

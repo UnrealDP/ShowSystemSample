@@ -10,7 +10,8 @@
 #include "SShowActionControllPanels.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "ShowMaker/ShowSequencerNotifyHook.h"
-#include "RunTime/ShowSequencerComponent.h"
+#include "ShowMaker/CameraPathPointCustom.h"
+#include "RunTime/ShowKeys/ShowCamSequence.h"
 
 DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
 
@@ -124,6 +125,7 @@ void FShowActionSystemEditor::RegisterShowKeyDetailsTab()
     FDetailsViewArgs ShowKeyDetailsViewArgs;
     ShowKeyDetailsViewArgs.bAllowSearch = true;
     ShowKeyDetailsViewArgs.bShowOptions = true;
+    ShowKeyDetailsViewArgs.bHideSelectionTip = true;
     ShowKeyNotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(nullptr));
     ShowKeyDetailsViewArgs.NotifyHook = ShowKeyNotifyHookInstance.Get();
 

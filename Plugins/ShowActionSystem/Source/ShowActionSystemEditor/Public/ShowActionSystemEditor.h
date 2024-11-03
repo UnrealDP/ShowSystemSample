@@ -14,6 +14,8 @@ class ShowSequencerNotifyHook;
 class FShowSequencerEditorHelper;
 struct FSkillData;
 struct FSkillShowData;
+struct FShowCamSequenceKey;
+struct FCameraPathPoint;
 
 class FShowActionSystemEditor : public IModuleInterface
 {

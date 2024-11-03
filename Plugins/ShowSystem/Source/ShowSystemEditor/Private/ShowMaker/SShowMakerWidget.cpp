@@ -168,14 +168,10 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
     FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
     FDetailsViewArgs ShowKeyDetailsViewArgs;
-    ShowKeyDetailsViewArgs.bAllowSearch = true;
-    ShowKeyDetailsViewArgs.bShowOptions = true;
     NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper));
     ShowKeyDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
 
     FStructureDetailsViewArgs ShowKeyDetailsArgs;
-    ShowKeyDetailsArgs.bShowObjects = true;
-    
     StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
         ShowKeyDetailsViewArgs,
         ShowKeyDetailsArgs,

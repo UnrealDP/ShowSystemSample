@@ -39,7 +39,6 @@ void ADebugCameraHelper::Initialize(AActor* InShowOwnerActor, TObjectPtr<UShowCa
     ShowCamSequence = InShowCamSequence;
 
     FVector ShowOwnerActorLocation = ShowOwnerActor->GetActorLocation();
-    UE_LOG(LogTemp, Warning, TEXT("ShowOwnerActorLocation : %s"), *ShowOwnerActorLocation.ToString());
     for (const FCameraPathPoint& CameraPathPoint : ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints)
     {
         FDebugCamera* DebugCamera = CreateMesh(CameraPathPoint);
@@ -153,7 +152,7 @@ void ADebugCameraHelper::UpdatePath(UGizmoTranslationComponent* GizmoComponent)
     FVector OwnerLocation = ShowOwner->GetActorLocation();
 
     FShowCamSequenceKey* ShowCamSequenceKey = const_cast<FShowCamSequenceKey*>(ShowCamSequence->GetShowCamSequenceKeyPtr());
-    TArray<FCameraPathPoint>* PathPointsPtr = const_cast<TArray<FCameraPathPoint>*>(&ShowCamSequenceKey->PathPoints);
+    TArray<FCameraPathPoint>* PathPointsPtr = (&ShowCamSequenceKey->PathPoints);
 
     for (int i = 0; i < PathPointsPtr->Num(); ++i)
     {

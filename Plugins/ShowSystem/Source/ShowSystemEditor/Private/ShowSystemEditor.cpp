@@ -7,7 +7,8 @@
 #include "Editor.h"
 #include "AssetTypeActions_AnimContainer.h"
 #include "AnimContainerFactory.h"
-
+#include "ShowMaker/CameraPathPointCustom.h"
+#include "RunTime/ShowKeys/ShowCamSequence.h"
 
 DEFINE_LOG_CATEGORY(ShowSystemEditor);
 
@@ -28,20 +29,33 @@ void FShowSystemEditor::StartupModule()
 	AssetTools.RegisterAssetTypeActions(ShowSequencerAction);
 	RegisteredAssetTypeActions.Add(ShowSequencerAction);
 
-
-	// PropertyEditor 모듈을 로드하여 커스터마이저를 등록
-	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	
-	// ShowSequenceAsset 클래스에 대한 커스터마이징 등록
-	PropertyModule.RegisterCustomClassLayout("ShowSequenceAsset",
-		FOnGetDetailCustomizationInstance::CreateStatic(&FShowSequenceAssetCustomization::MakeInstance));
-
-	PropertyModule.NotifyCustomizationModuleChanged();
-
 	
 	TSharedRef<IAssetTypeActions> AnimContainerAction = MakeShareable(new FAssetTypeActions_AnimContainer(ShowSystemAssetCategory));
 	AssetTools.RegisterAssetTypeActions(AnimContainerAction);
 	RegisteredAssetTypeActions.Add(AnimContainerAction);
+
+	// Show Key 커스터마이징 디테일 창 ----
+	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	PropertyModule.RegisterCustomClassLayout("ShowSequenceAsset",
+		FOnGetDetailCustomizationInstance::CreateStatic(&FShowSequenceAssetCustomization::MakeInstance));
+	
+	PropertyModule.RegisterCustomPropertyTypeLayout(
+		"CameraPathPoint",
+		FOnGetPropertyTypeCustomizationInstance::CreateLambda([this]() {
+
+			FOnButtonClicked OnSelect = FOnButtonClicked::CreateRaw(this, &FShowSystemEditor::SelectCamkey);
+			FOnButtonClicked OnSetCam = FOnButtonClicked::CreateRaw(this, &FShowSystemEditor::SetCamkey);
+
+			TSharedRef<FCameraPathPointCustom> CustomizationInstance = MakeShareable(new FCameraPathPointCustom(OnSelect, OnSetCam));
+			return CustomizationInstance;
+			})
+	);
+	GetCameraLocationFunc = [this]() { return GetCameraLocation(); };
+	// Show Key 커스터마이징 디테일 창 ----
+
+	// ---  모듈 변경 알림  ---
+	PropertyModule.NotifyCustomizationModuleChanged();
 }
 
 void FShowSystemEditor::ShutdownModule()
@@ -64,9 +78,31 @@ void FShowSystemEditor::ShutdownModule()
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 		PropertyModule.UnregisterCustomClassLayout("ShowSequenceAsset");
+		PropertyModule.UnregisterCustomPropertyTypeLayout("CameraPathPoint");
 	}
 
+
 	UE_LOG(ShowSystemEditor, Log, TEXT("ShowSystemEditor module has been unloaded"));
+}
+
+
+void FShowSystemEditor::SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
+{
+	UE_LOG(LogTemp, Log, TEXT("SelectCamkey"));
+}
+
+void FShowSystemEditor::SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
+{
+	if (GetCameraLocationFunc)
+	{
+		FVector Location = GetCameraLocationFunc();
+		UE_LOG(LogTemp, Log, TEXT("SetCamkey %s"), *Location.ToString());
+	}
+}
+
+FVector FShowSystemEditor::GetCameraLocation()
+{
+	return FVector::ZeroVector;
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -20,7 +20,8 @@
 #include "RunTime/ShowBase.h"
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
-
+#include "Camera/CameraComponent.h"
+#include "ShowSystemEditor.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -124,6 +125,9 @@ void AShowActionMakerGameMode::BeginPlay()
     {
         ShowActionSystemEditorModulePtr->InitializeModule(this);
     }
+
+    FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
+    ShowSystemEditorModule.GetCameraLocationFunc = [this]() { return GetCameraLocation(); };
 }
 
 void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -165,6 +169,9 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
         DebugCameraHelper->Destroy();
         DebugCameraHelper = nullptr;
     }
+
+    FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
+    ShowSystemEditorModule.GetCameraLocationFunc = nullptr;
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }
@@ -500,4 +507,41 @@ void AShowActionMakerGameMode::OnMouseLClick()
     if (DebugCameraHelper)
     {
     }
+}
+
+void AShowActionMakerGameMode::SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
+{
+}
+
+void AShowActionMakerGameMode::SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
+{
+    FVector Location = GetCameraLocation();
+    UE_LOG(LogTemp, Log, TEXT("SetCamkey Location: %s"), *Location.ToString());
+}
+
+FVector AShowActionMakerGameMode::GetCameraLocation()
+{
+#if WITH_EDITOR
+    if (GEditor->bIsSimulatingInEditor)
+    {
+        FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+        return EditorViewportClient->GetViewLocation();
+    }
+#endif    
+
+    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+    if (PlayerController && PlayerController->PlayerCameraManager)
+    {
+        APawn* ControlledPawn = PlayerController->GetPawn();
+        if (ControlledPawn)
+        {
+            UCameraComponent* CameraComponent = ControlledPawn->FindComponentByClass<UCameraComponent>();
+            if (CameraComponent)
+            {
+                return CameraComponent->GetComponentLocation();
+            }
+        }
+    }
+
+    return FVector::ZeroVector;
 }

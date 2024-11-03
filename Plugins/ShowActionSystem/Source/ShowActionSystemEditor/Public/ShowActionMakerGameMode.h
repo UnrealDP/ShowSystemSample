@@ -15,6 +15,8 @@ class UShowSequencer;
 class ADebugCameraHelper;
 class UShowBase;
 class FShowSequencerEditorHelper;
+struct FShowCamSequenceKey;
+struct FCameraPathPoint;
 
 /**
  * 
@@ -57,6 +59,9 @@ public:
     UShowSequencer* ChangeShow(EActionState ActionState, FSoftObjectPath* NewShowPath);
     void DoAction();
 
+    void SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint);
+    void SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint);
+    FVector GetCameraLocation();
    
 private:
 
