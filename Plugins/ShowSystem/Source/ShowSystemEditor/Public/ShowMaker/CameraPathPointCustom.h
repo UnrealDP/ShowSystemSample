@@ -17,19 +17,12 @@ DECLARE_DELEGATE_TwoParams(FOnButtonClicked, FShowCamSequenceKey*, FCameraPathPo
 class SHOWSYSTEMEDITOR_API FCameraPathPointCustom : public IPropertyTypeCustomization
 {
 public:
-    FCameraPathPointCustom(FOnButtonClicked InOnSelect, FOnButtonClicked InOnSetCam)
-        : OnSelect(InOnSelect), OnSetCam(InOnSetCam)
-    {}
-    ~FCameraPathPointCustom();
 
-    static TSharedRef<IPropertyTypeCustomization> MakeInstance(FOnButtonClicked InOnSelect, FOnButtonClicked InOnSetCam);
+    static TSharedRef<IPropertyTypeCustomization> MakeInstance();
 
     virtual void CustomizeHeader(TSharedRef<IPropertyHandle> StructPropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils) override;
     virtual void CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle, IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils) override;
 
     FShowCamSequenceKey* ShowCamSequenceKey = nullptr;
     FCameraPathPoint* CameraPathPoint = nullptr;
-
-    FOnButtonClicked OnSelect;
-    FOnButtonClicked OnSetCam;
 };

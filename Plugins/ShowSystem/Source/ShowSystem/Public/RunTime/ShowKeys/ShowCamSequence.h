@@ -60,6 +60,7 @@ struct FCameraPathPoint
 
 #if WITH_EDITOR
     bool bIsSelected = false;
+    bool bNeedUpdateLocation = false;
 #endif
 };
 

@@ -11,6 +11,7 @@ struct FCameraPathPoint;
 class UGizmoTranslationComponent;
 
 DECLARE_DELEGATE(FOnUpdate);
+DECLARE_DELEGATE_RetVal(FVector, FGetCameraLocationDelegate);
 
 USTRUCT(BlueprintType)
 struct FDebugCamera
@@ -28,6 +29,8 @@ struct FDebugCamera
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UGizmoTranslationComponent> DebugLookAtGizmo = nullptr;
+
+	FCameraPathPoint* CameraPathPointPtr;
 };
 
 UCLASS()
@@ -61,6 +64,7 @@ private:
 	TArray<FDebugCamera*> DebugCameras;
 	TWeakObjectPtr<UShowCamSequence> ShowCamSequence = nullptr;
 
-public:
+public:	
 	FOnUpdate OnUpdate;
+	FGetCameraLocationDelegate GetCameraLocationDelegate;
 };

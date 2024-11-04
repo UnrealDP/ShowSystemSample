@@ -43,15 +43,10 @@ void FShowSystemEditor::StartupModule()
 	PropertyModule.RegisterCustomPropertyTypeLayout(
 		"CameraPathPoint",
 		FOnGetPropertyTypeCustomizationInstance::CreateLambda([this]() {
-
-			FOnButtonClicked OnSelect = FOnButtonClicked::CreateRaw(this, &FShowSystemEditor::SelectCamkey);
-			FOnButtonClicked OnSetCam = FOnButtonClicked::CreateRaw(this, &FShowSystemEditor::SetCamkey);
-
-			TSharedRef<FCameraPathPointCustom> CustomizationInstance = MakeShareable(new FCameraPathPointCustom(OnSelect, OnSetCam));
+			TSharedRef<FCameraPathPointCustom> CustomizationInstance = MakeShareable(new FCameraPathPointCustom());
 			return CustomizationInstance;
 			})
 	);
-	GetCameraLocationFunc = [this]() { return GetCameraLocation(); };
 	// Show Key 커스터마이징 디테일 창 ----
 
 	// ---  모듈 변경 알림  ---
@@ -83,26 +78,6 @@ void FShowSystemEditor::ShutdownModule()
 
 
 	UE_LOG(ShowSystemEditor, Log, TEXT("ShowSystemEditor module has been unloaded"));
-}
-
-
-void FShowSystemEditor::SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
-{
-	UE_LOG(LogTemp, Log, TEXT("SelectCamkey"));
-}
-
-void FShowSystemEditor::SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
-{
-	if (GetCameraLocationFunc)
-	{
-		FVector Location = GetCameraLocationFunc();
-		UE_LOG(LogTemp, Log, TEXT("SetCamkey %s"), *Location.ToString());
-	}
-}
-
-FVector FShowSystemEditor::GetCameraLocation()
-{
-	return FVector::ZeroVector;
 }
 
 #undef LOCTEXT_NAMESPACE

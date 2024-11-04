@@ -21,7 +21,6 @@
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "Camera/CameraComponent.h"
-#include "ShowSystemEditor.h"
 
 AShowActionMakerGameMode::AShowActionMakerGameMode()
 {
@@ -125,9 +124,6 @@ void AShowActionMakerGameMode::BeginPlay()
     {
         ShowActionSystemEditorModulePtr->InitializeModule(this);
     }
-
-    FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
-    ShowSystemEditorModule.GetCameraLocationFunc = [this]() { return GetCameraLocation(); };
 }
 
 void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -169,9 +165,6 @@ void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
         DebugCameraHelper->Destroy();
         DebugCameraHelper = nullptr;
     }
-
-    FShowSystemEditor& ShowSystemEditorModule = FModuleManager::LoadModuleChecked<FShowSystemEditor>("ShowSystemEditor");
-    ShowSystemEditorModule.GetCameraLocationFunc = nullptr;
 
     UE_LOG(LogTemp, Log, TEXT("GameMode EndPlay called. Reason: %d"), static_cast<int32>(EndPlayReason));
 }
@@ -274,6 +267,7 @@ void AShowActionMakerGameMode::SelectKey(TSharedPtr<FShowSequencerEditorHelper> 
         DebugCameraHelper = GetWorld()->SpawnActor<ADebugCameraHelper>();
         DebugCameraHelper->Initialize(Caster, Cast<UShowCamSequence>(SelectedShowBasePtr));
         DebugCameraHelper->OnUpdate.BindUObject(this, &AShowActionMakerGameMode::ShowSequenceAssetMarkPackageDirty);
+        DebugCameraHelper->GetCameraLocationDelegate.BindUObject(this, &AShowActionMakerGameMode::GetCameraLocation);
     }
 }
 
@@ -507,16 +501,6 @@ void AShowActionMakerGameMode::OnMouseLClick()
     if (DebugCameraHelper)
     {
     }
-}
-
-void AShowActionMakerGameMode::SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
-{
-}
-
-void AShowActionMakerGameMode::SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint)
-{
-    FVector Location = GetCameraLocation();
-    UE_LOG(LogTemp, Log, TEXT("SetCamkey Location: %s"), *Location.ToString());
 }
 
 FVector AShowActionMakerGameMode::GetCameraLocation()

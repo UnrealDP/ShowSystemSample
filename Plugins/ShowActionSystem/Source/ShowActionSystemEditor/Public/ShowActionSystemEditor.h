@@ -16,6 +16,7 @@ struct FSkillData;
 struct FSkillShowData;
 struct FShowCamSequenceKey;
 struct FCameraPathPoint;
+class SShowKeyDetailsWidget;
 
 class FShowActionSystemEditor : public IModuleInterface
 {
@@ -58,8 +59,7 @@ private:
 	TSharedPtr<SSkillDataDetailsWidget> SkillDataDetailsWidget = nullptr;
 
 	FTabId ShowKeyDetailsTabId;
-	TSharedPtr<ShowSequencerNotifyHook> ShowKeyNotifyHookInstance = nullptr;
-	TSharedPtr<IStructureDetailsView> ShowKeyStructureDetailsView = nullptr;
+	TSharedPtr<SShowKeyDetailsWidget> ShowKeyDetailsWidget = nullptr;	
 
 	FTabId ShowActionControllPanelsTabId;
 	TSharedPtr<SShowActionControllPanels> ShowActionControllPanels = nullptr;

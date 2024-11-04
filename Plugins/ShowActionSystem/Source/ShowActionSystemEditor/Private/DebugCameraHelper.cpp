@@ -50,6 +50,7 @@ void ADebugCameraHelper::Initialize(AActor* InShowOwnerActor, TObjectPtr<UShowCa
 FDebugCamera* ADebugCameraHelper::CreateMesh(const FCameraPathPoint& CameraPathPoint)
 {
     FDebugCamera* DebugCamera = new FDebugCamera();
+    DebugCamera->CameraPathPointPtr = const_cast<FCameraPathPoint*>(&CameraPathPoint);
 
     // 디버그 카메라 기즈모 생성
     DebugCamera->DebugCameraGizmo = NewObject<UGizmoTranslationComponent>(this, UGizmoTranslationComponent::StaticClass());
@@ -107,9 +108,27 @@ void ADebugCameraHelper::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
-    for (const FDebugCamera* DebugCamera : DebugCameras)
+    for (FDebugCamera* DebugCamera : DebugCameras)
     {
+        if (DebugCamera->CameraPathPointPtr && DebugCamera->CameraPathPointPtr->bNeedUpdateLocation)
+        {
+            if (GetCameraLocationDelegate.IsBound())
+            {
+                FVector Location = GetCameraLocationDelegate.Execute();
+                AActor* ShowOwner = ShowCamSequence->GetShowOwner();
+                FVector OwnerLocation = ShowOwner->GetActorLocation();
+
+                DebugCamera->CameraPathPointPtr->Position = Location - OwnerLocation;
+                UpdateDebugCamera(DebugCamera, OwnerLocation + DebugCamera->CameraPathPointPtr->Position, OwnerLocation + DebugCamera->CameraPathPointPtr->LookAtTarget);
+                DebugCamera->CameraPathPointPtr->bNeedUpdateLocation = false;
+
+                if (OnUpdate.IsBound())
+                {
+                    OnUpdate.Execute();
+                }
+            }
+        }
+
         // 카메라와 LookAt 사이에 디버그 선 그리기
         DrawDebugLine(
             GetWorld(), 

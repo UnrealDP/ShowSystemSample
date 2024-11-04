@@ -43,6 +43,7 @@ protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
     
     void OnMouseLClick();
+    FVector GetCameraLocation();
 
 public:
 
@@ -57,11 +58,7 @@ public:
 
     void DisposeAction();
     UShowSequencer* ChangeShow(EActionState ActionState, FSoftObjectPath* NewShowPath);
-    void DoAction();
-
-    void SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint);
-    void SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint);
-    FVector GetCameraLocation();
+    void DoAction();    
    
 private:
 

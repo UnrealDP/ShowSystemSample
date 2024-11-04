@@ -16,6 +16,7 @@
 #include "ShowSequencerEditorToolkit.h"
 #include "ShowMaker/SShowSequencerEditor.h"
 #include "Runtime/ShowSystem.h"
+#include "ShowMaker/SShowKeyDetailsWidget.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowMakerWidget::Construct(const FArguments& InArgs)
@@ -165,19 +166,9 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructPreviewScenePanel()
 
 TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
 {
-    FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-
-    FDetailsViewArgs ShowKeyDetailsViewArgs;
-    NotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(EditorHelper));
-    ShowKeyDetailsViewArgs.NotifyHook = NotifyHookInstance.Get();
-
-    FStructureDetailsViewArgs ShowKeyDetailsArgs;
-    StructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
-        ShowKeyDetailsViewArgs,
-        ShowKeyDetailsArgs,
-        nullptr,
-        FText::FromString("Show Key Details")
-    );
+    ShowKeyDetailsWidget = SNew(SShowKeyDetailsWidget)
+        .InEditorHelper(nullptr)
+        .InShowBasePtr(nullptr);
 
     return SNew(SVerticalBox)
         + SVerticalBox::Slot()
@@ -202,21 +193,11 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructShowKeyDetails()
     + SVerticalBox::Slot()
         .AutoHeight()
         [
-            StructureDetailsView->GetWidget().ToSharedRef()
+            ShowKeyDetailsWidget.ToSharedRef()
         ];
 }
 
 void SShowMakerWidget::UpdateShowKeyDetails()
 {
-    if (EditorHelper->SelectedShowBasePtr)
-    {
-        UScriptStruct* ScriptStruct = EditorHelper->GetShowKeyStaticStruct(EditorHelper->SelectedShowBasePtr);
-        FShowKey* ShowKeyPtr = EditorHelper->GetMutableShowKey(EditorHelper->SelectedShowBasePtr);
-        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
-        StructureDetailsView->SetStructureData(StructData);
-    }
-    else
-    {
-        StructureDetailsView->SetStructureData(nullptr);
-    }
+    ShowKeyDetailsWidget->SetShowKey(EditorHelper, EditorHelper->SelectedShowBasePtr);
 }

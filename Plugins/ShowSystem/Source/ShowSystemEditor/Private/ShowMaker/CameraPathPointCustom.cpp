@@ -1,29 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "ShowMaker/CameraPathPointCustom.h"
-//#include "DetailLayoutBuilder.h"
-//#include "DetailCategoryBuilder.h"
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 
-FCameraPathPointCustom::~FCameraPathPointCustom()
+TSharedRef<IPropertyTypeCustomization> FCameraPathPointCustom::MakeInstance()
 {
-    if (OnSelect.IsBound())
-    {
-        OnSelect.Unbind();
-    }
-    
-    if (OnSetCam.IsBound())
-    {
-        OnSetCam.Unbind();
-    }
-}
-
-TSharedRef<IPropertyTypeCustomization> FCameraPathPointCustom::MakeInstance(FOnButtonClicked InOnSelect, FOnButtonClicked InOnSetCam)
-{
-    return MakeShareable(new FCameraPathPointCustom(InOnSelect, InOnSetCam));
+    return MakeShareable(new FCameraPathPointCustom());
 }
 
 void FCameraPathPointCustom::CustomizeHeader(TSharedRef<IPropertyHandle> StructPropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
@@ -97,11 +81,6 @@ void FCameraPathPointCustom::CustomizeChildren(TSharedRef<IPropertyHandle> Struc
                                 {
                                     cpp.bIsSelected = &cpp == CameraPathPoint;
                                 }
-
-                                if (OnSelect.IsBound())
-                                {
-                                    OnSelect.Execute(ShowCamSequenceKey, CameraPathPoint);
-                                }
                                 return FReply::Handled();
                             })
                         [
@@ -123,9 +102,13 @@ void FCameraPathPointCustom::CustomizeChildren(TSharedRef<IPropertyHandle> Struc
                         .Text(FText::FromString("Set Cam"))
                         .OnClicked_Lambda([this]()
                             {
-                                if (OnSetCam.IsBound())
+                                for (FCameraPathPoint& cpp : ShowCamSequenceKey->PathPoints)
                                 {
-                                    OnSetCam.Execute(ShowCamSequenceKey, CameraPathPoint);
+                                    if (&cpp == CameraPathPoint)
+                                    {
+                                        cpp.bNeedUpdateLocation = true;
+                                        break;
+                                    }
                                 }
                                 return FReply::Handled();
                             })

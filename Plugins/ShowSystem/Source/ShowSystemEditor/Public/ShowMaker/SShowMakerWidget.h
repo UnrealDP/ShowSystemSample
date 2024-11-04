@@ -15,6 +15,7 @@ class IStructureDetailsView;
 class FShowSequencerEditorHelper;
 class ShowSequencerNotifyHook;
 class FShowSequencerEditorToolkit;
+class SShowKeyDetailsWidget;
 
 /**
  * 
@@ -41,9 +42,9 @@ private:
 	TSharedRef<SWidget> ConstructPreviewScenePanel();
 	TSharedRef<SWidget> ConstructShowKeyDetails();
 
-	/** Preview Viewport widget */
+	/** Preview Viewport widget */	
 	TSharedPtr<SActorPreviewViewport> PreviewViewport = nullptr;
-	TSharedPtr<IStructureDetailsView> StructureDetailsView = nullptr;
+	TSharedPtr<SShowKeyDetailsWidget> ShowKeyDetailsWidget = nullptr;
 
 	TSharedPtr<ShowSequencerNotifyHook> NotifyHookInstance = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;

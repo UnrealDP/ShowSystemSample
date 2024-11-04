@@ -12,6 +12,8 @@
 #include "ShowMaker/ShowSequencerNotifyHook.h"
 #include "ShowMaker/CameraPathPointCustom.h"
 #include "RunTime/ShowKeys/ShowCamSequence.h"
+#include "ShowMaker/SShowKeyDetailsWidget.h"
+
 
 DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
 
@@ -120,24 +122,9 @@ void FShowActionSystemEditor::RegisterSkillDataTab()
 
 void FShowActionSystemEditor::RegisterShowKeyDetailsTab()
 {
-    FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-
-    FDetailsViewArgs ShowKeyDetailsViewArgs;
-    ShowKeyDetailsViewArgs.bAllowSearch = true;
-    ShowKeyDetailsViewArgs.bShowOptions = true;
-    ShowKeyDetailsViewArgs.bHideSelectionTip = true;
-    ShowKeyNotifyHookInstance = MakeShareable(new ShowSequencerNotifyHook(nullptr));
-    ShowKeyDetailsViewArgs.NotifyHook = ShowKeyNotifyHookInstance.Get();
-
-    FStructureDetailsViewArgs ShowKeyDetailsArgs;
-    ShowKeyDetailsArgs.bShowObjects = true;
-
-    ShowKeyStructureDetailsView = PropertyEditorModule.CreateStructureDetailView(
-        ShowKeyDetailsViewArgs,
-        ShowKeyDetailsArgs,
-        nullptr,
-        FText::FromString("Show Key Details")
-    );
+    ShowKeyDetailsWidget = SNew(SShowKeyDetailsWidget)
+        .InEditorHelper(nullptr)
+        .InShowBasePtr(nullptr);
 
     FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
         ShowKeyDetailsTabId.TabType,
@@ -149,7 +136,7 @@ void FShowActionSystemEditor::RegisterShowKeyDetailsTab()
                 TSharedRef<SDockTab> NewTab = SNew(SDockTab)
                     .TabRole(ETabRole::NomadTab)
                     [
-                        ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
+                        ShowKeyDetailsWidget.ToSharedRef()
                     ];
 
                 return NewTab;
@@ -181,7 +168,6 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                     if (SelectedShowBasePtr != ShowBasePtr)
                                     {
                                         SelectedShowBasePtr = ShowBasePtr;
-                                        ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper);
                                         UpdateShowKeyDetails(EditorHelper, SelectedShowBasePtr);
                                     }
                                     
@@ -198,7 +184,6 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                         if (SelectedShowBasePtr == EditorHelper->SelectedShowBasePtr)
                                         {
                                             SelectedShowBasePtr = CheckSelectedShowBasePtr;
-                                            ShowKeyNotifyHookInstance->UpdateEditorHelper(EditorHelper);
                                             UpdateShowKeyDetails(EditorHelper, SelectedShowBasePtr);
                                         }
 
@@ -234,17 +219,7 @@ void FShowActionSystemEditor::UpdateShowKeyDetails(TSharedPtr<FShowSequencerEdit
         ShowActionMakerGameMode->SelectKey(InSelectedShowSequencerEditorHelper, InSelectedShowBasePtr);
     }
 
-    if (InSelectedShowBasePtr)
-    {
-        UScriptStruct* ScriptStruct = ShowSystem::GetShowKeyStaticStruct(InSelectedShowBasePtr->GetShowKey()->KeyType);
-        FShowKey* ShowKeyPtr = const_cast<FShowKey*>(InSelectedShowBasePtr->GetShowKey());
-        TSharedRef<FStructOnScope> StructData = MakeShareable(new FStructOnScope(ScriptStruct, (uint8*)ShowKeyPtr));
-        ShowKeyStructureDetailsView->SetStructureData(StructData);
-    }
-    else
-    {
-        ShowKeyStructureDetailsView->SetStructureData(nullptr);
-    }
+    ShowKeyDetailsWidget->SetShowKey(InSelectedShowSequencerEditorHelper, InSelectedShowBasePtr);
 }
 
 void FShowActionSystemEditor::RegisterMenus()

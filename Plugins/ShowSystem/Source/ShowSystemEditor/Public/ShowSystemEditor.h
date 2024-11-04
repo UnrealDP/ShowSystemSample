@@ -20,9 +20,6 @@ class FShowSystemEditor : public IModuleInterface
 
 	void SelectCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint);
 	void SetCamkey(FShowCamSequenceKey* ShowCamSequenceKey, FCameraPathPoint* CameraPathPoint);
-	FVector GetCameraLocation();
-
-	std::function<FVector()> GetCameraLocationFunc = nullptr;
 
 	/** 등록된 AssetTypeActions를 저장 */
 	TArray<TSharedPtr<class IAssetTypeActions>> RegisteredAssetTypeActions;
