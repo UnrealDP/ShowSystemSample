@@ -6,6 +6,7 @@
 #include "RunTime/ShowBase.h"
 #include "ShowMaker/ShowSequencerNotifyHook.h"
 #include "RunTime/ShowSystem.h"
+#include "ShowMaker/SShowCamSequenceDetailsWidget.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowKeyDetailsWidget::Construct(const FArguments& InArgs)
@@ -41,27 +42,30 @@ END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 TSharedRef<SWidget> SShowKeyDetailsWidget::GetWidget()
 {
+    ShowCamSequenceDetailsWidget = nullptr;
+
     if (ShowBasePtr)
 	{
         switch (ShowBasePtr->GetKeyType())
         {
             case EShowKeyType::ShowKey_CamSequence:
-		    	return CamSequenceWidget();
+            {
+                ShowCamSequenceDetailsWidget = SNew(SShowCamSequenceDetailsWidget)
+                    .ShowKeyStructureDetailsView(ShowKeyStructureDetailsView);
+                return ShowCamSequenceDetailsWidget.ToSharedRef();
+            }
             default:
-                return DefaultWidget();
+                break;
         }
 	}
-	else
-	{
-        return DefaultWidget();
-	}
-}
 
-TSharedRef<SWidget> SShowKeyDetailsWidget::DefaultWidget()
-{
-    return ShowKeyStructureDetailsView.IsValid()
-        ? ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
-        : SNullWidget::NullWidget;
+    return SNew(SScrollBox)
+        + SScrollBox::Slot()
+        [
+            ShowKeyStructureDetailsView.IsValid()
+                ? ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
+                : SNullWidget::NullWidget
+        ];
 }
 
 void SShowKeyDetailsWidget::UpdateEditorHelper(TSharedPtr<FShowSequencerEditorHelper> InEditorHelper)
@@ -92,15 +96,20 @@ void SShowKeyDetailsWidget::SetShowKey(TSharedPtr<FShowSequencerEditorHelper> In
         ShowKeyStructureDetailsView->SetStructureData(nullptr);
     }
 
-    /*ChildSlot
+    ChildSlot
         [
             GetWidget()
-        ];*/
+        ];
 }
 
-TSharedRef<SWidget> SShowKeyDetailsWidget::CamSequenceWidget()
+void SShowKeyDetailsWidget::UpdateCameraView(UWorld* InWorld, FVector Position, FRotator Rotator, const TArray<AActor*>& ActorsToHide)
 {
-    return ShowKeyStructureDetailsView.IsValid()
-        ? ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
-        : SNullWidget::NullWidget;
+    if (!ShowCamSequenceDetailsWidget || 
+        !ShowBasePtr ||
+        !(ShowBasePtr->GetKeyType() == EShowKeyType::ShowKey_CamSequence))
+    {
+        return;
+    }
+
+    ShowCamSequenceDetailsWidget->UpdateCameraImage(InWorld, Position, Rotator, ActorsToHide);
 }

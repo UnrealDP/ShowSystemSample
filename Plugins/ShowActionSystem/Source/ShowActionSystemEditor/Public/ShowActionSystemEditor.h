@@ -48,6 +48,7 @@ public:
 	void NotifyActionChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillData* SkillData);
 	void NotifyActionShowChange(const FPropertyChangedEvent& PropertyChangedEvent, FEditPropertyChain* PropertyThatChanged, FSkillShowData* SkillShowData);
 	void ChangeShow(EActionState ActionState, FSkillShowData* SkillShowData);
+	void UpdateCameraPathPoint(APawn* InOwner, FCameraPathPoint* CameraPathPoint, const TArray<AActor*>& ActorsToHide);
 
 private:
 	// ----------------------------------------------------------------------------------------------

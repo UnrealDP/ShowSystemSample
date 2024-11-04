@@ -4,6 +4,7 @@
 #include "DebugCameraHelper.h"
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "GizmoTranslationComponent.h"
+#include "Components/LineBatchComponent.h"
 
 // Sets default values
 ADebugCameraHelper::ADebugCameraHelper()
@@ -100,6 +101,11 @@ FDebugCamera* ADebugCameraHelper::CreateMesh(const FCameraPathPoint& CameraPathP
         DebugCamera->LookAtSphereMesh->AttachToComponent(DebugCamera->DebugLookAtGizmo, FAttachmentTransformRules::KeepRelativeTransform);
     }
 
+    // 카메라 방향 라인 컴포넌트 생성
+    DebugCamera->LineBatch = NewObject<ULineBatchComponent>(this, ULineBatchComponent::StaticClass());
+    AddInstanceComponent(DebugCamera->LineBatch);
+    DebugCamera->LineBatch->RegisterComponent();
+
     return DebugCamera;
 }
 
@@ -110,31 +116,66 @@ void ADebugCameraHelper::Tick(float DeltaTime)
 
     for (FDebugCamera* DebugCamera : DebugCameras)
     {
-        if (DebugCamera->CameraPathPointPtr && DebugCamera->CameraPathPointPtr->bNeedUpdateLocation)
+        if (DebugCamera->CameraPathPointPtr)
         {
-            if (GetCameraLocationDelegate.IsBound())
+            if (DebugCamera->CameraPathPointPtr->bNeedUpdateLocation)
             {
-                FVector Location = GetCameraLocationDelegate.Execute();
-                AActor* ShowOwner = ShowCamSequence->GetShowOwner();
-                FVector OwnerLocation = ShowOwner->GetActorLocation();
-
-                DebugCamera->CameraPathPointPtr->Position = Location - OwnerLocation;
-                UpdateDebugCamera(DebugCamera, OwnerLocation + DebugCamera->CameraPathPointPtr->Position, OwnerLocation + DebugCamera->CameraPathPointPtr->LookAtTarget);
-                DebugCamera->CameraPathPointPtr->bNeedUpdateLocation = false;
-
-                if (OnUpdate.IsBound())
+                if (GetCameraLocationDelegate.IsBound())
                 {
-                    OnUpdate.Execute();
+                    FVector Location = GetCameraLocationDelegate.Execute();
+                    AActor* ShowOwner = ShowCamSequence->GetShowOwner();
+                    FVector OwnerLocation = ShowOwner->GetActorLocation();
+
+                    DebugCamera->CameraPathPointPtr->Position = Location - OwnerLocation;
+                    UpdateDebugCamera(DebugCamera, OwnerLocation + DebugCamera->CameraPathPointPtr->Position, OwnerLocation + DebugCamera->CameraPathPointPtr->LookAtTarget);
+                    DebugCamera->CameraPathPointPtr->bNeedUpdateLocation = false;
+
+                    if (OnUpdate.IsBound())
+                    {
+                        OnUpdate.Execute();
+                    }
+
+                    if (OnUpdateCameraPathPoint.IsBound())
+                    {
+                        OnUpdateCameraPathPoint.Execute(DebugCamera->CameraPathPointPtr);
+                    }
                 }
             }
-        }
 
-        // 카메라와 LookAt 사이에 디버그 선 그리기
-        DrawDebugLine(
-            GetWorld(), 
-            DebugCamera->DebugCameraMesh->GetComponentLocation(), 
-            DebugCamera->LookAtSphereMesh->GetComponentLocation(),
-            FColor::Red, false, -1, 0, 1.0f);
+            if (DebugCamera->CameraPathPointPtr->bIsSelected)
+            {
+                if (SelectedCameraPathPoint != DebugCamera->CameraPathPointPtr)
+				{
+					SelectedCameraPathPoint = DebugCamera->CameraPathPointPtr;
+                    if (OnUpdateCameraPathPoint.IsBound())
+                    {
+                        OnUpdateCameraPathPoint.Execute(DebugCamera->CameraPathPointPtr);
+                    }
+				}
+            }
+        }
+    }
+
+    // 기즈모로 움직이는 경우 너무 자주 호출되면 사용성이 떨어질 듯 하여 1초에 한번만 카메라 랜더 타겟 갱신
+    if (UpdatedCameraTime > 0.0f)
+    {
+        UpdatedCameraTime -= DeltaTime;
+    }
+    if (UpdatedCameraPaths.Num() > 0 && UpdatedCameraTime <= 0.0f)
+    {
+        for (FCameraPathPoint* CameraPathPoint : UpdatedCameraPaths)
+        {
+            if (CameraPathPoint == SelectedCameraPathPoint)
+			{
+				if (OnUpdateCameraPathPoint.IsBound())
+				{
+					OnUpdateCameraPathPoint.Execute(CameraPathPoint);
+				}
+                break;
+			}
+        }
+        UpdatedCameraPaths.Empty();
+		UpdatedCameraTime = 1.0f;
     }
 }
 
@@ -161,6 +202,22 @@ void ADebugCameraHelper::UpdateDebugCamera(int index, const FVector& CameraPos, 
 
     // LookAt 스피어 위치 업데이트
     DebugCameras[index]->DebugLookAtGizmo->SetWorldLocation(LookAtPos);
+
+    // 카메라와 LookAt 사이에 디버그 선 그리기
+    DebugCameras[index]->LineBatch->Flush(); // 이전 프레임의 라인 제거
+    DebugCameras[index]->LineBatch->DrawLine(
+        DebugCameras[index]->DebugCameraMesh->GetComponentLocation(),
+        DebugCameras[index]->LookAtSphereMesh->GetComponentLocation(),
+        FLinearColor::Red, 0, 1.0f);
+
+    if (SelectedCameraPathPoint != DebugCameras[index]->CameraPathPointPtr)
+	{
+        for (FDebugCamera* DebugCamera : DebugCameras)
+        {
+            DebugCamera->CameraPathPointPtr->bIsSelected = false;
+        }
+        DebugCameras[index]->CameraPathPointPtr->bIsSelected = true;
+	}
 }
 
 void ADebugCameraHelper::UpdatePath(UGizmoTranslationComponent* GizmoComponent)
@@ -178,10 +235,21 @@ void ADebugCameraHelper::UpdatePath(UGizmoTranslationComponent* GizmoComponent)
         FCameraPathPoint& CameraPathPoint = (*PathPointsPtr)[i];
         FDebugCamera* DebugCamera = DebugCameras[i];
 
-        CameraPathPoint.Position = DebugCamera->DebugCameraMesh->GetComponentLocation() - OwnerLocation;
-        CameraPathPoint.LookAtTarget = DebugCamera->LookAtSphereMesh->GetComponentLocation() - OwnerLocation;
+        FVector NewPosition = DebugCamera->DebugCameraMesh->GetComponentLocation() - OwnerLocation;
+        FVector NewLookAtTarget = DebugCamera->LookAtSphereMesh->GetComponentLocation() - OwnerLocation;
 
-        UpdateDebugCamera(DebugCamera, OwnerLocation + CameraPathPoint.Position, OwnerLocation + CameraPathPoint.LookAtTarget);
+        if (!CameraPathPoint.Position.Equals(NewPosition) || !CameraPathPoint.LookAtTarget.Equals(NewLookAtTarget))
+        {
+            CameraPathPoint.Position = NewPosition;
+            CameraPathPoint.LookAtTarget = NewLookAtTarget;
+
+            UpdateDebugCamera(DebugCamera, OwnerLocation + CameraPathPoint.Position, OwnerLocation + CameraPathPoint.LookAtTarget);
+
+            if (!UpdatedCameraPaths.Contains(DebugCamera->CameraPathPointPtr))
+            {
+                UpdatedCameraPaths.Add(DebugCamera->CameraPathPointPtr);
+            }
+        }
     }
 
     if (OnUpdate.IsBound())

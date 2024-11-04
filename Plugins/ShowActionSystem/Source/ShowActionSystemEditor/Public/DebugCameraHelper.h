@@ -9,9 +9,11 @@
 class UShowCamSequence;
 struct FCameraPathPoint;
 class UGizmoTranslationComponent;
+class ULineBatchComponent;
 
 DECLARE_DELEGATE(FOnUpdate);
 DECLARE_DELEGATE_RetVal(FVector, FGetCameraLocationDelegate);
+DECLARE_DELEGATE_OneParam(FOnUpdateCameraPathPoint, FCameraPathPoint*);
 
 USTRUCT(BlueprintType)
 struct FDebugCamera
@@ -29,6 +31,9 @@ struct FDebugCamera
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UGizmoTranslationComponent> DebugLookAtGizmo = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<ULineBatchComponent> LineBatch = nullptr;
 
 	FCameraPathPoint* CameraPathPointPtr;
 };
@@ -63,8 +68,12 @@ private:
 	AActor* ShowOwnerActor = nullptr;
 	TArray<FDebugCamera*> DebugCameras;
 	TWeakObjectPtr<UShowCamSequence> ShowCamSequence = nullptr;
+	FCameraPathPoint* SelectedCameraPathPoint = nullptr;
+	TArray<FCameraPathPoint*> UpdatedCameraPaths;
+	float UpdatedCameraTime = 1.0f;
 
 public:	
-	FOnUpdate OnUpdate;
-	FGetCameraLocationDelegate GetCameraLocationDelegate;
+	FOnUpdate OnUpdate = nullptr;
+	FGetCameraLocationDelegate GetCameraLocationDelegate = nullptr;
+	FOnUpdateCameraPathPoint OnUpdateCameraPathPoint = nullptr;
 };

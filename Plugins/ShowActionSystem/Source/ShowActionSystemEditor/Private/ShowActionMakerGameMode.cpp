@@ -126,6 +126,11 @@ void AShowActionMakerGameMode::BeginPlay()
     }
 }
 
+void AShowActionMakerGameMode::Initialize(FOnUpdateCameraView InOnUpdateCameraView)
+{
+    OnUpdateCameraView = InOnUpdateCameraView;
+}
+
 void AShowActionMakerGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
@@ -268,6 +273,7 @@ void AShowActionMakerGameMode::SelectKey(TSharedPtr<FShowSequencerEditorHelper> 
         DebugCameraHelper->Initialize(Caster, Cast<UShowCamSequence>(SelectedShowBasePtr));
         DebugCameraHelper->OnUpdate.BindUObject(this, &AShowActionMakerGameMode::ShowSequenceAssetMarkPackageDirty);
         DebugCameraHelper->GetCameraLocationDelegate.BindUObject(this, &AShowActionMakerGameMode::GetCameraLocation);
+        DebugCameraHelper->OnUpdateCameraPathPoint.BindUObject(this, &AShowActionMakerGameMode::UpdateCameraPathPoint);
     }
 }
 
@@ -528,4 +534,12 @@ FVector AShowActionMakerGameMode::GetCameraLocation()
     }
 
     return FVector::ZeroVector;
+}
+
+void AShowActionMakerGameMode::UpdateCameraPathPoint(FCameraPathPoint* CameraPathPoint)
+{
+	if (OnUpdateCameraView.IsBound())
+	{
+		OnUpdateCameraView.Execute(Caster, CameraPathPoint, { DebugCameraHelper });
+	}
 }

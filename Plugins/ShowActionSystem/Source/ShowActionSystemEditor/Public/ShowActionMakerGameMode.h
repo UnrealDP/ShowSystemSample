@@ -18,6 +18,8 @@ class FShowSequencerEditorHelper;
 struct FShowCamSequenceKey;
 struct FCameraPathPoint;
 
+DECLARE_DELEGATE_ThreeParams(FOnUpdateCameraView, APawn*, FCameraPathPoint*, const TArray<AActor*>&);
+
 /**
  * 
  */
@@ -28,6 +30,7 @@ class SHOWACTIONSYSTEMEDITOR_API AShowActionMakerGameMode : public AGameMode
 	
 public:
     AShowActionMakerGameMode();
+    void Initialize(FOnUpdateCameraView InOnUpdateCameraView);
 
 private:
     void GetPos(FVector& CasterPos, FVector& TargetPos, FRotator& CasterRotator, FRotator& TargetRotator);
@@ -44,6 +47,7 @@ protected:
     
     void OnMouseLClick();
     FVector GetCameraLocation();
+    void UpdateCameraPathPoint(FCameraPathPoint* CameraPathPoint);
 
 public:
 
@@ -62,7 +66,7 @@ public:
    
 private:
 
-    APawn*  Caster = nullptr;
+    APawn* Caster = nullptr;
 
     TArray<APawn*> Targets;
 
@@ -77,6 +81,7 @@ private:
 
 public:
     UActionServerExecutor* CrrActionPtr = nullptr;
+    FOnUpdateCameraView OnUpdateCameraView = nullptr;
 };
 
 

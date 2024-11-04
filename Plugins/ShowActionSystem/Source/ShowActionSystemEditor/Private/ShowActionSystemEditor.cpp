@@ -10,7 +10,6 @@
 #include "SShowActionControllPanels.h"
 #include "ShowMaker/ShowSequencerEditorHelper.h"
 #include "ShowMaker/ShowSequencerNotifyHook.h"
-#include "ShowMaker/CameraPathPointCustom.h"
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "ShowMaker/SShowKeyDetailsWidget.h"
 
@@ -57,6 +56,8 @@ void FShowActionSystemEditor::ShutdownModule()
 void FShowActionSystemEditor::InitializeModule(AShowActionMakerGameMode* InShowActionMakerGameMode)
 {
     ShowActionMakerGameMode = InShowActionMakerGameMode;
+    ShowActionMakerGameMode->Initialize(FOnUpdateCameraView::CreateRaw(this, &FShowActionSystemEditor::UpdateCameraPathPoint));
+
     OpenSkillDataDetails();
     OpenShowKeyDetails();
     OpenShowActionControllPanels();
@@ -549,6 +550,18 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
             ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
         }
     }
+}
+
+void FShowActionSystemEditor::UpdateCameraPathPoint(APawn* InOwner, FCameraPathPoint* CameraPathPoint, const TArray<AActor*>& ActorsToHide)
+{
+    UWorld* World = InOwner->GetWorld();
+    FVector CasterPos = InOwner->GetActorLocation();
+
+    FVector CameraPos = CameraPathPoint->Position + CasterPos;
+    FVector CameraLookAt = CameraPathPoint->LookAtTarget + CasterPos;
+    FRotator CameraRotator = (CameraLookAt - CameraPos).Rotation();
+
+    ShowKeyDetailsWidget->UpdateCameraView(World, CameraPos, CameraRotator, ActorsToHide);
 }
 
 #undef LOCTEXT_NAMESPACE

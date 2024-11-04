@@ -9,6 +9,7 @@
 class UShowBase;
 class ShowSequencerNotifyHook;
 class FShowSequencerEditorHelper;
+class SShowCamSequenceDetailsWidget;
 
 /**
  * 
@@ -26,11 +27,10 @@ public:
 
 	void UpdateEditorHelper(TSharedPtr<FShowSequencerEditorHelper> InEditorHelper);
 	void SetShowKey(TSharedPtr<FShowSequencerEditorHelper> InEditorHelper, UShowBase* InShowBasePtr);
+	void UpdateCameraView(UWorld* InWorld, FVector position, FRotator Rotator, const TArray<AActor*>& ActorsToHide);
 
 private:
 	TSharedRef<SWidget> GetWidget();
-	TSharedRef<SWidget> DefaultWidget();
-	TSharedRef<SWidget> CamSequenceWidget();
 
 private:
 	TSharedPtr<ShowSequencerNotifyHook> ShowKeyNotifyHookInstance = nullptr;
@@ -38,4 +38,6 @@ private:
 
 	UShowBase* ShowBasePtr = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
+
+	TSharedPtr<SShowCamSequenceDetailsWidget> ShowCamSequenceDetailsWidget = nullptr;	
 };
