@@ -203,6 +203,10 @@ void UShowCascade::DefaultEngineAttach(AActor* ShowOwner)
         CascadeKeyPtr->bWeldSimulatedBodies
     );
 
+    ParticleComponent->SetRelativeLocation(CascadeKeyPtr->LocalLocation);
+    ParticleComponent->SetRelativeRotation(CascadeKeyPtr->LocalRotation);
+    ParticleComponent->SetRelativeScale3D(CascadeKeyPtr->LocalScale);
+
     ParticleComponent->SetUseAutoManageAttachment(true);
     ParticleComponent->SetAutoAttachmentParameters(
         SkeletalMeshComp,
@@ -211,10 +215,6 @@ void UShowCascade::DefaultEngineAttach(AActor* ShowOwner)
         static_cast<EAttachmentRule>(CascadeKeyPtr->RotationRule),
         static_cast<EAttachmentRule>(CascadeKeyPtr->ScaleRule)
     );
-
-    ParticleComponent->SetRelativeLocation(CascadeKeyPtr->LocalLocation);
-    ParticleComponent->SetRelativeRotation(CascadeKeyPtr->LocalRotation);
-    ParticleComponent->SetRelativeScale3D(CascadeKeyPtr->LocalScale);
 }
 
 // Case 2: 모든 트랜스폼 규칙이 KeepRelativeThenFollowRoot일 때
@@ -228,6 +228,11 @@ void UShowCascade::AllFollowRoot(AActor* ShowOwner)
     FTransform RootTransform = ShowOwner->GetActorTransform();
     FTransform RelativeToRoot = AttachBoneTransform.GetRelativeTransform(RootTransform);
 
+    // AttachBone 상대 트랜스폼과 Local 값을 조합하여 파티클의 트랜스폼 설정
+    ParticleComponent->SetRelativeLocation(RelativeToRoot.GetLocation() + CascadeKeyPtr->LocalLocation);
+    ParticleComponent->SetRelativeRotation(RelativeToRoot.GetRotation().Rotator() + CascadeKeyPtr->LocalRotation);
+    ParticleComponent->SetRelativeScale3D(RelativeToRoot.GetScale3D() * CascadeKeyPtr->LocalScale);
+
     ParticleComponent->SetUseAutoManageAttachment(true);
     ParticleComponent->SetAutoAttachmentParameters(
         ShowOwner->GetRootComponent(),
@@ -236,11 +241,6 @@ void UShowCascade::AllFollowRoot(AActor* ShowOwner)
         EAttachmentRule::KeepRelative,
         EAttachmentRule::KeepRelative
     );
-
-    // AttachBone 상대 트랜스폼과 Local 값을 조합하여 파티클의 트랜스폼 설정
-    ParticleComponent->SetRelativeLocation(RelativeToRoot.GetLocation() + CascadeKeyPtr->LocalLocation);
-    ParticleComponent->SetRelativeRotation(RelativeToRoot.GetRotation().Rotator() + CascadeKeyPtr->LocalRotation);
-    ParticleComponent->SetRelativeScale3D(RelativeToRoot.GetScale3D() * CascadeKeyPtr->LocalScale);
 }
 
 // Case 3: 일부 트랜스폼 규칙이 KeepRelativeThenFollowRoot인 경우
@@ -256,10 +256,6 @@ void UShowCascade::PartialFollowRoot(AActor* ShowOwner)
     FTransform AttachBoneTransform = SkeletalMeshComp->GetSocketTransform(CascadeKeyPtr->AttachBone, RTS_World);
     FTransform RootTransform = ShowOwner->GetActorTransform();
 
-    ParticleComponent->SetRelativeLocation(CascadeKeyPtr->LocalLocation);
-    ParticleComponent->SetRelativeRotation(CascadeKeyPtr->LocalRotation);
-    ParticleComponent->SetRelativeScale3D(CascadeKeyPtr->LocalScale);
-
     EAttachmentRule LocationAttachmentRule = static_cast<EAttachmentRule>(CascadeKeyPtr->LocationRule);
     EAttachmentRule RotationAttachmentRule = static_cast<EAttachmentRule>(CascadeKeyPtr->RotationRule);
     EAttachmentRule ScaleAttachmentRule = static_cast<EAttachmentRule>(CascadeKeyPtr->ScaleRule);
@@ -272,6 +268,10 @@ void UShowCascade::PartialFollowRoot(AActor* ShowOwner)
         LocationAttachmentRule = EAttachmentRule::KeepWorld;
         ParticleComponent->SetWorldLocation(ParticleAttachmentState->InitialParentLocation);
     }
+    else
+    {
+        ParticleComponent->SetRelativeLocation(CascadeKeyPtr->LocalLocation);
+    }
 
     if (CascadeKeyPtr->RotationRule == EAttachmentRuleEx::KeepWorldThenFollowRoot)
     {
@@ -281,6 +281,10 @@ void UShowCascade::PartialFollowRoot(AActor* ShowOwner)
         RotationAttachmentRule = EAttachmentRule::KeepWorld;
         ParticleComponent->SetWorldRotation(ParticleAttachmentState->InitialParentRotation);
     }
+    else
+    {
+        ParticleComponent->SetRelativeRotation(CascadeKeyPtr->LocalRotation);
+    }
 
     if (CascadeKeyPtr->ScaleRule == EAttachmentRuleEx::KeepWorldThenFollowRoot)
     {
@@ -289,6 +293,10 @@ void UShowCascade::PartialFollowRoot(AActor* ShowOwner)
         ParticleAttachmentState->InitialRootScale = RootTransform.GetScale3D();
         ScaleAttachmentRule = EAttachmentRule::KeepWorld;
         ParticleComponent->SetWorldScale3D(ParticleAttachmentState->InitialParentScale);
+    }
+    else
+    {
+        ParticleComponent->SetRelativeScale3D(CascadeKeyPtr->LocalScale);
     }
 
     FAttachmentTransformRules AttachmentRules(
