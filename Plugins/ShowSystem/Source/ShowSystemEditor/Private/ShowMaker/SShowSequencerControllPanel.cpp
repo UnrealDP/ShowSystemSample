@@ -38,6 +38,8 @@ void SShowSequencerControllPanel::Construct(const FArguments& InArgs)
 						SNew(SImage)
 							.ColorAndOpacity(FSlateColor::UseSubduedForeground())
 							.Image_Lambda([this]() -> const FSlateBrush* {
+
+							UE_LOG(LogTemp, Warning, TEXT("bIsPlaying : %d"), bIsPlaying.Get());
 							return (bIsPlaying.Get() == true)
 								? FAppStyle::Get().GetBrush("Animation.Pause") // 상태에 따른 아이콘 전환
 								: FAppStyle::Get().GetBrush("Animation.Forward");

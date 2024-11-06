@@ -165,6 +165,13 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                                 {
                                     if (ShowActionMakerGameMode.IsValid() && ShowActionMakerGameMode->CrrActionPtr)
                                     {
+                                        if (ShowActionMakerGameMode->CrrActionPtr->GetState() == EActionState::Wait ||
+                                            ShowActionMakerGameMode->CrrActionPtr->GetState() == EActionState::Cooldown ||
+                                            ShowActionMakerGameMode->CrrActionPtr->GetState() == EActionState::Complete)
+                                        {
+                                            return false;
+                                        }
+
                                         return !ShowActionMakerGameMode->CrrActionPtr->IsPause();
                                     }
                                     return false;

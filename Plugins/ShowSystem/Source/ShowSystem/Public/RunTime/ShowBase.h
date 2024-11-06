@@ -128,7 +128,7 @@ public:
 			return;
 		}
         ShowKeyState = EShowKeyState::ShowKey_Pause;
-		Pause();
+        ApplyTimeScale(0.0f);
 	}
     void ExecuteUnPause()
     {
@@ -137,7 +137,7 @@ public:
             return;
         }
         ShowKeyState = EShowKeyState::ShowKey_Playing;
-        UnPause();
+        ApplyTimeScale(CachedTimeScale);
     }
 
     void SetKeyTimeScale(float InKeyTimeScale)
@@ -198,8 +198,6 @@ protected:
     virtual void Play() PURE_VIRTUAL(UShowBase::Play, );
     virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
     virtual void Reset() PURE_VIRTUAL(UShowBase::Reset, );
-    virtual void Pause() PURE_VIRTUAL(UShowBase::Pause, );
-    virtual void UnPause() PURE_VIRTUAL(UShowBase::UnPause, );
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
     virtual void ApplyTimeScale(float FinalTimeScale) PURE_VIRTUAL(UShowBase::ApplyTimeScale, );
 

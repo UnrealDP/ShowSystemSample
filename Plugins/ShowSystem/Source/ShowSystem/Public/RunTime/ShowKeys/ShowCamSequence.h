@@ -106,8 +106,6 @@ protected:
     virtual void Dispose() override;
     virtual void Play() override;
     virtual void Reset();
-    virtual void Pause() override {};
-    virtual void UnPause() override {};
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override;
     virtual void ApplyTimeScale(float FinalTimeScale) override {};
 
