@@ -175,7 +175,7 @@ void UShowCascade::Play()
 	}
 
     ParticleComponent->ActivateSystem(true);
-    ParticleComponent->CustomTimeDilation = ShowKey->PlayRate;
+    ParticleComponent->CustomTimeDilation = ShowKey->PlayRate * CachedTimeScale;
 
     // OnSystemFinished 델리게이트에 종료 이벤트 연결
     if (!ParticleComponent->OnSystemFinished.IsAlreadyBound(this, &UShowCascade::OnParticleSystemFinished))
@@ -341,7 +341,7 @@ void UShowCascade::OnParticleSystemFinished(UParticleSystemComponent* FinishedCo
     }
 }
 
-void UShowCascade::Tick(float DeltaTime, float BasePassedTime)
+void UShowCascade::Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime)
 {
     if (!ParticleComponent || ShowKeyState != EShowKeyState::ShowKey_Playing || !ParticleAttachmentState)
     {
@@ -384,3 +384,10 @@ void UShowCascade::Tick(float DeltaTime, float BasePassedTime)
     }
 }
 
+void UShowCascade::ApplyTimeScale(float FinalTimeScale)
+{
+	if (ParticleComponent)
+	{
+		ParticleComponent->CustomTimeDilation = ShowKey->PlayRate * FinalTimeScale;
+	}
+}

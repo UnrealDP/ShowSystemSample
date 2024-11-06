@@ -20,11 +20,6 @@ void SShowActionControllPanels::Construct(const FArguments& InArgs)
     OnSelectedKey = InArgs._OnSelectedKey;
     OnRemoveKey = InArgs._OnRemoveKey;
 
-    ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
-        {
-            return EShowSequencerState::ShowSequencer_Wait;
-        }));
-
     ChildSlot
         [
             SNew(SVerticalBox)
@@ -88,8 +83,9 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
         .AutoHeight()
         [
             SNew(SShowSequencerControllPanel)
-                .ShowSequencerState(ShowSequencerState)
+                .bIsPlaying(InArgs._bIsPlaying)
                 .OnPlay(InArgs._OnPlay)
+                .OnTimeScaleValueChanged(InArgs._OnTimeScaleValueChanged)
         ];
 }
 

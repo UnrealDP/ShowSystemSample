@@ -84,7 +84,8 @@ public:
 
     void BaseTick(float DeltaTime)
     {
-        PassedTime += (DeltaTime * CachedTimeScale);
+        float ScaleDeltaTime = DeltaTime * CachedTimeScale * ShowKey->PlayRate;
+        PassedTime += ScaleDeltaTime;
 
         // TODO: (DIPI) 키의 종류에 따라서 시간이 아닌 이벤트 같은거로 처리할 수 있음 (예시: UShowAnimStatic)
         /*if (CachedTimeScale > 0)
@@ -102,7 +103,7 @@ public:
             }
         }*/
         
-        Tick(DeltaTime, PassedTime);
+        Tick(ScaleDeltaTime, DeltaTime, PassedTime);
     }
 
     void ExecutePlay()
@@ -199,7 +200,7 @@ protected:
     virtual void Reset() PURE_VIRTUAL(UShowBase::Reset, );
     virtual void Pause() PURE_VIRTUAL(UShowBase::Pause, );
     virtual void UnPause() PURE_VIRTUAL(UShowBase::UnPause, );
-    virtual void Tick(float DeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
+    virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
     virtual void ApplyTimeScale(float FinalTimeScale) PURE_VIRTUAL(UShowBase::ApplyTimeScale, );
 
 protected:

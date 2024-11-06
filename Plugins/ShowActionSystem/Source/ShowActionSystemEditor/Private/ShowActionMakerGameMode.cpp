@@ -14,7 +14,6 @@
 #include "RunTime/ShowSequencerComponent.h"
 #include "SSkillDataDetailsWidget.h"
 #include "RunTime/ShowSequencer.h"
-#include "ActionServerExecutor.h"
 #include "Kismet/GameplayStatics.h"
 #include "DebugCameraHelper.h"
 #include "RunTime/ShowBase.h"
@@ -477,6 +476,7 @@ UShowSequencer* AShowActionMakerGameMode::ChangeShow(EActionState ActionState, F
     if (NewShowPath && NewShowPath->IsValid())
     {
         NewShowSequencerPtr = CrrActionPtr->NewShowSequencer(ActionState);
+        NewShowSequencerPtr->SetDontDestroy();
     }
     return NewShowSequencerPtr;
 }
@@ -485,20 +485,42 @@ void AShowActionMakerGameMode::DoAction()
 {
 	if (Caster && CrrActionPtr)
 	{
-		UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
-        ActionComponent->MainActionPtr = nullptr;
-
-        if (UActionBase* Action = ActionComponent->GetActiveAction(CrrActionPtr->GetActionName()))
+        if (CrrActionPtr && CrrActionPtr->IsPause())
+		{
+			CrrActionPtr->UnPause();
+		} 
+        else if (CrrActionPtr && 
+            CrrActionPtr->GetState() != EActionState::Wait && 
+            CrrActionPtr->GetState() != EActionState::Cooldown && 
+            CrrActionPtr->GetState() != EActionState::Complete)
         {
-            Action->Reset();
+            CrrActionPtr->Pause();
         }
         else
         {
-            ActionComponent->ActiveActions.Add(CrrActionPtr->GetActionName(), CrrActionPtr);
+            UActionComponent* ActionComponent = Caster->FindComponentByClass<UActionComponent>();
+            ActionComponent->MainActionPtr = nullptr;
+
+            if (UActionBase* Action = ActionComponent->GetActiveAction(CrrActionPtr->GetActionName()))
+            {
+                Action->Reset();
+            }
+            else
+            {
+                ActionComponent->ActiveActions.Add(CrrActionPtr->GetActionName(), CrrActionPtr);
+            }
+
+            CrrActionPtr->DoAction();
         }
-            	
-        CrrActionPtr->DoAction();
 	}
+}
+
+void AShowActionMakerGameMode::ChangeTimeScale(float scale)
+{
+    if (Caster && CrrActionPtr)
+    {
+        CrrActionPtr->ChangeTimeScale(scale);
+    }
 }
 
 void AShowActionMakerGameMode::OnMouseLClick()

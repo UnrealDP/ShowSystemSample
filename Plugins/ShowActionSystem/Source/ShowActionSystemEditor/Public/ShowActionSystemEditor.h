@@ -68,4 +68,6 @@ private:
 	
 	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperSortMap;
 	UShowBase* SelectedShowBasePtr = nullptr;
+
+	float CrrTimeScale = 1.0f;
 };

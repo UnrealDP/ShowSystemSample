@@ -56,6 +56,7 @@ public:
 	void ShowSequencerStop();
 	void ShowSequencerClearShowObjects();
 	float GetWidgetLengthAlignedToInterval(float Interval);
+	void ChangeTimeScale(float scale);
 
 	UShowBase* CheckGetSelectedShowBase();
 	bool ValidateRuntimeShowKeys();

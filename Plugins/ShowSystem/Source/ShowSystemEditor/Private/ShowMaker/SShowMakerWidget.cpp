@@ -25,11 +25,6 @@ void SShowMakerWidget::Construct(const FArguments& InArgs)
     OnAddKey = InArgs._OnAddKey;
     OnRemoveKey = InArgs._OnRemoveKey;
 
-    ShowSequencerState = TAttribute<EShowSequencerState>::Create(TAttribute<EShowSequencerState>::FGetter::CreateLambda([this]()
-        {
-            return EditorHelper->EditShowSequencerPtr->GetShowSequencerState();
-        }));
-
     // 기본 UI 레이아웃 구성
     ChildSlot
         [
@@ -98,7 +93,10 @@ TSharedRef<SWidget> SShowMakerWidget::ConstructMainBody()
                             .EditorHelper(EditorHelper)
                             .Height(20.0f)
                             .MinWidth(20.0f)
-                            .ShowSequencerState(ShowSequencerState)
+                            .bIsPlaying_Lambda([this]() 
+                                {
+                                    return EditorHelper->EditShowSequencerPtr->GetShowSequencerState() == EShowSequencerState::ShowSequencer_Playing;
+                                })
                             .OnAddKey_Lambda([this](UShowBase* ShowBasePtr)
                                 {
                                     EditorHelper->ShowSequenceAssetMarkPackageDirty();

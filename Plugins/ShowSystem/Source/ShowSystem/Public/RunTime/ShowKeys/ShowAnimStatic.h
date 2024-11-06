@@ -53,12 +53,11 @@ protected:
     virtual void Reset();
     virtual void Pause() override {};
     virtual void UnPause() override {};
+    virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override {};
+    virtual void ApplyTimeScale(float FinalTimeScale) override;
 
     UFUNCTION()
     void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-
-private:
-    virtual void Tick(float DeltaTime, float BasePassedTime) override;
 
 private:
     const FShowAnimStaticKey* AnimStaticKeyPtr = nullptr;

@@ -48,7 +48,6 @@ private:
 
 	TSharedPtr<ShowSequencerNotifyHook> NotifyHookInstance = nullptr;
 	TSharedPtr<FShowSequencerEditorHelper> EditorHelper = nullptr;
-	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 
 	FOnShowBaseEvent OnAddKey = nullptr;
 	FOnShowRemoveEvent OnRemoveKey = nullptr;

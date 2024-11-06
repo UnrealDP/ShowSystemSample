@@ -154,6 +154,14 @@ void FShowSequencerEditorHelper::Play()
 	}
 }
 
+void FShowSequencerEditorHelper::ChangeTimeScale(float scale)
+{
+	if (EditShowSequencerPtr)
+	{
+		EditShowSequencerPtr->ChangeTimeScale(scale);
+	}
+}
+
 void FShowSequencerEditorHelper::ShowSequencerReset()
 {
 	EditShowSequencerPtr->ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;

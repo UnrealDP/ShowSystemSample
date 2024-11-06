@@ -12,6 +12,7 @@
 #include "ShowMaker/ShowSequencerNotifyHook.h"
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "ShowMaker/SShowKeyDetailsWidget.h"
+#include "ActionServerExecutor.h"
 
 
 DEFINE_LOG_CATEGORY(ShowActionSystemEditor);
@@ -57,6 +58,7 @@ void FShowActionSystemEditor::InitializeModule(AShowActionMakerGameMode* InShowA
 {
     ShowActionMakerGameMode = InShowActionMakerGameMode;
     ShowActionMakerGameMode->Initialize(FOnUpdateCameraView::CreateRaw(this, &FShowActionSystemEditor::UpdateCameraPathPoint));
+    ShowActionMakerGameMode->ChangeTimeScale(CrrTimeScale);
 
     OpenSkillDataDetails();
     OpenShowKeyDetails();
@@ -159,6 +161,14 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                     .TabRole(ETabRole::NomadTab)
                     [
                         SAssignNew(ShowActionControllPanels, SShowActionControllPanels)
+                            .bIsPlaying_Lambda([this]()
+                                {
+                                    if (ShowActionMakerGameMode.IsValid() && ShowActionMakerGameMode->CrrActionPtr)
+                                    {
+                                        return !ShowActionMakerGameMode->CrrActionPtr->IsPause();
+                                    }
+                                    return false;
+                                })
                             .Height(20.0f)
                             .OnAddKey_Lambda([this](TSharedPtr<FShowSequencerEditorHelper> EditorHelper, UShowBase* ShowBasePtr)
 								{
@@ -201,6 +211,14 @@ void FShowActionSystemEditor::RegisterShowActionControllPanelsTab()
                             .IsShowKeySelected_Lambda([this](UShowBase* ShowBasePtr)
                                 {
 									return SelectedShowBasePtr == ShowBasePtr;
+								})
+                            .OnTimeScaleValueChanged_Lambda([this](float InValue)
+								{
+                                    CrrTimeScale = InValue;
+									if (ShowActionMakerGameMode.IsValid())
+									{
+										ShowActionMakerGameMode->ChangeTimeScale(CrrTimeScale);
+									}
 								})
                     ];
 
@@ -330,16 +348,19 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
             {
                 ShowSequencerEditorHelperSortMap["Cast"] = MakeShared<FShowSequencerEditorHelper>();
                 ShowSequencerEditorHelperSortMap["Cast"]->EditShowSequencerPtr = OutCastShowSequencer;
+                OutCastShowSequencer->ChangeTimeScale(CrrTimeScale);
             }
             if (OutExecShowSequencer)
             {
                 ShowSequencerEditorHelperSortMap["Exec"] = MakeShared<FShowSequencerEditorHelper>();
                 ShowSequencerEditorHelperSortMap["Exec"]->EditShowSequencerPtr = OutExecShowSequencer;
+                OutExecShowSequencer->ChangeTimeScale(CrrTimeScale);
             }
             if (OutFinishShowSequencer)
             {
                 ShowSequencerEditorHelperSortMap["Finish"] = MakeShared<FShowSequencerEditorHelper>();
                 ShowSequencerEditorHelperSortMap["Finish"]->EditShowSequencerPtr = OutFinishShowSequencer;
+                OutFinishShowSequencer->ChangeTimeScale(CrrTimeScale);
             }
 
             if (ShowActionControllPanels)

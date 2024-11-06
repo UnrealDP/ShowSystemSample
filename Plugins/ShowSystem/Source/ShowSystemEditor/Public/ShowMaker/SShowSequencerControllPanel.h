@@ -7,6 +7,7 @@
 #include "Widgets/SCompoundWidget.h"
 
 DECLARE_DELEGATE(FOnPlay);
+DECLARE_DELEGATE_OneParam(FOnTimeScaleValueChanged, float);
 
 /**
  * 
@@ -15,8 +16,9 @@ class SHOWSYSTEMEDITOR_API SShowSequencerControllPanel : public SCompoundWidget
 {
 public:
 	SLATE_BEGIN_ARGS(SShowSequencerControllPanel) {}
-		SLATE_ARGUMENT(TAttribute<EShowSequencerState>, ShowSequencerState)
+		SLATE_ATTRIBUTE(bool, bIsPlaying)
 		SLATE_EVENT(FOnPlay, OnPlay)
+		SLATE_EVENT(FOnTimeScaleValueChanged, OnTimeScaleValueChanged)		
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -26,6 +28,6 @@ public:
 	FReply HandleReverseButton();
 	FReply HandleStopButton();
 
-	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;	
+	TAttribute<bool> bIsPlaying = false;
 	FOnPlay OnPlay;
 };

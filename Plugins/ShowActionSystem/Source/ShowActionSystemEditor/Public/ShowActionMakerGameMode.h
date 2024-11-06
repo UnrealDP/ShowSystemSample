@@ -63,7 +63,8 @@ public:
     void DisposeAction();
     UShowSequencer* ChangeShow(EActionState ActionState, FSoftObjectPath* NewShowPath);
     void DoAction();    
-   
+    void ChangeTimeScale(float scale);
+
 private:
 
     APawn* Caster = nullptr;

@@ -108,11 +108,12 @@ protected:
     virtual void Reset();
     virtual void Pause() override {};
     virtual void UnPause() override {};
+    virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override;
+    virtual void ApplyTimeScale(float FinalTimeScale) override {};
 
 private:
     FVector CalculateRelativePositionForPlayback(const FVector& OriginVactor, const FVector& ActorWorldPosition, const FRotator& ActorWorldRotation, ECameraSequenceOption Option) const;
-
-    virtual void Tick(float DeltaTime, float BasePassedTime) override;
+    
     void ApplyCameraSettings(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV, float DeltaTime);
     void ApplyRunTimeCamera(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV);
 #if WITH_EDITOR

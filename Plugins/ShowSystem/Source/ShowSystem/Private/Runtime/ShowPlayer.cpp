@@ -87,6 +87,36 @@ void UShowPlayer::PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
     ShowSequencerComponent->PlayShow(ShowSequencerPtr);
 }
 
+void UShowPlayer::PauseSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
+{
+    checkf(Owner, TEXT("UShowPlayer::PauseSoloShow: The Owner provided is invalid or null."));
+
+    UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::PauseSoloShow: The ShowSequencerComponent provided is invalid or null."));
+
+    ShowSequencerComponent->PauseShow(ShowSequencerPtr);
+}
+
+void UShowPlayer::UnPauseSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
+{
+    checkf(Owner, TEXT("UShowPlayer::UnPauseSoloShow: The Owner provided is invalid or null."));
+
+    UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::UnPauseSoloShow: The ShowSequencerComponent provided is invalid or null."));
+
+    ShowSequencerComponent->UnPauseShow(ShowSequencerPtr);
+}
+
+void UShowPlayer::ChangeTimeScale(AActor* Owner, UShowSequencer* ShowSequencerPtr, float scale)
+{
+    checkf(Owner, TEXT("UShowPlayer::UnPauseSoloShow: The Owner provided is invalid or null."));
+
+    UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
+    checkf(ShowSequencerComponent, TEXT("UShowPlayer::UnPauseSoloShow: The ShowSequencerComponent provided is invalid or null."));
+
+    ShowSequencerComponent->ChangeShowTimeScalse(ShowSequencerPtr, scale);
+}
+
 void UShowPlayer::ResetSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr)
 {
     checkf(Owner, TEXT("UShowPlayer::ResetSoloShow: The Owner provided is invalid or null."));

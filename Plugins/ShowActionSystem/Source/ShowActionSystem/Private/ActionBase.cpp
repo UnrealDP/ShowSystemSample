@@ -55,32 +55,40 @@ void UActionBase::Tick(float DeltaTime)
 	// Wait는 아무런 로직이 없는 대기 상태
 	if (State != EActionState::Wait)
 	{
-		StepPassedTime += DeltaTime;
-		switch (State)
+		if (!bIsPause)
 		{
-		case EActionState::Cast:
-			if (StepPassedTime > ActionBaseData->CastDuration)
+			StepPassedTime += DeltaTime;
+			switch (State)
 			{
-				StepPassedTime = ActionBaseData->CastDuration;
+			case EActionState::Cast:
+				if (StepPassedTime > ActionBaseData->CastDuration)
+				{
+					StepPassedTime = ActionBaseData->CastDuration;
+				}
+				break;
+			case EActionState::Exec:
+				if (StepPassedTime > ActionBaseData->ExecDuration)
+				{
+					StepPassedTime = ActionBaseData->ExecDuration;
+				}
+				break;
+			case EActionState::Finish:
+				if (RemainCoolDown > 0.0f)
+				{
+					Cooldown();
+				}
+				else
+				{
+					Complete();
+				}
+				break;
+			default:
+				break;
 			}
-			break;
-		case EActionState::Exec:
-			if (StepPassedTime > ActionBaseData->ExecDuration)
-			{
-				StepPassedTime = ActionBaseData->ExecDuration;
-			}
-			break;
-		case EActionState::Finish:
-			if (RemainCoolDown > 0.0f)
-			{
-				Cooldown();
-			}
-			else
-			{
-				Complete();
-			}
-			break;
-		case EActionState::Cooldown:
+		}
+
+		if (State == EActionState::Cooldown)
+		{
 			if (RemainCoolDown > 0.0f)
 			{
 				RemainCoolDown -= DeltaTime;
@@ -94,9 +102,6 @@ void UActionBase::Tick(float DeltaTime)
 					Complete();
 				}
 			}
-			break;
-		default:
-			break;
 		}
 	}
 }
@@ -345,4 +350,78 @@ void UActionBase::Reset()
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 	State = EActionState::Wait;
+}
+
+void UActionBase::Pause()
+{
+	UE_LOG(LogTemp, Warning, TEXT("UActionBase::Pause"));
+	bIsPause = true;
+
+	if (CastShowPtr)
+	{
+		ShowPlayer->PauseSoloShow(Owner, CastShowPtr);
+	}
+	if (ExecShowPtr)
+	{
+		ShowPlayer->PauseSoloShow(Owner, ExecShowPtr);
+	}
+	if (FinishShowPtr)
+	{
+		ShowPlayer->PauseSoloShow(Owner, FinishShowPtr);
+	}
+}
+
+void UActionBase::UnPause()
+{
+	UE_LOG(LogTemp, Warning, TEXT("UActionBase::UnPause"));
+	bIsPause = false;
+
+	if (CastShowPtr)
+	{
+		ShowPlayer->UnPauseSoloShow(Owner, CastShowPtr);
+	}
+	if (ExecShowPtr)
+	{
+		ShowPlayer->UnPauseSoloShow(Owner, ExecShowPtr);
+	}
+	if (FinishShowPtr)
+	{
+		ShowPlayer->UnPauseSoloShow(Owner, FinishShowPtr);
+	}
+}
+
+void UActionBase::ChangeTimeScale(float scale)
+{
+	if (CastShowPtr)
+	{
+		ShowPlayer->ChangeTimeScale(Owner, CastShowPtr, scale);
+	}
+	if (ExecShowPtr)
+	{
+		ShowPlayer->ChangeTimeScale(Owner, ExecShowPtr, scale);
+	}
+	if (FinishShowPtr)
+	{
+		ShowPlayer->ChangeTimeScale(Owner, FinishShowPtr, scale);
+	}
+}
+
+bool UActionBase::IsShowAllEnd() const
+{
+	if (CastShowPtr && !CastShowPtr->IsEnd())
+	{
+		return false;
+	}
+
+	if (ExecShowPtr && !ExecShowPtr->IsEnd())
+	{
+		return false;
+	}
+
+	if (FinishShowPtr && !FinishShowPtr->IsEnd())
+	{
+		return false;
+	}
+
+	return true;
 }

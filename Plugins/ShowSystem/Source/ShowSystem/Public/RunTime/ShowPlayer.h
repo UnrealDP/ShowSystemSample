@@ -20,6 +20,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
 	void PlaySoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 
+	UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
+	void PauseSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
+
+	UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
+	void UnPauseSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
+
+	UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
+	void ChangeTimeScale(AActor* Owner, UShowSequencer* ShowSequencerPtr, float scale);
+
     UFUNCTION(BlueprintCallable, Category = "ShowPlayer")
 	void ResetSoloShow(AActor* Owner, UShowSequencer* ShowSequencerPtr);
 

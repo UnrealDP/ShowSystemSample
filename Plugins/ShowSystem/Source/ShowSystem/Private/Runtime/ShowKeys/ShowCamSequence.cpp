@@ -110,7 +110,7 @@ FVector UShowCamSequence::CalculateRelativePositionForPlayback(const FVector& Or
     }
 }
 
-void UShowCamSequence::Tick(float DeltaTime, float BasePassedTime)
+void UShowCamSequence::Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime)
 {
     if (State == ECameraSequenceState::Wait)
     {
@@ -124,18 +124,18 @@ void UShowCamSequence::Tick(float DeltaTime, float BasePassedTime)
         return;
     }
 
-    CurrentBlendTime += DeltaTime;
+    CurrentBlendTime += ScaleDeltaTime;
 
     switch (State)
     {
     case ECameraSequenceState::Playing:
     {
-        PathPointPlay(OwnerActor, DeltaTime);
+        PathPointPlay(OwnerActor, ScaleDeltaTime);
         break;
     }
     case ECameraSequenceState::ReturningToStart:
     {
-        PathPointReturningToStart(OwnerActor, DeltaTime);
+        PathPointReturningToStart(OwnerActor, ScaleDeltaTime);
         break;
     }
     case ECameraSequenceState::End:

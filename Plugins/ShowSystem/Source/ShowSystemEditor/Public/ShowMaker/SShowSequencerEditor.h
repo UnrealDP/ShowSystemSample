@@ -26,7 +26,7 @@ public:
 		SLATE_ARGUMENT(TSharedPtr<FShowSequencerEditorHelper>, EditorHelper)
 		SLATE_ATTRIBUTE(float, Height)
 		SLATE_ATTRIBUTE(float, MinWidth)
-		SLATE_ARGUMENT(TAttribute<EShowSequencerState>, ShowSequencerState)
+		SLATE_ATTRIBUTE(bool, bIsPlaying)
 		SLATE_EVENT(FOnShowBaseEvent, OnAddKey)
 		SLATE_EVENT(FOnShowRemoveEvent, OnRemoveKey)
 		SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)

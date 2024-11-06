@@ -88,10 +88,14 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructLeftWidget(const FArguments& 
         .AutoHeight()
         [
             SNew(SShowSequencerControllPanel)
-                .ShowSequencerState(InArgs._ShowSequencerState)
+                .bIsPlaying(InArgs._bIsPlaying)
                 .OnPlay_Lambda([this]()
 					{
 						EditorHelper->Play();
+					})
+                .OnTimeScaleValueChanged_Lambda([this](float InValue)
+					{
+						EditorHelper->ChangeTimeScale(InValue);
 					})
         ];
 }

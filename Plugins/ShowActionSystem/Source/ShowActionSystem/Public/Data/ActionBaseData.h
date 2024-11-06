@@ -39,5 +39,5 @@ public:
 	EActionState CooldownStart = EActionState::Exec;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action Base Data")
-	float Cooldown = 0.0f;	
+	float Cooldown = 0.0f;
 };

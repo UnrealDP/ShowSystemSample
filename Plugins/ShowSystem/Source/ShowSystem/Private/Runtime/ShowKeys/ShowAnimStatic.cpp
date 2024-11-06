@@ -100,7 +100,7 @@ void UShowAnimStatic::Play()
             AnimStaticKeyPtr->LoopCount,
             AnimStaticKeyPtr->BlendOutTriggerTime,
             AnimStaticKeyPtr->InTimeToStartMontageAt,
-            ShowKey->PlayRate);
+            ShowKey->PlayRate * CachedTimeScale);
 
         if (AnimMontage)
         {
@@ -123,7 +123,7 @@ void UShowAnimStatic::Play()
             TEXT("DefaultSlot"), 
             0.25f,
             0.25f,
-            ShowKey->PlayRate,
+            ShowKey->PlayRate * CachedTimeScale,
             AnimStaticKeyPtr->LoopCount,
             AnimStaticKeyPtr->BlendOutTriggerTime,
             AnimStaticKeyPtr->InTimeToStartMontageAt);
@@ -172,7 +172,10 @@ void UShowAnimStatic::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
     }
 }
 
-void UShowAnimStatic::Tick(float DeltaTime, float BasePassedTime)
+void UShowAnimStatic::ApplyTimeScale(float FinalTimeScale) 
 {
-    // 애니메이션은 OnMontageEnded 이벤트로 종료 처리
+    if (AnimInstance && AnimMontage)
+    {
+        AnimInstance->Montage_SetPlayRate(AnimMontage, ShowKey->PlayRate * FinalTimeScale);
+    }
 }

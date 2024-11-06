@@ -66,6 +66,11 @@ public:
 	virtual void Complete();	
 	virtual void Cancel();
 	virtual void Reset();
+	virtual void Pause();
+	virtual void UnPause();
+	virtual void ChangeTimeScale(float scale);
+
+	bool IsShowAllEnd() const;
 
 	AActor* GetOwner() const { return Owner; }
 	EActionState GetState() const { return State; }
@@ -74,6 +79,7 @@ public:
 	const EObjectPoolType GetObjectPoolType() const { return ObjectPoolType; }
 	const EDataTable GetDataType() const { return DataType; }
 	const EDataTable GetShowDataType() const { return ShowDataType; }
+	const bool IsPause() const { return bIsPause; }
 
 	void SetDontDestroy() { bIsDontDestroy = true; }
 	void ReleaseDontDestroy() { bIsDontDestroy = false; }
@@ -111,4 +117,5 @@ protected:
 	EObjectPoolType ObjectPoolType = EObjectPoolType::Max;
 	EDataTable DataType = EDataTable::Max;
 	EDataTable ShowDataType = EDataTable::Max;
+	bool bIsPause = false;
 };

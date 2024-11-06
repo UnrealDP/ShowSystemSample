@@ -19,6 +19,7 @@ DECLARE_DELEGATE_TwoParams(FOnShowBaseEditEvent, TSharedPtr<FShowSequencerEditor
 DECLARE_DELEGATE_OneParam(FOnShowSequencerRemoveEvent, TSharedPtr<FShowSequencerEditorHelper>);
 DECLARE_DELEGATE(FOnPlay);
 DECLARE_DELEGATE_RetVal_OneParam(bool, FIsShowKeySelected, UShowBase*);
+DECLARE_DELEGATE_OneParam(FOnTimeScaleValueChanged, float);
 
 /**
  * 
@@ -28,11 +29,13 @@ class SHOWACTIONSYSTEMEDITOR_API SShowActionControllPanels : public SCompoundWid
 public:
 	SLATE_BEGIN_ARGS(SShowActionControllPanels) {}
 		SLATE_ATTRIBUTE(float, Height)
+		SLATE_ATTRIBUTE(bool, bIsPlaying)
 		SLATE_EVENT(FOnShowBaseEditEvent, OnAddKey)
 		SLATE_EVENT(FOnShowBaseEditEvent, OnSelectedKey)
 		SLATE_EVENT(FOnShowSequencerRemoveEvent, OnRemoveKey)
 		SLATE_EVENT(FOnPlay, OnPlay)
 		SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
+		SLATE_EVENT(FOnTimeScaleValueChanged, OnTimeScaleValueChanged)		
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
@@ -54,7 +57,6 @@ private:
 
 	TSharedPtr<SHorizontalBox> HorizontalBox = nullptr;
 	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;
-	TAttribute<EShowSequencerState> ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 
 	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* ShowSequencerEditorHelperSortMapPtr;
 
