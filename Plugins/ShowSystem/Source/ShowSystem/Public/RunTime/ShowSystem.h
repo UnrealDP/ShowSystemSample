@@ -22,5 +22,7 @@ public:
     static bool ValidateRuntimeShowKey(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt);
     static bool ValidateShowAnimStatic(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt);
     static bool ValidateShowCascade(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt);
+    static bool ValidateShowNiagara(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt);
     static bool ValidateShowCamSequence(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt);
+    static bool ValidateShowCamShake(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt);
 };

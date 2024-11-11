@@ -19,7 +19,9 @@ enum class EObjectPoolType : uint8
     ObjectPool_ShowSequencer        UMETA(DisplayName = "ObjectPool ShowSequencer"),
     ObjectPool_ShowKeyAnim          UMETA(DisplayName = "ObjectPool ShowKeyAnim"),
     ObjectPool_ShowKeyCascade       UMETA(DisplayName = "ObjectPool ShowKeyCascade"),
+    ObjectPool_ShowKeyNiagara       UMETA(DisplayName = "ObjectPool ShowKeyNiagara"),
     ObjectPool_ShowCamSequenceKey   UMETA(DisplayName = "ObjectPool ShowCamSequenceKey"),
+    ObjectPool_ShowCamShake         UMETA(DisplayName = "ObjectPool ShowCamShake"),
     Max   UMETA(DisplayName = "Max Types")
 };
 
