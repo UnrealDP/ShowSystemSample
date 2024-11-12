@@ -50,7 +50,8 @@ public class ShowSystem : ModuleRules
 				"AnimGraphRuntime",
 				// ... add private dependencies that you statically link with here ...	
 				"TemplateSequence",
-                "GameplayCameras"
+                "GameplayCameras",
+                "MovieScene"
             }
 			);
 		

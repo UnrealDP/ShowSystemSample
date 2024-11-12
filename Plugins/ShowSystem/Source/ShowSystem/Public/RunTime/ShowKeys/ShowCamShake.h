@@ -6,6 +6,7 @@
 #include "RunTime/ShowBase.h"
 #include "RunTime/Misc/ShowPerlinNoiseCamShakePattern.h"
 #include "RunTime/Misc/ShowSequenceCamShakePattern.h"
+#include "RunTime/Misc/ShowWaveOscCamShakePattern.h"
 #include "SequenceCameraShake.h"
 #include "ShowCamShake.generated.h"
 
@@ -15,6 +16,7 @@ UENUM()
 enum class ECameraShakePattern
 {
 	PerlinNoise,
+    WaveOscillator,
 	Sequence,
 };
 
@@ -93,6 +95,72 @@ struct FShowPerlinNoiseCameraShake : public FShowCameraShake
 };
 
 USTRUCT(BlueprintType)
+struct FShowWaveOscCamShake : public FShowCameraShake
+{
+    GENERATED_BODY()
+
+    FShowWaveOscCamShake()
+    {
+        CameraShakePattern = UShowWaveOscCamShakePattern::StaticClass();
+    }
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Duration = 1.f;
+
+    /** Blend-in time for this shake. Zero or less means no blend-in. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float BlendInTime = 0.2f;
+
+    /** Blend-out time for this shake. Zero or less means no blend-out. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float BlendOutTime = 0.2f;
+
+    /** Amplitude multiplier for all location oscillation */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Location)
+    float LocationAmplitudeMultiplier = 1.f;
+
+    /** Frequency multiplier for all location oscillation */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Location)
+    float LocationFrequencyMultiplier = 1.f;
+
+    /** Oscillation in the X axis. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Location)
+    FWaveOscillator X;
+
+    /** Oscillation in the Y axis. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Location)
+    FWaveOscillator Y;
+
+    /** Oscillation in the Z axis. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Location)
+    FWaveOscillator Z;
+
+    /** Amplitude multiplier for all rotation oscillation */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rotation)
+    float RotationAmplitudeMultiplier = 1.f;
+
+    /** Frequency multiplier for all rotation oscillation */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rotation)
+    float RotationFrequencyMultiplier = 1.f;
+
+    /** Pitch oscillation. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rotation)
+    FWaveOscillator Pitch;
+
+    /** Yaw oscillation. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rotation)
+    FWaveOscillator Yaw;
+
+    /** Roll oscillation. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Rotation)
+    FWaveOscillator Roll;
+
+    /** FOV oscillation. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = FOV)
+    FWaveOscillator FOV;
+};
+
+USTRUCT(BlueprintType)
 struct FShowSequenceCameraShake : public FShowCameraShake
 {
     GENERATED_BODY()
@@ -105,10 +173,6 @@ struct FShowSequenceCameraShake : public FShowCameraShake
     /** 재생할 카메라 애니메이션 시퀀스 소스 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TObjectPtr<class UCameraAnimationSequence> Sequence = nullptr;
-
-    /** 애니메이션 재생 속도를 정의하는 스칼라 값 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0.001"))
-    float PlayRate = 1.0f;
 
     /** 애니메이션 재생 강도를 정의하는 스칼라 값 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0.0"))
