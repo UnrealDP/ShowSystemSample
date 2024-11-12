@@ -256,8 +256,6 @@ private:
     UPROPERTY()
     TObjectPtr<UCameraShakeBase> CameraShakeInstance;
 
-    bool bBeforeMoving;
-
 #if WITH_EDITOR
 public:
     TMap<ECameraShakePattern, FInstancedStruct> BackupPatternData;

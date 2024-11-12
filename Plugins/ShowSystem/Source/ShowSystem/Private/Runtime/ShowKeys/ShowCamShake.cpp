@@ -130,94 +130,93 @@ void UShowCamShake::Play()
         ShowKeyState = EShowKeyState::ShowKey_End;
     }
 
-    if (CameraShakeInstance)
-    {
-        float TimeScale = ShowKey->PlayRate * CachedTimeScale;
-        const UScriptStruct* ScriptStruct = CamShakeKeyPtr->PatternData.GetScriptStruct();
-        switch (CamShakeKeyPtr->CameraShakePattern)
-        {
-            case ECameraShakePattern::PerlinNoise:
-            {
-                const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
-
-                UShowPerlinNoiseCamShakePattern* ShakePattern = NewObject<UShowPerlinNoiseCamShakePattern>(CameraShakeInstance, PerlinShakeData.CameraShakePattern);
-
-                ShakePattern->Duration = PerlinShakeData.Duration / TimeScale;
-                ShakePattern->BlendInTime = PerlinShakeData.BlendInTime;
-                ShakePattern->BlendOutTime = PerlinShakeData.BlendOutTime;
-                ShakePattern->LocationAmplitudeMultiplier = PerlinShakeData.LocationAmplitudeMultiplier;
-                ShakePattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
-                ShakePattern->X = PerlinShakeData.X;
-                ShakePattern->Y = PerlinShakeData.Y;
-                ShakePattern->Z = PerlinShakeData.Z;
-                ShakePattern->RotationAmplitudeMultiplier = PerlinShakeData.RotationAmplitudeMultiplier;
-                ShakePattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
-                ShakePattern->Pitch = PerlinShakeData.Pitch;
-                ShakePattern->Yaw = PerlinShakeData.Yaw;
-                ShakePattern->Roll = PerlinShakeData.Roll;
-                ShakePattern->FOV = PerlinShakeData.FOV;
-
-                CameraShakeInstance->SetRootShakePattern(ShakePattern);
-                break;
-            }
-            case ECameraShakePattern::WaveOscillator:
-            {
-                const FShowWaveOscCamShake& ShowWaveOscData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
-
-                UShowWaveOscCamShakePattern* ShakePattern = NewObject<UShowWaveOscCamShakePattern>(CameraShakeInstance, ShowWaveOscData.CameraShakePattern);
-
-                ShakePattern->Duration = ShowWaveOscData.Duration / TimeScale;
-                ShakePattern->BlendInTime = ShowWaveOscData.BlendInTime;
-                ShakePattern->BlendOutTime = ShowWaveOscData.BlendOutTime;
-                ShakePattern->LocationAmplitudeMultiplier = ShowWaveOscData.LocationAmplitudeMultiplier;
-                ShakePattern->LocationFrequencyMultiplier = ShowWaveOscData.LocationFrequencyMultiplier * TimeScale;
-                ShakePattern->X = ShowWaveOscData.X;
-                ShakePattern->Y = ShowWaveOscData.Y;
-                ShakePattern->Z = ShowWaveOscData.Z;
-                ShakePattern->RotationAmplitudeMultiplier = ShowWaveOscData.RotationAmplitudeMultiplier;
-                ShakePattern->RotationFrequencyMultiplier = ShowWaveOscData.RotationFrequencyMultiplier * TimeScale;
-                ShakePattern->Pitch = ShowWaveOscData.Pitch;
-                ShakePattern->Yaw = ShowWaveOscData.Yaw;
-                ShakePattern->Roll = ShowWaveOscData.Roll;
-                ShakePattern->FOV = ShowWaveOscData.FOV;
-
-                CameraShakeInstance->SetRootShakePattern(ShakePattern);
-                break;
-            }
-            case ECameraShakePattern::Sequence:
-            {
-                const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
-
-                UShowSequenceCamShakePattern* ShakePattern = NewObject<UShowSequenceCamShakePattern>(CameraShakeInstance, SequenceShakeData.CameraShakePattern);
-
-                ShakePattern->Sequence = SequenceShakeData.Sequence;
-                ShakePattern->PlayRate = TimeScale;
-                ShakePattern->Scale = SequenceShakeData.Scale;
-                ShakePattern->BlendInTime = SequenceShakeData.BlendInTime;
-                ShakePattern->BlendOutTime = SequenceShakeData.BlendOutTime;
-                ShakePattern->RandomSegmentDuration = SequenceShakeData.RandomSegmentDuration;
-                ShakePattern->bRandomSegment = SequenceShakeData.bRandomSegment;
-
-                CameraShakeInstance->SetRootShakePattern(ShakePattern);
-                break;
-            }
-            default:
-                break;
-        }
-
-        // Shake를 수동으로 시작
-        FCameraShakeBaseStartParams StartParams;
-        StartParams.CameraManager = PlayerController->PlayerCameraManager;
-        StartParams.Scale = 1.0f;
-        StartParams.PlaySpace = CamShakeKeyPtr->PlaySpace;
-        StartParams.UserPlaySpaceRot = CamShakeKeyPtr->UserPlaySpaceRot;
-
-        CameraShakeInstance->StartShake(StartParams);
-    }
-    else
+    if (!CameraShakeInstance)
     {
         ShowKeyState = EShowKeyState::ShowKey_End;
+        return;
     }
+
+    float TimeScale = ShowKey->PlayRate * CachedTimeScale;
+    const UScriptStruct* ScriptStruct = CamShakeKeyPtr->PatternData.GetScriptStruct();
+    switch (CamShakeKeyPtr->CameraShakePattern)
+    {
+        case ECameraShakePattern::PerlinNoise:
+        {
+            const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
+
+            UShowPerlinNoiseCamShakePattern* ShakePattern = NewObject<UShowPerlinNoiseCamShakePattern>(CameraShakeInstance, PerlinShakeData.CameraShakePattern);
+
+            ShakePattern->Duration = PerlinShakeData.Duration / TimeScale;
+            ShakePattern->BlendInTime = PerlinShakeData.BlendInTime;
+            ShakePattern->BlendOutTime = PerlinShakeData.BlendOutTime;
+            ShakePattern->LocationAmplitudeMultiplier = PerlinShakeData.LocationAmplitudeMultiplier;
+            ShakePattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
+            ShakePattern->X = PerlinShakeData.X;
+            ShakePattern->Y = PerlinShakeData.Y;
+            ShakePattern->Z = PerlinShakeData.Z;
+            ShakePattern->RotationAmplitudeMultiplier = PerlinShakeData.RotationAmplitudeMultiplier;
+            ShakePattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
+            ShakePattern->Pitch = PerlinShakeData.Pitch;
+            ShakePattern->Yaw = PerlinShakeData.Yaw;
+            ShakePattern->Roll = PerlinShakeData.Roll;
+            ShakePattern->FOV = PerlinShakeData.FOV;
+
+            CameraShakeInstance->SetRootShakePattern(ShakePattern);
+            break;
+        }
+        case ECameraShakePattern::WaveOscillator:
+        {
+            const FShowWaveOscCamShake& ShowWaveOscData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
+
+            UShowWaveOscCamShakePattern* ShakePattern = NewObject<UShowWaveOscCamShakePattern>(CameraShakeInstance, ShowWaveOscData.CameraShakePattern);
+
+            ShakePattern->Duration = ShowWaveOscData.Duration / TimeScale;
+            ShakePattern->BlendInTime = ShowWaveOscData.BlendInTime;
+            ShakePattern->BlendOutTime = ShowWaveOscData.BlendOutTime;
+            ShakePattern->LocationAmplitudeMultiplier = ShowWaveOscData.LocationAmplitudeMultiplier;
+            ShakePattern->LocationFrequencyMultiplier = ShowWaveOscData.LocationFrequencyMultiplier * TimeScale;
+            ShakePattern->X = ShowWaveOscData.X;
+            ShakePattern->Y = ShowWaveOscData.Y;
+            ShakePattern->Z = ShowWaveOscData.Z;
+            ShakePattern->RotationAmplitudeMultiplier = ShowWaveOscData.RotationAmplitudeMultiplier;
+            ShakePattern->RotationFrequencyMultiplier = ShowWaveOscData.RotationFrequencyMultiplier * TimeScale;
+            ShakePattern->Pitch = ShowWaveOscData.Pitch;
+            ShakePattern->Yaw = ShowWaveOscData.Yaw;
+            ShakePattern->Roll = ShowWaveOscData.Roll;
+            ShakePattern->FOV = ShowWaveOscData.FOV;
+
+            CameraShakeInstance->SetRootShakePattern(ShakePattern);
+            break;
+        }
+        case ECameraShakePattern::Sequence:
+        {
+            const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
+
+            UShowSequenceCamShakePattern* ShakePattern = NewObject<UShowSequenceCamShakePattern>(CameraShakeInstance, SequenceShakeData.CameraShakePattern);
+
+            ShakePattern->Sequence = SequenceShakeData.Sequence;
+            ShakePattern->PlayRate = TimeScale;
+            ShakePattern->Scale = SequenceShakeData.Scale;
+            ShakePattern->BlendInTime = SequenceShakeData.BlendInTime;
+            ShakePattern->BlendOutTime = SequenceShakeData.BlendOutTime;
+            ShakePattern->RandomSegmentDuration = SequenceShakeData.RandomSegmentDuration;
+            ShakePattern->bRandomSegment = SequenceShakeData.bRandomSegment;
+
+            CameraShakeInstance->SetRootShakePattern(ShakePattern);
+            break;
+        }
+        default:
+            break;
+    }
+
+    // Shake를 수동으로 시작
+    FCameraShakeBaseStartParams StartParams;
+    StartParams.CameraManager = PlayerController->PlayerCameraManager;
+    StartParams.Scale = 1.0f;
+    StartParams.PlaySpace = CamShakeKeyPtr->PlaySpace;
+    StartParams.UserPlaySpaceRot = CamShakeKeyPtr->UserPlaySpaceRot;
+
+    CameraShakeInstance->StartShake(StartParams);
 }
 
 void UShowCamShake::Reset()
@@ -243,56 +242,60 @@ void UShowCamShake::Tick(float ScaleDeltaTime, float SystemDeltaTime, float Base
 
 void UShowCamShake::ApplyTimeScale(float FinalTimeScale)
 {
-    if (CameraShakeInstance)
+    if (!CameraShakeInstance)
     {
-        float TimeScale = ShowKey->PlayRate * FinalTimeScale;
-        UCameraShakePattern* ShakePattern = CameraShakeInstance->GetRootShakePattern();
-        if (ShakePattern)
+        return;
+    }
+    
+    UCameraShakePattern* ShakePattern = CameraShakeInstance->GetRootShakePattern();
+    if (!ShakePattern)
+    {
+        return;
+    }
+
+    float TimeScale = ShowKey->PlayRate * FinalTimeScale;    
+    switch (CamShakeKeyPtr->CameraShakePattern)
+    {
+        case ECameraShakePattern::PerlinNoise:
         {
-            switch (CamShakeKeyPtr->CameraShakePattern)
+            if (UShowPerlinNoiseCamShakePattern* PerlinPattern = Cast<UShowPerlinNoiseCamShakePattern>(ShakePattern))
             {
-                case ECameraShakePattern::PerlinNoise:
-                {
-                    if (UShowPerlinNoiseCamShakePattern* PerlinPattern = Cast<UShowPerlinNoiseCamShakePattern>(ShakePattern))
-                    {
-                        const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
+                const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
 
-                        PerlinPattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
-                        PerlinPattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
-                        PerlinPattern->UpdateDuration(PerlinShakeData.Duration / TimeScale);
-                    }
-                    break;
-                }
-                case ECameraShakePattern::WaveOscillator:
-                {
-                    if (UShowWaveOscCamShakePattern* PerlinPattern = Cast<UShowWaveOscCamShakePattern>(ShakePattern))
-                    {
-                        const FShowWaveOscCamShake& ShowWaveOscShakeData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
-
-                        PerlinPattern->LocationFrequencyMultiplier = ShowWaveOscShakeData.LocationFrequencyMultiplier * TimeScale;
-                        PerlinPattern->RotationFrequencyMultiplier = ShowWaveOscShakeData.RotationFrequencyMultiplier * TimeScale;
-                        PerlinPattern->UpdateDuration(ShowWaveOscShakeData.Duration / TimeScale);
-                    }
-                    break;
-                }
-                case ECameraShakePattern::Sequence:
-                {
-                    if (UShowSequenceCamShakePattern* SequencePattern = Cast<UShowSequenceCamShakePattern>(ShakePattern))
-                    {
-                        const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
-
-                        SequencePattern->PlayRate = TimeScale;
-                        if (SequencePattern->bRandomSegment)
-                        {
-                            SequencePattern->RandomSegmentDuration = SequenceShakeData.RandomSegmentDuration / TimeScale;
-                        }
-                        SequencePattern->UpdatePlayRate(TimeScale);
-                    }
-                    break;
-                }
-                default:
-                    break;
+                PerlinPattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
+                PerlinPattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
+                PerlinPattern->UpdateDuration(PerlinShakeData.Duration / TimeScale);
             }
+            break;
         }
+        case ECameraShakePattern::WaveOscillator:
+        {
+            if (UShowWaveOscCamShakePattern* PerlinPattern = Cast<UShowWaveOscCamShakePattern>(ShakePattern))
+            {
+                const FShowWaveOscCamShake& ShowWaveOscShakeData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
+
+                PerlinPattern->LocationFrequencyMultiplier = ShowWaveOscShakeData.LocationFrequencyMultiplier * TimeScale;
+                PerlinPattern->RotationFrequencyMultiplier = ShowWaveOscShakeData.RotationFrequencyMultiplier * TimeScale;
+                PerlinPattern->UpdateDuration(ShowWaveOscShakeData.Duration / TimeScale);
+            }
+            break;
+        }
+        case ECameraShakePattern::Sequence:
+        {
+            if (UShowSequenceCamShakePattern* SequencePattern = Cast<UShowSequenceCamShakePattern>(ShakePattern))
+            {
+                const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
+
+                SequencePattern->PlayRate = TimeScale;
+                if (SequencePattern->bRandomSegment)
+                {
+                    SequencePattern->RandomSegmentDuration = SequenceShakeData.RandomSegmentDuration / TimeScale;
+                }
+                SequencePattern->UpdatePlayRate(TimeScale);
+            }
+            break;
+        }
+        default:
+            break;
     }
 }
