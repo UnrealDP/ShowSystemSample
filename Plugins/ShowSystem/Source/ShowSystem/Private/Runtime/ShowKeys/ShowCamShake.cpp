@@ -22,37 +22,47 @@ float UShowCamShake::GetLength()
     {
         case ECameraShakePattern::PerlinNoise:
         {
-            const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
-            return PerlinShakeData.Duration / ShowKey->PlayRate;
+            if (CamShakeKeyPtr->PatternData.IsValid() && CamShakeKeyPtr->PatternData.GetScriptStruct() == FShowPerlinNoiseCameraShake::StaticStruct())
+            {
+                const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
+                return PerlinShakeData.Duration / ShowKey->PlayRate;
+            }
+            break;
         }
         case ECameraShakePattern::WaveOscillator:
         {
-            const FShowWaveOscCamShake& ShowWaveOscShakeData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
-            return ShowWaveOscShakeData.Duration / ShowKey->PlayRate;
+            if (CamShakeKeyPtr->PatternData.IsValid() && CamShakeKeyPtr->PatternData.GetScriptStruct() == FShowWaveOscCamShake::StaticStruct())
+            {
+                const FShowWaveOscCamShake& ShowWaveOscShakeData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
+                return ShowWaveOscShakeData.Duration / ShowKey->PlayRate;
+            }
+            break;
         }
         case ECameraShakePattern::Sequence:
         {
-            const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
-
-            if (!SequenceShakeData.Sequence)
+            if (CamShakeKeyPtr->PatternData.IsValid() && CamShakeKeyPtr->PatternData.GetScriptStruct() == FShowSequenceCameraShake::StaticStruct())
             {
-                return 0.0f;
-            }
+                const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
 
-            if (SequenceShakeData.bRandomSegment)
-            {
-                return SequenceShakeData.RandomSegmentDuration / ShowKey->PlayRate;
-            }
-            else if (UMovieScene* MovieScene = SequenceShakeData.Sequence->GetMovieScene())
-            {
-                FFrameRate FrameRate = MovieScene->GetTickResolution();
-                FFrameNumber StartFrame = MovieScene->GetPlaybackRange().GetLowerBoundValue();
-                FFrameNumber EndFrame = MovieScene->GetPlaybackRange().GetUpperBoundValue();
+                if (!SequenceShakeData.Sequence)
+                {
+                    return 0.0f;
+                }
 
-                return FrameRate.AsSeconds(EndFrame - StartFrame) / ShowKey->PlayRate;
-            }
+                if (SequenceShakeData.bRandomSegment)
+                {
+                    return SequenceShakeData.RandomSegmentDuration / ShowKey->PlayRate;
+                }
+                else if (UMovieScene* MovieScene = SequenceShakeData.Sequence->GetMovieScene())
+                {
+                    FFrameRate FrameRate = MovieScene->GetTickResolution();
+                    FFrameNumber StartFrame = MovieScene->GetPlaybackRange().GetLowerBoundValue();
+                    FFrameNumber EndFrame = MovieScene->GetPlaybackRange().GetUpperBoundValue();
 
-            return 0.0f;
+                    return FrameRate.AsSeconds(EndFrame - StartFrame) / ShowKey->PlayRate;
+                }
+            }
+            break;
         }
         default:
             break;
@@ -67,6 +77,10 @@ void UShowCamShake::Initialize()
     
     CamShakeKeyPtr = static_cast<const FShowCamShakeKey*>(ShowKey);
     checkf(CamShakeKeyPtr, TEXT("UShowCamShake::Initialize CamShakeKeyPtr is invalid [ %d ]"), static_cast<int>(ShowKey->KeyType));
+
+#if WITH_EDITOR
+    InitBackupPatternData();
+#endif
 }
 
 void UShowCamShake::Dispose()

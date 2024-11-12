@@ -71,6 +71,55 @@ void ShowSystem::NotifyShowKeyChange(UShowBase* ShowBasePtr, FName PropertyName)
             ShowBasePtr->ExecuteReset();
         }
     }
+    else if (ShowBasePtr->IsA<UShowCamShake>())
+    {
+        if (PropertyName.IsEqual("CameraShakePattern"))
+        {
+            UShowCamShake* CamShakePtr = Cast<UShowCamShake>(ShowBasePtr);
+            if (CamShakePtr)
+            {
+                CamShakePtr->ReConstructPatternData();
+            }
+        }
+        else if (PropertyName.IsEqual("PatternData"))
+        {
+            UShowCamShake* CamShakePtr = Cast<UShowCamShake>(ShowBasePtr);
+            if (CamShakePtr)
+            {
+                const FShowCamShakeKey* ShowCamShakeKeyPtr = CamShakePtr->GetCamShakeKey();
+                const UScriptStruct* ScriptStruct = ShowCamShakeKeyPtr->PatternData.GetScriptStruct();
+                switch (ShowCamShakeKeyPtr->CameraShakePattern)
+                {
+                    case ECameraShakePattern::PerlinNoise:
+					{
+						if (ScriptStruct != FShowPerlinNoiseCameraShake::StaticStruct())
+						{
+							CamShakePtr->ReConstructPatternData();
+						}
+						break;
+					}
+                    case ECameraShakePattern::WaveOscillator:
+                    {
+                        if (ScriptStruct != FShowWaveOscCamShake::StaticStruct())
+						{
+							CamShakePtr->ReConstructPatternData();
+						}
+						break;
+                    }
+                    case ECameraShakePattern::Sequence:
+                    {
+                        if (ScriptStruct != FShowSequenceCameraShake::StaticStruct())
+                        {
+                            CamShakePtr->ReConstructPatternData();
+                        }
+                        break;
+                    }
+                default:
+                    break;
+                }
+            }
+        }
+    }
 }
 
 bool ShowSystem::ValidateRuntimeShowKey(AActor* Owner, UShowBase* ShowBasePtr, FText& ErrTxt)

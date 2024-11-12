@@ -223,7 +223,7 @@ struct FShowCamShakeKey : public FShowKey
     bool bSingleInstance = true;    
 
     // 카메라 쉐이크 패턴 데이터
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditFixedSize))
     FInstancedStruct PatternData;
 };
 
@@ -247,7 +247,8 @@ protected:
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override;
     virtual void ApplyTimeScale(float FinalTimeScale) override;
 
-private:
+public:
+    const FShowCamShakeKey* GetCamShakeKey() const { return CamShakeKeyPtr; }
 
 private:
     const FShowCamShakeKey* CamShakeKeyPtr = nullptr;
@@ -256,4 +257,100 @@ private:
     TObjectPtr<UCameraShakeBase> CameraShakeInstance;
 
     bool bBeforeMoving;
+
+#if WITH_EDITOR
+public:
+    TMap<ECameraShakePattern, FInstancedStruct> BackupPatternData;
+    void InitBackupPatternData()
+    {
+        checkf(BackupPatternData.Num() <= 0, TEXT("BackupPatternData is not empty"));
+
+        if (CamShakeKeyPtr->PatternData.IsValid())
+        {
+            const UScriptStruct* ScriptStruct = CamShakeKeyPtr->PatternData.GetScriptStruct();
+            if (ScriptStruct == FShowPerlinNoiseCameraShake::StaticStruct())
+            {
+                BackupPatternData.Add(ECameraShakePattern::PerlinNoise, CamShakeKeyPtr->PatternData);
+            }
+            else if (ScriptStruct == FShowWaveOscCamShake::StaticStruct())
+            {
+                BackupPatternData.Add(ECameraShakePattern::WaveOscillator, CamShakeKeyPtr->PatternData);
+            }
+            else if (ScriptStruct == FShowSequenceCameraShake::StaticStruct())
+            {
+                BackupPatternData.Add(ECameraShakePattern::Sequence, CamShakeKeyPtr->PatternData);
+            }
+        }
+    }
+    void ReConstructPatternData()
+    {
+        if (CamShakeKeyPtr->PatternData.IsValid())
+        {
+            const UScriptStruct* ScriptStruct = CamShakeKeyPtr->PatternData.GetScriptStruct();
+            if (ScriptStruct == FShowPerlinNoiseCameraShake::StaticStruct())
+            {
+                if (BackupPatternData.Contains(ECameraShakePattern::PerlinNoise))
+                {
+                    BackupPatternData[ECameraShakePattern::PerlinNoise] = CamShakeKeyPtr->PatternData;
+                }
+                else
+                {
+                    BackupPatternData.Add(ECameraShakePattern::PerlinNoise, CamShakeKeyPtr->PatternData);
+                }
+            }
+            else if (ScriptStruct == FShowWaveOscCamShake::StaticStruct())
+            {
+                if (BackupPatternData.Contains(ECameraShakePattern::WaveOscillator))
+                {
+                    BackupPatternData[ECameraShakePattern::WaveOscillator] = CamShakeKeyPtr->PatternData;
+                }
+                else
+                {
+                    BackupPatternData.Add(ECameraShakePattern::WaveOscillator, CamShakeKeyPtr->PatternData);
+                }
+            }
+            else if (ScriptStruct == FShowSequenceCameraShake::StaticStruct())
+            {
+                if (BackupPatternData.Contains(ECameraShakePattern::Sequence))
+                {
+                    BackupPatternData[ECameraShakePattern::Sequence] = CamShakeKeyPtr->PatternData;
+                }
+                else
+                {
+                    BackupPatternData.Add(ECameraShakePattern::Sequence, CamShakeKeyPtr->PatternData);
+                }
+            }
+        }
+
+        FShowCamShakeKey* MutableCamShakeKeyPtr = const_cast<FShowCamShakeKey*>(CamShakeKeyPtr);
+        FInstancedStruct* PatternDataPtr = BackupPatternData.Find(MutableCamShakeKeyPtr->CameraShakePattern);
+        if (PatternDataPtr)
+        {
+            MutableCamShakeKeyPtr->PatternData.InitializeAs(PatternDataPtr->GetScriptStruct(), PatternDataPtr->GetMemory());
+        }
+        else
+        {
+            switch (CamShakeKeyPtr->CameraShakePattern)
+            {
+                case ECameraShakePattern::PerlinNoise:
+                {
+                    MutableCamShakeKeyPtr->PatternData.InitializeAs(FShowPerlinNoiseCameraShake::StaticStruct());
+                    break;
+                }
+                case ECameraShakePattern::WaveOscillator:
+                {
+                    MutableCamShakeKeyPtr->PatternData.InitializeAs(FShowWaveOscCamShake::StaticStruct());
+                    break;
+                }
+                case ECameraShakePattern::Sequence:
+                {
+                    MutableCamShakeKeyPtr->PatternData.InitializeAs(FShowSequenceCameraShake::StaticStruct());
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+#endif
 };

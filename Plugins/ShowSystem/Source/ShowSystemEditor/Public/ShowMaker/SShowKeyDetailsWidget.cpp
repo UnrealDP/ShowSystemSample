@@ -82,7 +82,7 @@ void SShowKeyDetailsWidget::SetShowKey(TSharedPtr<FShowSequencerEditorHelper> In
     }
 
     ShowBasePtr = InShowBasePtr;
-    EditorHelper = InEditorHelper;
+    UpdateEditorHelper(InEditorHelper);
 
     if (ShowBasePtr)
     {
