@@ -10,6 +10,7 @@ class UShowCamSequence;
 struct FCameraPathPoint;
 class UGizmoTranslationComponent;
 class ULineBatchComponent;
+class UTextRenderComponent;
 
 DECLARE_DELEGATE(FOnUpdate);
 DECLARE_DELEGATE_RetVal(FVector, FGetCameraLocationDelegate);
@@ -35,6 +36,9 @@ struct FDebugCamera
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<ULineBatchComponent> LineBatch = nullptr;
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTextRenderComponent> TextRenderComponent;
+
 	FCameraPathPoint* CameraPathPointPtr;
 };
 
@@ -54,7 +58,7 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-	FDebugCamera* CreateMesh(const FCameraPathPoint& CameraPathPoint);
+	FDebugCamera* CreateMesh(const int Index, const FCameraPathPoint& CameraPathPoint);
 
 public:	
 	// Called every frame

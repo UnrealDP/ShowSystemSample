@@ -12,10 +12,30 @@ TSharedRef<IPropertyTypeCustomization> FCameraPathPointCustom::MakeInstance()
 
 void FCameraPathPointCustom::CustomizeHeader(TSharedRef<IPropertyHandle> StructPropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
+    HeaderRow.NameContent()
+        [
+            StructPropertyHandle->CreatePropertyNameWidget()
+        ];
 }
 
 void FCameraPathPointCustom::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle, IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
+    // 기본 프로퍼티 렌더링
+    uint32 NumChildren;
+    StructPropertyHandle->GetNumChildren(NumChildren);
+
+    // 각 자식 프로퍼티 순회
+    for (uint32 Index = 0; Index < NumChildren; ++Index)
+    {
+        TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(Index); // 자식 프로퍼티 가져오기
+
+        if (ChildProperty.IsValid())
+        {
+            // 기본 UI로 렌더링
+            StructBuilder.AddProperty(ChildProperty.ToSharedRef());
+        }
+    }
+
     TArray<TSharedPtr<FStructOnScope>> Structs;
     StructPropertyHandle->GetOuterStructs(Structs);
     for (TSharedPtr<FStructOnScope> StructOnScope : Structs)
@@ -114,20 +134,4 @@ void FCameraPathPointCustom::CustomizeChildren(TSharedRef<IPropertyHandle> Struc
                             })
                 ]
         ];
-
-    // 기본 프로퍼티 렌더링
-    uint32 NumChildren;
-    StructPropertyHandle->GetNumChildren(NumChildren);
-
-    // 각 자식 프로퍼티 순회
-    for (uint32 Index = 0; Index < NumChildren; ++Index)
-    {
-        TSharedPtr<IPropertyHandle> ChildProperty = StructPropertyHandle->GetChildHandle(Index); // 자식 프로퍼티 가져오기
-
-        if (ChildProperty.IsValid())
-        {
-            // 기본 UI로 렌더링
-            StructBuilder.AddProperty(ChildProperty.ToSharedRef());
-        }
-    }
 }

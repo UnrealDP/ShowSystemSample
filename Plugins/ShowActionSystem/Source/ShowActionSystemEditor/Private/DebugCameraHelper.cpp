@@ -5,6 +5,7 @@
 #include "RunTime/ShowKeys/ShowCamSequence.h"
 #include "GizmoTranslationComponent.h"
 #include "Components/LineBatchComponent.h"
+#include "Components/TextRenderComponent.h"
 
 // Sets default values
 ADebugCameraHelper::ADebugCameraHelper()
@@ -40,15 +41,19 @@ void ADebugCameraHelper::Initialize(AActor* InShowOwnerActor, TObjectPtr<UShowCa
     ShowCamSequence = InShowCamSequence;
 
     FVector ShowOwnerActorLocation = ShowOwnerActor->GetActorLocation();
-    for (const FCameraPathPoint& CameraPathPoint : ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints)
+    for (int i = 0; i < ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints.Num(); ++i)
     {
-        FDebugCamera* DebugCamera = CreateMesh(CameraPathPoint);
+        FDebugCamera* DebugCamera = CreateMesh(i, ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints[i]);
         DebugCameras.Add(DebugCamera);
-        UpdateDebugCamera(DebugCamera, ShowOwnerActorLocation + CameraPathPoint.Position, ShowOwnerActorLocation + CameraPathPoint.LookAtTarget);
+
+        UpdateDebugCamera(
+            DebugCamera, 
+            ShowOwnerActorLocation + ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints[i].Position,
+            ShowOwnerActorLocation + ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints[i].LookAtTarget);
     }
 }
 
-FDebugCamera* ADebugCameraHelper::CreateMesh(const FCameraPathPoint& CameraPathPoint)
+FDebugCamera* ADebugCameraHelper::CreateMesh(const int Index, const FCameraPathPoint& CameraPathPoint)
 {
     FDebugCamera* DebugCamera = new FDebugCamera();
     DebugCamera->CameraPathPointPtr = const_cast<FCameraPathPoint*>(&CameraPathPoint);
@@ -106,6 +111,15 @@ FDebugCamera* ADebugCameraHelper::CreateMesh(const FCameraPathPoint& CameraPathP
     AddInstanceComponent(DebugCamera->LineBatch);
     DebugCamera->LineBatch->RegisterComponent();
 
+    // 카메라 번호 텍스트 컴포넌트 생성
+    DebugCamera->TextRenderComponent = NewObject<UTextRenderComponent>(this, UTextRenderComponent::StaticClass());
+    AddInstanceComponent(DebugCamera->TextRenderComponent);
+    DebugCamera->TextRenderComponent->RegisterComponent();
+    DebugCamera->TextRenderComponent->SetText(FText::AsNumber(Index));
+    DebugCamera->TextRenderComponent->SetHorizontalAlignment(EHTA_Center);
+    DebugCamera->TextRenderComponent->SetWorldSize(25.0f);
+    DebugCamera->TextRenderComponent->SetTextRenderColor(FColor::Purple);
+
     return DebugCamera;
 }
 
@@ -152,6 +166,35 @@ void ADebugCameraHelper::Tick(float DeltaTime)
                         OnUpdateCameraPathPoint.Execute(DebugCamera->CameraPathPointPtr);
                     }
 				}
+            }
+        }
+
+        if (DebugCamera->TextRenderComponent)
+        {
+#if WITH_EDITOR
+            if (GEditor->bIsSimulatingInEditor)
+            {
+                FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+                FVector CameraLocation = EditorViewportClient->GetViewLocation();
+                FVector TextLocation = DebugCamera->TextRenderComponent->GetComponentLocation();
+
+                // 텍스트가 카메라를 바라보도록 회전 계산
+                FRotator LookAtRotation = (CameraLocation - TextLocation).Rotation();
+                DebugCamera->TextRenderComponent->SetWorldRotation(LookAtRotation);
+            }
+            else
+#endif    
+            {
+                APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+                if (PlayerController && PlayerController->PlayerCameraManager)
+                {
+                    FVector CameraLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
+                    FVector TextLocation = DebugCamera->TextRenderComponent->GetComponentLocation();
+
+                    // 텍스트가 카메라를 바라보도록 회전 계산
+                    FRotator LookAtRotation = (CameraLocation - TextLocation).Rotation();
+                    DebugCamera->TextRenderComponent->SetWorldRotation(LookAtRotation);
+                }
             }
         }
     }
@@ -218,6 +261,9 @@ void ADebugCameraHelper::UpdateDebugCamera(int index, const FVector& CameraPos, 
         }
         DebugCameras[index]->CameraPathPointPtr->bIsSelected = true;
 	}
+
+    DebugCameras[index]->TextRenderComponent->SetWorldLocation(CameraPos);
+    DebugCameras[index]->TextRenderComponent->AddRelativeLocation(FVector(0.0f, -15.0f, 0.0f));
 }
 
 void ADebugCameraHelper::UpdatePath(UGizmoTranslationComponent* GizmoComponent)

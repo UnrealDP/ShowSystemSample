@@ -532,6 +532,11 @@ void FShowSequencerEditorHelper::NotifyShowKeyChange(const FPropertyChangedEvent
 			FName MemberPropertyName = PropertyChangedEvent.MemberProperty ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
 			ShowSystem::NotifyShowKeyChange(SelectedShowBasePtr, PropertyName);
+
+			if (OnShowKeyChange.IsBound())
+			{
+				OnShowKeyChange.Execute(SelectedShowBasePtr, PropertyName);
+			}
 		}
 	}
 

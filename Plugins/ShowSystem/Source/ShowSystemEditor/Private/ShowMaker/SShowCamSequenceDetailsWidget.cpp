@@ -7,6 +7,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "IStructureDetailsView.h"
 #include "SAutoAspectRatioWidthWidget.h"
+#include "SVerticalResizableSplitter.h"
 
 #define LOCTEXT_NAMESPACE "SShowCamSequenceDetailsWidget"
 
@@ -120,56 +121,77 @@ const FSlateBrush* SShowCamSequenceDetailsWidget::GetCameraRenderTargetBrush() c
 
 TSharedRef<SWidget> SShowCamSequenceDetailsWidget::CamSequenceWidget()
 {
-    return SNew(SVerticalBox)
+    return SNew(SVerticalResizableSplitter)
+        .Widgets(
+            {
+                DetailScroll(),
+                RenderView()
+            }
+        )
+        .InitialRatios(
+            { 0.9f, 0.1f }
+        );
 
-        // 스크롤 가능한 부분
-        + SVerticalBox::Slot()
-        .FillHeight(1.0f)
+    //return SNew(SVerticalBox)
+
+    //    // 스크롤 가능한 부분
+    //    + SVerticalBox::Slot()
+    //    .FillHeight(1.0f)
+    //    [
+    //        DetailScroll()
+    //    ]
+
+    //    // 스크롤되지 않는 고정 부분
+    //    + SVerticalBox::Slot()
+    //    .AutoHeight()
+    //    [
+    //        RenderView()
+    //    ];
+}
+
+TSharedRef<SWidget> SShowCamSequenceDetailsWidget::DetailScroll()
+{
+    return SNew(SScrollBox)
+        + SScrollBox::Slot()
         [
-            SNew(SScrollBox)
-                + SScrollBox::Slot()
+            SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+                .AutoHeight()
                 [
-                    SNew(SVerticalBox)
-                        + SVerticalBox::Slot()
-                        .AutoHeight()
+                    SNew(SCheckBox)
+                        .OnCheckStateChanged(this, &SShowCamSequenceDetailsWidget::OnShowCameraCheckChanged)
+                        .IsChecked(bShowCamera ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                         [
-                            SNew(SCheckBox)
-                                .OnCheckStateChanged(this, &SShowCamSequenceDetailsWidget::OnShowCameraCheckChanged)
-                                .IsChecked(bShowCamera ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                [
-                                    SNew(STextBlock).Text(FText::FromString("Show Camera"))
-                                ]
-                        ]
-                        + SVerticalBox::Slot()
-                        .AutoHeight()
-                        [
-                            ShowKeyStructureDetailsView.IsValid()
-                                ? ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
-                                : SNullWidget::NullWidget
-                        ]
-                        + SVerticalBox::Slot()
-                        .AutoHeight()
-                        [
-                            SNew(SSpacer).Size(FVector2D(0, 8))
+                            SNew(STextBlock).Text(FText::FromString("Show Camera"))
                         ]
                 ]
-        ]
-
-        // 스크롤되지 않는 고정 부분
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        [
-            SNew(SAutoAspectRatioWidthWidget)
-                .WidthRatio(ImageHeight/ImageWidth)
+                + SVerticalBox::Slot()
+                .AutoHeight()
                 [
-                    SNew(SBorder)
-                        .Padding(5.0f)
-                        .BorderImage(FCoreStyle::Get().GetBrush("Border"))
-                        .BorderBackgroundColor(FLinearColor::Gray)
-                        [
-                            SNew(SImage)
-                                .Image(this, &SShowCamSequenceDetailsWidget::GetCameraRenderTargetBrush)
-                        ]
+                    ShowKeyStructureDetailsView.IsValid()
+                        ? ShowKeyStructureDetailsView->GetWidget().ToSharedRef()
+                        : SNullWidget::NullWidget
+                ]
+                + SVerticalBox::Slot()
+                .AutoHeight()
+                [
+                    SNew(SSpacer).Size(FVector2D(0, 8))
+                ]
+        ];
+}
+
+TSharedRef<SWidget> SShowCamSequenceDetailsWidget::RenderView()
+{
+    return SNew(SAutoAspectRatioWidthWidget)
+        .WidthRatio(ImageHeight / ImageWidth)
+        [
+            SNew(SBorder)
+                .Padding(5.0f)
+                .BorderImage(FCoreStyle::Get().GetBrush("Border"))
+                .BorderBackgroundColor(FLinearColor::Gray)
+                [
+                    SNew(SImage)
+                        .Image(this, &SShowCamSequenceDetailsWidget::GetCameraRenderTargetBrush)
                 ]
         ];
 }

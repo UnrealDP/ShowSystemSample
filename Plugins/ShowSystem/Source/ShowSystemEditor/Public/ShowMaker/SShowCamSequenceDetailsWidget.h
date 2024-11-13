@@ -34,6 +34,8 @@ private:
     const FSlateBrush* GetCameraRenderTargetBrush() const;
 
     TSharedRef<SWidget> CamSequenceWidget();
+    TSharedRef<SWidget> DetailScroll();
+    TSharedRef<SWidget> RenderView();
 
     UPROPERTY()
     TObjectPtr<UTextureRenderTarget2D> CameraRenderTargetTexture = nullptr;

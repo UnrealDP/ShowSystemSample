@@ -258,6 +258,10 @@ void AShowActionMakerGameMode::OnActorDestroyed(AActor* DestroyedActor)
 void AShowActionMakerGameMode::SelectKey(TSharedPtr<FShowSequencerEditorHelper> InSelectedShowSequencerEditorHelper, UShowBase* InSelectedShowBasePtr)
 {
     SelectedShowSequencerEditorHelper = InSelectedShowSequencerEditorHelper;
+    SelectedShowSequencerEditorHelper->OnShowKeyChange = FShowKeyChange::CreateLambda([this](UShowBase* ShowBasePtr, FName PropertyName) 
+        { 
+            NotifyShowKeyChange(ShowBasePtr, PropertyName); 
+        });
     SelectedShowBasePtr = InSelectedShowBasePtr;
 
     if (DebugCameraHelper)
@@ -273,6 +277,35 @@ void AShowActionMakerGameMode::SelectKey(TSharedPtr<FShowSequencerEditorHelper> 
         DebugCameraHelper->OnUpdate.BindUObject(this, &AShowActionMakerGameMode::ShowSequenceAssetMarkPackageDirty);
         DebugCameraHelper->GetCameraLocationDelegate.BindUObject(this, &AShowActionMakerGameMode::GetCameraLocation);
         DebugCameraHelper->OnUpdateCameraPathPoint.BindUObject(this, &AShowActionMakerGameMode::UpdateCameraPathPoint);
+    }
+}
+
+void AShowActionMakerGameMode::NotifyShowKeyChange(UShowBase* ShowBasePtr, FName PropertyName)
+{
+    if (!ShowBasePtr)
+    {
+        return;
+    }
+
+    if (ShowBasePtr->IsA<UShowCamSequence>())
+    {
+        if (PropertyName.IsEqual("PathPoints"))
+        {
+            if (DebugCameraHelper)
+            {
+                DebugCameraHelper->Destroy();
+                DebugCameraHelper = nullptr;
+            }
+
+            if (SelectedShowBasePtr && SelectedShowBasePtr->IsA(UShowCamSequence::StaticClass()))
+            {
+                DebugCameraHelper = GetWorld()->SpawnActor<ADebugCameraHelper>();
+                DebugCameraHelper->Initialize(Caster, Cast<UShowCamSequence>(SelectedShowBasePtr));
+                DebugCameraHelper->OnUpdate.BindUObject(this, &AShowActionMakerGameMode::ShowSequenceAssetMarkPackageDirty);
+                DebugCameraHelper->GetCameraLocationDelegate.BindUObject(this, &AShowActionMakerGameMode::GetCameraLocation);
+                DebugCameraHelper->OnUpdateCameraPathPoint.BindUObject(this, &AShowActionMakerGameMode::UpdateCameraPathPoint);
+            }
+        }
     }
 }
 

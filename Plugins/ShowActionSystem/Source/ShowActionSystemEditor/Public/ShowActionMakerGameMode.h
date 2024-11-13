@@ -48,6 +48,7 @@ protected:
     void OnMouseLClick();
     FVector GetCameraLocation();
     void UpdateCameraPathPoint(FCameraPathPoint* CameraPathPoint);
+    void NotifyShowKeyChange(UShowBase* ShowBasePtr, FName PropertyName);
 
 public:
 

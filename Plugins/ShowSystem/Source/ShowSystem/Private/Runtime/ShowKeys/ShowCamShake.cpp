@@ -102,6 +102,10 @@ void UShowCamShake::Dispose()
             ShowKeyState = EShowKeyState::ShowKey_End;
         }
     }
+
+#if WITH_EDITOR
+    BackupPatternData.Empty();
+#endif
 }
 
 void UShowCamShake::Play()

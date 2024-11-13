@@ -8,6 +8,9 @@
 
 class FShowSequencerEditorToolkit;
 class SShowMakerWidget;
+class UShowBase;
+
+DECLARE_DELEGATE_TwoParams(FShowKeyChange, UShowBase*, FName);
 
 /**
  * 
@@ -75,5 +78,7 @@ public:
 	TArray<FObjectPoolTypeSettings> EditorPoolSettings;
 
 	bool bIsCreatedFromHlper = false;
+
+	FShowKeyChange OnShowKeyChange = nullptr;
 };
 
