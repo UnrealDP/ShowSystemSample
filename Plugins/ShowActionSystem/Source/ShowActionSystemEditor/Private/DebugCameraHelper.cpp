@@ -29,6 +29,8 @@ void ADebugCameraHelper::EndPlay(const EEndPlayReason::Type EndPlayReason)
     }
     DebugCameras.Empty();
 
+    CameraPathLineBatch = nullptr;
+
     Super::EndPlay(EndPlayReason);
 }
 
@@ -51,6 +53,12 @@ void ADebugCameraHelper::Initialize(AActor* InShowOwnerActor, TObjectPtr<UShowCa
             ShowOwnerActorLocation + ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints[i].Position,
             ShowOwnerActorLocation + ShowCamSequence->GetShowCamSequenceKeyPtr()->PathPoints[i].LookAtTarget);
     }
+
+    CameraPathLineBatch = NewObject<ULineBatchComponent>(this, ULineBatchComponent::StaticClass());
+    AddInstanceComponent(CameraPathLineBatch);
+    CameraPathLineBatch->RegisterComponent();
+
+    DrawCameraPath();
 }
 
 FDebugCamera* ADebugCameraHelper::CreateMesh(const int Index, const FCameraPathPoint& CameraPathPoint)
@@ -76,11 +84,10 @@ FDebugCamera* ADebugCameraHelper::CreateMesh(const int Index, const FCameraPathP
     if (CameraMesh)
     {
         DebugCamera->DebugCameraMesh->SetStaticMesh(CameraMesh);
-        DebugCamera->DebugCameraMesh->SetRelativeScale3D(FVector(0.3f));
+        DebugCamera->DebugCameraMesh->SetRelativeScale3D(FVector(0.2f));
         DebugCamera->DebugCameraMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         DebugCamera->DebugCameraMesh->AttachToComponent(DebugCamera->DebugCameraGizmo, FAttachmentTransformRules::KeepRelativeTransform);
     }
-
 
     // 디버그 LookAt 기즈모 생성
     DebugCamera->DebugLookAtGizmo = NewObject<UGizmoTranslationComponent>(this, UGizmoTranslationComponent::StaticClass());
@@ -121,6 +128,53 @@ FDebugCamera* ADebugCameraHelper::CreateMesh(const int Index, const FCameraPathP
     DebugCamera->TextRenderComponent->SetTextRenderColor(FColor::Purple);
 
     return DebugCamera;
+}
+
+void ADebugCameraHelper::DrawCameraPath()
+{
+    if (!CameraPathLineBatch)
+    {
+        return;
+    }
+
+    CameraPathLineBatch->Flush();
+
+    float PlaybackEndTime = 0.0f;
+    FInterpCurve<FVector> PositionCurve;
+    UShowCamSequence::CreateCurve(
+        PlaybackEndTime,
+        ShowCamSequence->GetShowCamSequenceKeyPtr(),
+        &PositionCurve,
+        nullptr,
+        nullptr,
+        0.0f);
+
+    PositionCurve.AutoSetTangents(0.0f, ShowCamSequence->GetShowCamSequenceKeyPtr()->bStationaryEndpoints);
+
+    AActor* ShowOwner = ShowCamSequence->GetShowOwner();
+    FVector OwnerLocation = ShowOwner->GetActorLocation();
+
+    const float SamplingInterval = 0.1f; // 샘플링 간격
+    FVector PreviousPosition = PositionCurve.Eval(0.0f, FVector::ZeroVector);    
+    PreviousPosition = PreviousPosition + OwnerLocation;
+
+    for (float Time = SamplingInterval; Time <= PositionCurve.Points.Last().InVal; Time += SamplingInterval)
+    {
+        FVector CurrentPosition = PositionCurve.Eval(Time, FVector::ZeroVector);
+        CurrentPosition = CurrentPosition + OwnerLocation;
+
+        // 이전 위치와 현재 위치를 연결하는 선을 그립니다.
+        CameraPathLineBatch->DrawLine(
+            PreviousPosition,
+            CurrentPosition,
+            FLinearColor::Gray,    // 선 색상
+            0,                // 선 그룹 ID
+            0.5f,             // 선 두께
+            -1.0f              // 지속 시간
+        );
+
+        PreviousPosition = CurrentPosition;
+    }
 }
 
 // Called every frame
@@ -251,7 +305,7 @@ void ADebugCameraHelper::UpdateDebugCamera(int index, const FVector& CameraPos, 
     DebugCameras[index]->LineBatch->DrawLine(
         DebugCameras[index]->DebugCameraMesh->GetComponentLocation(),
         DebugCameras[index]->LookAtSphereMesh->GetComponentLocation(),
-        FLinearColor::Red, 0, 1.0f);
+        FLinearColor::Red, 0, 0.5f);
 
     if (SelectedCameraPathPoint != DebugCameras[index]->CameraPathPointPtr)
 	{
@@ -264,6 +318,8 @@ void ADebugCameraHelper::UpdateDebugCamera(int index, const FVector& CameraPos, 
 
     DebugCameras[index]->TextRenderComponent->SetWorldLocation(CameraPos);
     DebugCameras[index]->TextRenderComponent->AddRelativeLocation(FVector(0.0f, -15.0f, 0.0f));
+
+    DrawCameraPath();
 }
 
 void ADebugCameraHelper::UpdatePath(UGizmoTranslationComponent* GizmoComponent)

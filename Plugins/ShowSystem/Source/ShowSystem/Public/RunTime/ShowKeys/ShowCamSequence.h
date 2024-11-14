@@ -179,7 +179,7 @@ struct FShowCamSequenceKey : public FShowKey
     * 이 설정은 루프가 아닌 곡선에서 자연스러운 시작과 끝을 표현할 때 유용합니다.
     */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Sequence")
-    bool bStationaryEndpoints = false; // 페이드 아웃 시간 및 설정
+    bool bStationaryEndpoints = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Sequence")
     TArray<FCameraPathPoint> PathPoints; // 카메라 이동 경로 리스트
@@ -198,6 +198,19 @@ public:
     virtual float GetLength() override;
     const FShowCamSequenceKey* GetShowCamSequenceKeyPtr() const { return ShowCamSequenceKeyPtr; }
 
+    // 툴에서 경로 생성하는 곳에서 사용해서 static으로 함 (ADebugCameraHelper::DrawCameraPath() 참고)
+    static void CreateCurve(
+        float& OutPlaybackEndTime,
+        const FShowCamSequenceKey* InShowCamSequenceKeyPtr,
+        FInterpCurve<FVector>* OutPositionCurvePtr,
+        FInterpCurve<FVector>* OutLookAtCurvePtr,
+        FInterpCurve<float>* OutFOVCurvePtr,
+        float FOV);
+
+#if WITH_EDITOR
+    void ShowSwitchDebugCameara(bool On);
+#endif
+
 protected:
     virtual void Initialize() override;
     virtual void Dispose() override;
@@ -207,7 +220,7 @@ protected:
     virtual void ApplyTimeScale(float FinalTimeScale) override {};
 
 private:
-    void AddVectorPoint(FInterpCurve<FVector>& Curve, const float InVal, const FVector& OutVal, const ECameraCurveMode Mode);
+    static void AddVectorPoint(FInterpCurve<FVector>& Curve, const float InVal, const FVector& OutVal, const ECameraCurveMode Mode);
     FVector CalculateRelativePositionForPlayback(const FVector& OriginVactor, const FVector& ActorWorldPosition, const FRotator& ActorWorldRotation, ECameraSequenceOption Option) const;
     
     void ApplyCameraSettings(const FVector& NewPosition, const FVector& NewLookAt, TOptional<float>& NewFOV);
@@ -255,4 +268,10 @@ private:
     FInterpCurve<FVector> PositionCurve;
     FInterpCurve<FVector> LookAtCurve;
     FInterpCurve<float> FOVCurve;
+
+#if WITH_EDITOR
+public:
+    bool bIsShowDebugCamera = false;
+    TObjectPtr<UStaticMeshComponent> DebugCameraMesh = nullptr;
+#endif
 };

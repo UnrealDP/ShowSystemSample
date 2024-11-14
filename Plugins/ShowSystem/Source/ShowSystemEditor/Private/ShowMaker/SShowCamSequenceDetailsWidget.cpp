@@ -8,6 +8,7 @@
 #include "IStructureDetailsView.h"
 #include "SAutoAspectRatioWidthWidget.h"
 #include "SVerticalResizableSplitter.h"
+#include "RunTime/ShowKeys/ShowCamSequence.h"
 
 #define LOCTEXT_NAMESPACE "SShowCamSequenceDetailsWidget"
 
@@ -31,6 +32,7 @@ BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowCamSequenceDetailsWidget::Construct(const FArguments& InArgs)
 {
     ShowKeyStructureDetailsView = InArgs._ShowKeyStructureDetailsView;
+    ShowCamSequence = InArgs._ShowCamSequence;
 
     InitializeCameraRenderTarget();
 
@@ -114,6 +116,15 @@ void SShowCamSequenceDetailsWidget::OnShowCameraCheckChanged(ECheckBoxState NewS
     // UI 업데이트나 추가 동작이 필요한 경우 추가 처리 가능
 }
 
+void SShowCamSequenceDetailsWidget::OnMoveDebugCamera(ECheckBoxState NewState)
+{
+    UShowCamSequence* ShowCamSequencePtr = ShowCamSequence.Get();
+    if (ShowCamSequencePtr)
+    {
+        ShowCamSequencePtr->ShowSwitchDebugCameara(NewState == ECheckBoxState::Checked);
+    }
+}
+
 const FSlateBrush* SShowCamSequenceDetailsWidget::GetCameraRenderTargetBrush() const
 {
     return CameraRenderTargetBrush.Get();
@@ -131,22 +142,6 @@ TSharedRef<SWidget> SShowCamSequenceDetailsWidget::CamSequenceWidget()
         .InitialRatios(
             { 0.9f, 0.1f }
         );
-
-    //return SNew(SVerticalBox)
-
-    //    // 스크롤 가능한 부분
-    //    + SVerticalBox::Slot()
-    //    .FillHeight(1.0f)
-    //    [
-    //        DetailScroll()
-    //    ]
-
-    //    // 스크롤되지 않는 고정 부분
-    //    + SVerticalBox::Slot()
-    //    .AutoHeight()
-    //    [
-    //        RenderView()
-    //    ];
 }
 
 TSharedRef<SWidget> SShowCamSequenceDetailsWidget::DetailScroll()
@@ -158,11 +153,34 @@ TSharedRef<SWidget> SShowCamSequenceDetailsWidget::DetailScroll()
                 + SVerticalBox::Slot()
                 .AutoHeight()
                 [
-                    SNew(SCheckBox)
-                        .OnCheckStateChanged(this, &SShowCamSequenceDetailsWidget::OnShowCameraCheckChanged)
-                        .IsChecked(bShowCamera ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                    SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
                         [
-                            SNew(STextBlock).Text(FText::FromString("Show Camera"))
+                            SNew(SCheckBox)
+                                .OnCheckStateChanged(this, &SShowCamSequenceDetailsWidget::OnShowCameraCheckChanged)
+                                .IsChecked(bShowCamera ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                [
+                                    SNew(STextBlock).Text(FText::FromString("Show Camera"))
+                                ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        [
+                            SNew(SCheckBox)
+                                .OnCheckStateChanged(this, &SShowCamSequenceDetailsWidget::OnMoveDebugCamera)
+                                .IsChecked_Lambda([this]() 
+                                    { 
+                                        UShowCamSequence* ShowCamSequencePtr = ShowCamSequence.Get();
+                                        if (ShowCamSequencePtr)
+                                        {
+                                            return ShowCamSequencePtr->bIsShowDebugCamera ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+                                        }
+                                        return ECheckBoxState::Unchecked;
+                                    })
+                                [
+                                    SNew(STextBlock).Text(FText::FromString("Move Debug Cam"))
+                                ]
                         ]
                 ]
                 + SVerticalBox::Slot()

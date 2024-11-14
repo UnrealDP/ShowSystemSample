@@ -51,6 +51,7 @@ public:
 	// Sets default values for this actor's properties
 	ADebugCameraHelper();
 	void Initialize(AActor* InShowOwnerActor, TObjectPtr<UShowCamSequence> InShowCamSequence);
+	void DrawCameraPath();
 
 protected:
 	// Called when the game starts or when spawned
@@ -75,6 +76,9 @@ private:
 	FCameraPathPoint* SelectedCameraPathPoint = nullptr;
 	TArray<FCameraPathPoint*> UpdatedCameraPaths;
 	float UpdatedCameraTime = 1.0f;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<ULineBatchComponent> CameraPathLineBatch = nullptr;
 
 public:	
 	FOnUpdate OnUpdate = nullptr;

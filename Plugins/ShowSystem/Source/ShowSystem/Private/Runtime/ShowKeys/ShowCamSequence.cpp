@@ -500,11 +500,31 @@ void UShowCamSequence::Dispose()
     PositionCurve.Reset();
     LookAtCurve.Reset();
     FOVCurve.Reset();
+
+#if WITH_EDITOR
+    bIsShowDebugCamera = false;
+    if (DebugCameraMesh)
+    {
+        DebugCameraMesh->RemoveFromRoot();
+        DebugCameraMesh->UnregisterComponent();
+        DebugCameraMesh->DestroyComponent();
+        DebugCameraMesh = nullptr;
+    }
+#endif
 }
 
 void UShowCamSequence::Reset()
 {
-    Dispose();
+    ShowCamSequenceKeyPtr = nullptr;
+    State = ECameraSequenceState::Wait;
+    CurrentBlendTime = 0.0f;
+    CurrentPointIndex = 0;
+
+    PlaybackEndTime = 0.0f;
+    PositionCurve.Reset();
+    LookAtCurve.Reset();
+    FOVCurve.Reset();
+
     Initialize();
 }
 
@@ -541,7 +561,7 @@ void UShowCamSequence::Play()
         PreviousLookAt = GetCameraLookAt();
         InitialRelativeLookAtFromSocket = PreviousLookAt - ActorWorldPosition;
 
-        InitialFOV = PlayerController->PlayerCameraManager->GetFOVAngle();
+        InitialFOV = GetCameraFOV();
 
         bInitialUsePawnControlRotation = SpringArmComponent->bUsePawnControlRotation;
 
@@ -561,7 +581,14 @@ void UShowCamSequence::Play()
     FOVCurve.AddPoint(0.0f, GetCameraFOV());
 
     // 각 구간별 Curve Add
-    PlaybackEndTime = 0.0f;
+    UShowCamSequence::CreateCurve(
+        PlaybackEndTime,
+        ShowCamSequenceKeyPtr,
+        &PositionCurve,
+        &LookAtCurve,
+        &FOVCurve,
+        GetCameraFOV());
+    /*PlaybackEndTime = 0.0f;
     int CurveIdx = 0;
     int CurveNum = ShowCamSequenceKeyPtr->PathPoints.Num();
     for (; CurveIdx < CurveNum; ++CurveIdx)
@@ -571,13 +598,13 @@ void UShowCamSequence::Play()
         AddVectorPoint(PositionCurve, PlaybackEndTime, ShowCamSequenceKeyPtr->PathPoints[CurveIdx].Position, ShowCamSequenceKeyPtr->PathPoints[CurveIdx].InterpMode);
         LookAtCurve.AddPoint(PlaybackEndTime, ShowCamSequenceKeyPtr->PathPoints[CurveIdx].LookAtTarget);
 
-        float FOV = PlayerController->PlayerCameraManager->GetFOVAngle();
+        float FOV = GetCameraFOV();
         if (ShowCamSequenceKeyPtr->PathPoints[CurveIdx].FieldOfView.IsSet())
         {
             FOV = ShowCamSequenceKeyPtr->PathPoints[CurveIdx].FieldOfView.GetValue();
         }
         FOVCurve.AddPoint(PlaybackEndTime, FOV);
-    }
+    }*/
 
     // 마지막 종료 구간 Curve 등록
     PlaybackEndTime += ShowCamSequenceKeyPtr->FadeOutBlendTime;
@@ -633,6 +660,43 @@ void UShowCamSequence::Play()
     State = ECameraSequenceState::Playing;
     CurrentBlendTime = 0.0f;
     CurrentPointIndex = 0;
+}
+
+void UShowCamSequence::CreateCurve(
+    float& OutPlaybackEndTime, 
+    const FShowCamSequenceKey* InShowCamSequenceKeyPtr, 
+    FInterpCurve<FVector>* OutPositionCurvePtr,
+    FInterpCurve<FVector>* OutLookAtCurvePtr,
+    FInterpCurve<float>* OutFOVCurvePtr,
+    float FOV)
+{
+    // 각 구간별 Curve Add
+    OutPlaybackEndTime = 0.0f;
+    int CurveIdx = 0;
+    int CurveNum = InShowCamSequenceKeyPtr->PathPoints.Num();
+    for (; CurveIdx < CurveNum; ++CurveIdx)
+    {
+        OutPlaybackEndTime += InShowCamSequenceKeyPtr->PathPoints[CurveIdx].Duration;
+
+        if (OutPositionCurvePtr)
+        {
+            AddVectorPoint(*OutPositionCurvePtr, OutPlaybackEndTime, InShowCamSequenceKeyPtr->PathPoints[CurveIdx].Position, InShowCamSequenceKeyPtr->PathPoints[CurveIdx].InterpMode);
+        }
+        
+        if (OutLookAtCurvePtr)
+        {
+            OutLookAtCurvePtr->AddPoint(OutPlaybackEndTime, InShowCamSequenceKeyPtr->PathPoints[CurveIdx].LookAtTarget);
+        }
+
+        if (OutFOVCurvePtr)
+        {
+            if (InShowCamSequenceKeyPtr->PathPoints[CurveIdx].FieldOfView.IsSet())
+            {
+                FOV = InShowCamSequenceKeyPtr->PathPoints[CurveIdx].FieldOfView.GetValue();
+            }
+            OutFOVCurvePtr->AddPoint(OutPlaybackEndTime, FOV);
+        }
+    }
 }
 
 void UShowCamSequence::AddVectorPoint(FInterpCurve<FVector>& Curve, const float InVal, const FVector& OutVal, const ECameraCurveMode Mode)
@@ -915,7 +979,7 @@ void UShowCamSequence::PathPointReturningToStart(AActor* OwnerActor, float Delta
     {
         // FOV 보간 계산
         TOptional<float> InterpolatedFOV;
-        float CamaraFov = PlayerController->PlayerCameraManager->GetFOVAngle();
+        float CamaraFov = GetCameraFOV();
         if (InitialFOV != CamaraFov)
         {
             InterpolatedFOV = FMath::Lerp(CamaraFov, InitialFOV, Alpha);
@@ -1009,24 +1073,80 @@ void UShowCamSequence::ApplyEditorViewCamera(const FVector& NewPosition, const F
 
     FRotator Rotation = (PreviousLookAt - PreviousLocation).Rotation();
 
-    if (GEditor && GEditor->GetActiveViewport())
+    if (bIsShowDebugCamera && DebugCameraMesh)
     {
-        FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+        DebugCameraMesh->SetWorldLocation(PreviousLocation);
 
-        if (EditorViewportClient)
+        FQuat LookAtQuat = FQuat(Rotation);
+        FQuat OffsetQuat = FQuat(FRotator(0.f, 90.f, 0.f));
+        FRotator FinalRotation = (LookAtQuat * OffsetQuat).Rotator();
+        DebugCameraMesh->SetWorldRotation(FinalRotation);
+    }
+    else
+    {
+        if (GEditor && GEditor->GetActiveViewport())
         {
-            if (NewFOV.IsSet())
+            FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+
+            if (EditorViewportClient)
             {
-                EditorViewportClient->ViewFOV = NewFOV.GetValue();
+                if (NewFOV.IsSet())
+                {
+                    EditorViewportClient->ViewFOV = NewFOV.GetValue();
+                }
+
+                EditorViewportClient->SetViewLocation(PreviousLocation);
+                EditorViewportClient->SetViewRotation(Rotation);
+
+                // 즉시 업데이트
+                EditorViewportClient->Invalidate();
             }
+        }
+    }    
+}
 
-            EditorViewportClient->SetViewLocation(PreviousLocation);
-            EditorViewportClient->SetViewRotation(Rotation);
+void UShowCamSequence::ShowSwitchDebugCameara(bool On)
+{
+    if (bIsShowDebugCamera == On)
+    {
+		return;
+	}
 
-            // 즉시 업데이트
-            EditorViewportClient->Invalidate();
+    bIsShowDebugCamera = On;
+    
+    if (bIsShowDebugCamera)
+    {
+        if (DebugCameraMesh)
+        {
+            DebugCameraMesh->SetVisibility(true);
+        }
+        else
+        {
+            // 디버그 카메라 메쉬 생성
+            AActor* Owner = GetShowOwner();
+            DebugCameraMesh = NewObject<UStaticMeshComponent>(Owner, UStaticMeshComponent::StaticClass());
+            DebugCameraMesh->AddToRoot();
+            Owner->AddInstanceComponent(DebugCameraMesh);
+            DebugCameraMesh->RegisterComponent();
+
+            TSoftObjectPtr<UStaticMesh> CameraMeshPath = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Engine/EditorMeshes/Camera/SM_CineCam.SM_CineCam")));
+            TObjectPtr<UStaticMesh> CameraMesh = CameraMeshPath.Get();
+            if (CameraMesh)
+            {
+                DebugCameraMesh->SetStaticMesh(CameraMesh);
+                DebugCameraMesh->SetRelativeScale3D(FVector(0.2f));
+                DebugCameraMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            }
         }
     }
+    else
+    {
+        if (DebugCameraMesh)
+        {
+            DebugCameraMesh->SetVisibility(false);
+        }
+    }
+    
 }
 #endif
 
@@ -1073,7 +1193,6 @@ FVector UShowCamSequence::GetCameraLookAt()
         return LookAtTarget;
     }
 }
-
 
 float UShowCamSequence::GetCameraFOV()
 {

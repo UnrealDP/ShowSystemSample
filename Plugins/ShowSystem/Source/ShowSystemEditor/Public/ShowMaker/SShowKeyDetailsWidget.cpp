@@ -7,6 +7,7 @@
 #include "ShowMaker/ShowSequencerNotifyHook.h"
 #include "RunTime/ShowSystem.h"
 #include "ShowMaker/SShowCamSequenceDetailsWidget.h"
+#include "RunTime/ShowKeys/ShowCamSequence.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowKeyDetailsWidget::Construct(const FArguments& InArgs)
@@ -51,7 +52,8 @@ TSharedRef<SWidget> SShowKeyDetailsWidget::GetWidget()
             case EShowKeyType::ShowKey_CamSequence:
             {
                 ShowCamSequenceDetailsWidget = SNew(SShowCamSequenceDetailsWidget)
-                    .ShowKeyStructureDetailsView(ShowKeyStructureDetailsView);
+                    .ShowKeyStructureDetailsView(ShowKeyStructureDetailsView)
+                    .ShowCamSequence(Cast<UShowCamSequence>(ShowBasePtr));
                 return ShowCamSequenceDetailsWidget.ToSharedRef();
             }
             default:

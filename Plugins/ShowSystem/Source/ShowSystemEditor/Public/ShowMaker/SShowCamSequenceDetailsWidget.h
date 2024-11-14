@@ -7,6 +7,7 @@
 
 class IStructureDetailsView;
 class USceneCaptureComponent2D;
+class UShowCamSequence;
 
 /**
  * 
@@ -15,7 +16,8 @@ class SHOWSYSTEMEDITOR_API SShowCamSequenceDetailsWidget : public SCompoundWidge
 {
 public:
 	SLATE_BEGIN_ARGS(SShowCamSequenceDetailsWidget) {}
-		SLATE_ARGUMENT(TSharedPtr<IStructureDetailsView>, ShowKeyStructureDetailsView)
+        SLATE_ARGUMENT(TSharedPtr<IStructureDetailsView>, ShowKeyStructureDetailsView)
+        SLATE_ARGUMENT(TWeakObjectPtr<UShowCamSequence>, ShowCamSequence)
 	SLATE_END_ARGS()
 
     ~SShowCamSequenceDetailsWidget();
@@ -31,6 +33,7 @@ private:
     void InitializeCameraRenderTarget();
 
     void OnShowCameraCheckChanged(ECheckBoxState NewState);
+    void OnMoveDebugCamera(ECheckBoxState NewState);
     const FSlateBrush* GetCameraRenderTargetBrush() const;
 
     TSharedRef<SWidget> CamSequenceWidget();
@@ -46,6 +49,9 @@ private:
     TSharedPtr<FSlateBrush> CameraRenderTargetBrush;    
 
     TSharedPtr<IStructureDetailsView> ShowKeyStructureDetailsView = nullptr;;
+
+    TWeakObjectPtr<UShowCamSequence> ShowCamSequence;
+
     bool bShowCamera = false;
 
     UWorld* BeforeWorld = nullptr;

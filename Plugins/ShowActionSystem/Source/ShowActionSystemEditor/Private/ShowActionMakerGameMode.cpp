@@ -306,6 +306,13 @@ void AShowActionMakerGameMode::NotifyShowKeyChange(UShowBase* ShowBasePtr, FName
                 DebugCameraHelper->OnUpdateCameraPathPoint.BindUObject(this, &AShowActionMakerGameMode::UpdateCameraPathPoint);
             }
         }
+        else if (PropertyName.IsEqual("InterpMode"))
+        {
+            if (DebugCameraHelper)
+            {
+                DebugCameraHelper->DrawCameraPath();
+            }
+        }
     }
 }
 
