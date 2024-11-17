@@ -16,7 +16,7 @@ SlateEditorUtils
 -	툴 용 UI Slate 기능을 모아둔 플러그인
   
 ShowSystem
-https://github.com/UnrealDP/ShowSystem?tab=readme-ov-file#readme
+- https://github.com/UnrealDP/ShowSystem?tab=readme-ov-file#readme
 -	Show 연출 시스템  
   
 ShowActionSystem
