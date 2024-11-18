@@ -9,7 +9,7 @@ EditorPackageUtils
 -	CoreUtils 에 포함할 필요가 있음
   
 ExcelImporter
-- https://github.com/UnrealDP/ExcelImporter/blob/main/README.md
+- https://github.com/UnrealDP/ExcelImporter/tree/main?tab=readme-ov-file#readme
 -	액셀 기준으로 cpp 코드 생성
 -	액셀 파일을 언리얼 data 로 import
   
