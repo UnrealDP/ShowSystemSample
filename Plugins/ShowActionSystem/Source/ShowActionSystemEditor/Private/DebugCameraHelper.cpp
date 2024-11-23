@@ -139,41 +139,45 @@ void ADebugCameraHelper::DrawCameraPath()
 
     CameraPathLineBatch->Flush();
 
-    float PlaybackEndTime = 0.0f;
-    FInterpCurve<FVector> PositionCurve;
-    UShowCamSequence::CreateCurve(
-        PlaybackEndTime,
-        ShowCamSequence->GetShowCamSequenceKeyPtr(),
-        &PositionCurve,
-        nullptr,
-        nullptr,
-        0.0f);
-
-    PositionCurve.AutoSetTangents(0.0f, ShowCamSequence->GetShowCamSequenceKeyPtr()->bStationaryEndpoints);
-
-    AActor* ShowOwner = ShowCamSequence->GetShowOwner();
-    FVector OwnerLocation = ShowOwner->GetActorLocation();
-
-    const float SamplingInterval = 0.1f; // 샘플링 간격
-    FVector PreviousPosition = PositionCurve.Eval(0.0f, FVector::ZeroVector);    
-    PreviousPosition = PreviousPosition + OwnerLocation;
-
-    for (float Time = SamplingInterval; Time <= PositionCurve.Points.Last().InVal; Time += SamplingInterval)
+    const FShowCamSequenceKey* ShowCamSequenceKeyPtr = ShowCamSequence->GetShowCamSequenceKeyPtr();
+    if (ShowCamSequenceKeyPtr && ShowCamSequenceKeyPtr->PathPoints.Num() > 0)
     {
-        FVector CurrentPosition = PositionCurve.Eval(Time, FVector::ZeroVector);
-        CurrentPosition = CurrentPosition + OwnerLocation;
+        float PlaybackEndTime = 0.0f;
+        FInterpCurve<FVector> PositionCurve;
+        UShowCamSequence::CreateCurve(
+            PlaybackEndTime,
+            ShowCamSequence->GetShowCamSequenceKeyPtr(),
+            &PositionCurve,
+            nullptr,
+            nullptr,
+            0.0f);
 
-        // 이전 위치와 현재 위치를 연결하는 선을 그립니다.
-        CameraPathLineBatch->DrawLine(
-            PreviousPosition,
-            CurrentPosition,
-            FLinearColor::Gray,    // 선 색상
-            0,                // 선 그룹 ID
-            0.5f,             // 선 두께
-            -1.0f              // 지속 시간
-        );
+        PositionCurve.AutoSetTangents(0.0f, ShowCamSequence->GetShowCamSequenceKeyPtr()->bStationaryEndpoints);
 
-        PreviousPosition = CurrentPosition;
+        AActor* ShowOwner = ShowCamSequence->GetShowOwner();
+        FVector OwnerLocation = ShowOwner->GetActorLocation();
+
+        const float SamplingInterval = 0.1f; // 샘플링 간격
+        FVector PreviousPosition = PositionCurve.Eval(0.0f, FVector::ZeroVector);
+        PreviousPosition = PreviousPosition + OwnerLocation;
+
+        for (float Time = SamplingInterval; Time <= PositionCurve.Points.Last().InVal; Time += SamplingInterval)
+        {
+            FVector CurrentPosition = PositionCurve.Eval(Time, FVector::ZeroVector);
+            CurrentPosition = CurrentPosition + OwnerLocation;
+
+            // 이전 위치와 현재 위치를 연결하는 선을 그립니다.
+            CameraPathLineBatch->DrawLine(
+                PreviousPosition,
+                CurrentPosition,
+                FLinearColor::Gray,    // 선 색상
+                0,                // 선 그룹 ID
+                0.5f,             // 선 두께
+                -1.0f              // 지속 시간
+            );
+
+            PreviousPosition = CurrentPosition;
+        }
     }
 }
 

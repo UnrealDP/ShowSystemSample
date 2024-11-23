@@ -79,6 +79,11 @@ void UShowCamShake::Initialize()
     checkf(CamShakeKeyPtr, TEXT("UShowCamShake::Initialize CamShakeKeyPtr is invalid [ %d ]"), static_cast<int>(ShowKey->KeyType));
 
 #if WITH_EDITOR
+    if (!CamShakeKeyPtr->PatternData.IsValid())
+    {
+        ReConstructPatternData();
+    }
+    
     InitBackupPatternData();
 #endif
 }
@@ -115,6 +120,14 @@ void UShowCamShake::Play()
     APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
     if (PlayerController)
     {
+#if WITH_EDITOR
+        if (GEditor->bIsSimulatingInEditor)
+        {
+            InitialLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
+            InitialRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+        }
+#endif
+
         if (PlayerController && PlayerController->PlayerCameraManager)
         {
             CameraShakeInstance = NewObject<UShowCameraShakeBase>(PlayerController->PlayerCameraManager);
@@ -214,13 +227,16 @@ void UShowCamShake::Play()
     }
 
     // Shake를 수동으로 시작
-    FCameraShakeBaseStartParams StartParams;
-    StartParams.CameraManager = PlayerController->PlayerCameraManager;
-    StartParams.Scale = 1.0f;
-    StartParams.PlaySpace = CamShakeKeyPtr->PlaySpace;
-    StartParams.UserPlaySpaceRot = CamShakeKeyPtr->UserPlaySpaceRot;
+    if (PlayerController)
+    {
+        FCameraShakeBaseStartParams StartParams;
+        StartParams.CameraManager = PlayerController->PlayerCameraManager;
+        StartParams.Scale = 1.0f;
+        StartParams.PlaySpace = CamShakeKeyPtr->PlaySpace;
+        StartParams.UserPlaySpaceRot = CamShakeKeyPtr->UserPlaySpaceRot;
 
-    CameraShakeInstance->StartShake(StartParams);
+        CameraShakeInstance->StartShake(StartParams);
+    }
 }
 
 void UShowCamShake::Reset()
@@ -241,6 +257,39 @@ void UShowCamShake::Tick(float ScaleDeltaTime, float SystemDeltaTime, float Base
         {
             ShowKeyState = EShowKeyState::ShowKey_End;
         }
+
+#if WITH_EDITOR
+        if (GEditor->bIsSimulatingInEditor)
+        {
+            APlayerController* PlayerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+            if (PlayerController && PlayerController->PlayerCameraManager)
+            {
+                FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+                if (EditorViewportClient)
+                {
+                    // 현재 카메라 위치와 회전 가져오기
+                    FVector CurrentLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
+                    FRotator CurrentRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+
+                    // 변화량 계산
+                    FVector DeltaLocation = CurrentLocation - InitialLocation;
+                    FRotator DeltaRotation = CurrentRotation - InitialRotation;
+
+                    // 뷰포트 카메라에 변화량 적용
+                    FVector NewViewportLocation = EditorViewportClient->GetViewLocation() + DeltaLocation;
+                    FRotator NewViewportRotation = EditorViewportClient->GetViewRotation() + DeltaRotation;
+
+                    EditorViewportClient->SetViewLocation(NewViewportLocation);
+                    EditorViewportClient->SetViewRotation(NewViewportRotation);
+                    EditorViewportClient->Invalidate(); // 뷰포트 갱신
+
+                    // 현재 값을 초기값으로 갱신
+                    InitialLocation = CurrentLocation;
+                    InitialRotation = CurrentRotation;
+                }
+            }
+        }
+#endif
     }
 }
 

@@ -258,6 +258,9 @@ private:
 
 #if WITH_EDITOR
 public:
+    FVector InitialLocation;
+    FRotator InitialRotation;
+
     TMap<ECameraShakePattern, FInstancedStruct> BackupPatternData;
     void InitBackupPatternData()
     {
