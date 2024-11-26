@@ -20,7 +20,7 @@ void SShowKeyBoxHandler::Construct(const FArguments& InArgs)
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
     OnClickedKey = InArgs._OnClickedKey;
-    OnChangedKey = InArgs._OnChangedKey;
+    OnChangedStartTime = InArgs._OnChangedStartTime;
 
     ChildSlot
         [
@@ -53,15 +53,18 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
                     .ShowBasePtr(ShowBasePtr)
                     .Height(Height)
                     .MinWidth(MinWidth)
-                    .SecondToWidthRatio(TAttribute<float>::Create(TAttribute<float>::FGetter::CreateSP(this, &SShowKeyBoxHandler::GetSecondToWidthRatio)))
-                    .OnClick(this, &SShowKeyBoxHandler::OnKeyClicked)
+                    .SecondToWidthRatio_Lambda([this]() 
+                        { 
+                            return WidgetWidth / EditorHelper->GetWidgetLengthAlignedToInterval(2.0f);
+                        })
+                    .OnClick(Args._OnClickedKey)
                     .OnChangedStartTime_Lambda([this](UShowBase* ChangedShowBasePtr, float StartTime) 
                         { 
                             EditorHelper->SetShowBaseStartTime(ChangedShowBasePtr, StartTime);
 
-                            if (OnChangedKey.IsBound())
+                            if (OnChangedStartTime.IsBound())
 							{
-								OnChangedKey.Execute(ChangedShowBasePtr);
+                                OnChangedStartTime.Execute(ChangedShowBasePtr);
 							}
                         })
                     .IsShowKeySelected(Args._IsShowKeySelected)
@@ -69,24 +72,9 @@ void SShowKeyBoxHandler::RefreshShowKeyWidgets()
     }
 }
 
-float SShowKeyBoxHandler::GetSecondToWidthRatio()
-{
-    return WidgetWidth / EditorHelper->GetWidgetLengthAlignedToInterval(2.0f);
-}
-
 void SShowKeyBoxHandler::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
     WidgetWidth = AllottedGeometry.GetLocalSize().X;
-}
-
-// Key를 클릭했을 때 호출
-void SShowKeyBoxHandler::OnKeyClicked(UShowBase* ClickedhowBasePtr)
-{
-    // 키 관련 로직 처리
-    if (OnClickedKey.IsBound())
-	{
-		OnClickedKey.Execute(ClickedhowBasePtr);
-	}
 }
 
 #undef LOCTEXT_NAMESPACE

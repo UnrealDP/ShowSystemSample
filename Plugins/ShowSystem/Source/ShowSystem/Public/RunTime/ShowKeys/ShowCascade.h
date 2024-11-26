@@ -146,6 +146,7 @@ protected:
     virtual void Reset();
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override;
     virtual void ApplyTimeScale(float FinalTimeScale) override;
+    virtual void SetPassedTime(float InTime) override;
 
     UFUNCTION()
     void OnParticleSystemFinished(UParticleSystemComponent* FinishedComponent);

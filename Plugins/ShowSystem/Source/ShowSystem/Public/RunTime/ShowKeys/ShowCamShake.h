@@ -245,7 +245,10 @@ protected:
     virtual void Play() override;
     virtual void Reset();
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override;
+    virtual void Pause();
+    virtual void UnPause();
     virtual void ApplyTimeScale(float FinalTimeScale) override;
+    virtual void SetPassedTime(float InTime) override;
 
 public:
     const FShowCamShakeKey* GetCamShakeKey() const { return CamShakeKeyPtr; }
@@ -353,5 +356,7 @@ public:
             }
         }
     }
+
+    void UpdateSimulatingInEditor();
 #endif
 };

@@ -30,3 +30,8 @@ void UShowNiagara::Tick(float ScaleDeltaTime, float SystemDeltaTime, float BaseP
 
 void UShowNiagara::ApplyTimeScale(float FinalTimeScale)
 {}
+
+void UShowNiagara::SetPassedTime(float InTime)
+{
+}
+

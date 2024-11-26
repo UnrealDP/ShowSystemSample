@@ -115,11 +115,6 @@ void UShowSequencer::Reset()
 
 void UShowSequencer::Pause()
 {
-    if (ShowSequencerState != EShowSequencerState::ShowSequencer_Playing)
-    {
-        return;
-    }
-
     for (UShowBase* ShowBasePtr : RuntimeShowKeys)
     {
         if (!ShowBasePtr)
@@ -151,6 +146,22 @@ void UShowSequencer::UnPause()
     }
 
     ShowSequencerState = EShowSequencerState::ShowSequencer_Playing;
+}
+
+void UShowSequencer::Cancel()
+{
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
+    {
+        if (!ShowBasePtr)
+        {
+            continue;
+        }
+
+        ShowBasePtr->ExecuteCancel();
+    }
+
+    PassedTime = 0.0f;
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 }
 
 void UShowSequencer::ChangeTimeScale(float InTimeScale)
@@ -214,4 +225,28 @@ void UShowSequencer::Tick(float DeltaTime)
             }
         }
     }
+}
+
+void UShowSequencer::SetPassedTime(float InTime)
+{
+    for (UShowBase* ShowBasePtr : RuntimeShowKeys)
+    {
+        if (!ShowBasePtr)
+        {
+            continue;
+        }
+
+        float BasePassedTime = InTime - ShowBasePtr->GetStartTime();
+        if (BasePassedTime <= 0.0f)
+		{
+            ShowBasePtr->ExecuteReset();
+		}
+        else
+        {
+            ShowBasePtr->ExecuteSetPassedTime(BasePassedTime);
+        }
+    }
+
+    PassedTime = InTime;
+    ShowSequencerState = EShowSequencerState::ShowSequencer_Wait;
 }

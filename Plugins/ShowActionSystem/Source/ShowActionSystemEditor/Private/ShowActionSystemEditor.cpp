@@ -81,10 +81,11 @@ void FShowActionSystemEditor::ClearModule()
     ShowActionMakerGameMode = nullptr;
 
     SelectedShowBasePtr = nullptr;
+    CrrActionPtr = nullptr;
     ShowSequencerEditorHelperSortMap.Empty();
     if (ShowActionControllPanels)
     {
-        ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
+        ShowActionControllPanels->RefreshShowActionControllPanels(nullptr, &ShowSequencerEditorHelperSortMap);
     }
     UpdateShowKeyDetails(nullptr, nullptr);
 }
@@ -344,6 +345,8 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
             OutExecShowSequencer,
             OutFinishShowSequencer))
         {
+            CrrActionPtr = Action;
+
             for (auto& Elem : ShowSequencerEditorHelperSortMap)
             {
                 Elem.Value.Reset();
@@ -355,24 +358,23 @@ void FShowActionSystemEditor::SelectAction(FName InSelectedActionName, FSkillDat
             {
                 ShowSequencerEditorHelperSortMap["Cast"] = MakeShared<FShowSequencerEditorHelper>();
                 ShowSequencerEditorHelperSortMap["Cast"]->EditShowSequencerPtr = OutCastShowSequencer;
-                OutCastShowSequencer->ChangeTimeScale(CrrTimeScale);
             }
             if (OutExecShowSequencer)
             {
                 ShowSequencerEditorHelperSortMap["Exec"] = MakeShared<FShowSequencerEditorHelper>();
                 ShowSequencerEditorHelperSortMap["Exec"]->EditShowSequencerPtr = OutExecShowSequencer;
-                OutExecShowSequencer->ChangeTimeScale(CrrTimeScale);
             }
             if (OutFinishShowSequencer)
             {
                 ShowSequencerEditorHelperSortMap["Finish"] = MakeShared<FShowSequencerEditorHelper>();
                 ShowSequencerEditorHelperSortMap["Finish"]->EditShowSequencerPtr = OutFinishShowSequencer;
-                OutFinishShowSequencer->ChangeTimeScale(CrrTimeScale);
             }
+
+            CrrActionPtr->ChangeTimeScale(CrrTimeScale);
 
             if (ShowActionControllPanels)
             {
-                ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
+                ShowActionControllPanels->RefreshShowActionControllPanels(CrrActionPtr, &ShowSequencerEditorHelperSortMap);
             }
         }
     }
@@ -487,73 +489,6 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
             }
         }
 
-     //   UShowSequencer* NewShowSequencerPtr = nullptr;
-     //   UActionBase* ActionBasePtr = ShowActionMakerGameMode ? ShowActionMakerGameMode->CrrActionPtr : nullptr;
-     //   if (ActionBasePtr)
-     //   {
-     //       if (NewShowPath->IsValid())
-     //       {
-     //           NewShowSequencerPtr = ActionBasePtr->NewShowSequencer(ActionState);
-     //           if (NewShowSequencerPtr)
-     //           {
-     //               FString StepStr = StaticEnum<EActionState>()->GetNameStringByValue(static_cast<int64>(ActionState));
-     //               if (ShowSequencerEditorHelperSortMap.ContainsKey(StepStr))
-     //               {
-     //                   if (TSharedPtr<FShowSequencerEditorHelper>* ExistingHelper = ShowSequencerEditorHelperSortMap.Find(StepStr))
-     //                   {
-     //                       // "Cast" 키가 존재하면 해당 객체의 Show 변수를 변경
-     //                       (*ExistingHelper)->EditShowSequencerPtr = NewShowSequencerPtr;
-     //                   }
-     //               }
-     //               else
-     //               {
-     //                   ShowSequencerEditorHelperSortMap[StepStr] = MakeShared<FShowSequencerEditorHelper>();
-     //                   ShowSequencerEditorHelperSortMap[StepStr]->EditShowSequencerPtr = NewShowSequencerPtr;
-     //               }
-     //           }
-     //       }
-     //       else
-     //       {
-     //           AActor* Owner = ActionBasePtr->GetOwner();
-     //           UShowSequencerComponent* ShowSequencerComponent = Owner->FindComponentByClass<UShowSequencerComponent>();
-     //           switch (ActionState)
-     //           {
-     //           case EActionState::Cast:
-     //               if (ShowSequencerEditorHelperSortMap.ContainsKey("Cast"))
-     //               {
-     //                   ShowSequencerEditorHelperSortMap["Cast"]->Dispose();
-     //                   ShowSequencerEditorHelperSortMap.Remove("Cast");
-     //               }
-     //               
-     //               ShowSequencerComponent->DisposeShow(ActionBasePtr->CastShowPtr);
-     //               ActionBasePtr->CastShowPtr = nullptr;
-     //               break;
-     //           case EActionState::Exec:
-     //               if (ShowSequencerEditorHelperSortMap.ContainsKey("Exec"))
-     //               {
-     //                   ShowSequencerEditorHelperSortMap["Exec"]->Dispose();
-     //                   ShowSequencerEditorHelperSortMap.Remove("Exec");
-     //               }
-
-     //               ShowSequencerComponent->DisposeShow(ActionBasePtr->ExecShowPtr);
-     //               ActionBasePtr->ExecShowPtr = nullptr;
-     //               break;
-     //           case EActionState::Finish:
-     //               if (ShowSequencerEditorHelperSortMap.ContainsKey("Finish"))
-					//{
-					//	ShowSequencerEditorHelperSortMap["Finish"]->Dispose();
-					//	ShowSequencerEditorHelperSortMap.Remove("Finish");
-					//}
-
-     //               ShowSequencerComponent->DisposeShow(ActionBasePtr->FinishShowPtr);
-     //               ActionBasePtr->FinishShowPtr = nullptr;
-     //               break;
-     //           default:
-     //               break;
-     //           }
-     //       }
-     //   }
-
         ShowSequencerEditorHelperSortMap.Sort(
             [](const TPair<FString, TSharedPtr<FShowSequencerEditorHelper>>& A, const TPair<FString, TSharedPtr<FShowSequencerEditorHelper>>& B)
             {
@@ -575,7 +510,7 @@ void FShowActionSystemEditor::ChangeShow(EActionState ActionState, FSkillShowDat
 
         if (ShowActionControllPanels)
         {
-            ShowActionControllPanels->RefreshShowActionControllPanels(&ShowSequencerEditorHelperSortMap);
+            ShowActionControllPanels->RefreshShowActionControllPanels(CrrActionPtr, &ShowSequencerEditorHelperSortMap);
         }
     }
 }

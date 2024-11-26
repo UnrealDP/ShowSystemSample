@@ -163,20 +163,25 @@ void UShowCamShake::Play()
 
             UShowPerlinNoiseCamShakePattern* ShakePattern = NewObject<UShowPerlinNoiseCamShakePattern>(CameraShakeInstance, PerlinShakeData.CameraShakePattern);
 
-            ShakePattern->Duration = PerlinShakeData.Duration / TimeScale;
+            ShakePattern->Duration = PerlinShakeData.Duration;
+            //ShakePattern->Duration = PerlinShakeData.Duration / TimeScale;
             ShakePattern->BlendInTime = PerlinShakeData.BlendInTime;
             ShakePattern->BlendOutTime = PerlinShakeData.BlendOutTime;
             ShakePattern->LocationAmplitudeMultiplier = PerlinShakeData.LocationAmplitudeMultiplier;
-            ShakePattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
+            ShakePattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier;
+            //ShakePattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
             ShakePattern->X = PerlinShakeData.X;
             ShakePattern->Y = PerlinShakeData.Y;
             ShakePattern->Z = PerlinShakeData.Z;
             ShakePattern->RotationAmplitudeMultiplier = PerlinShakeData.RotationAmplitudeMultiplier;
-            ShakePattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
+            ShakePattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier;
+            //ShakePattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
             ShakePattern->Pitch = PerlinShakeData.Pitch;
             ShakePattern->Yaw = PerlinShakeData.Yaw;
             ShakePattern->Roll = PerlinShakeData.Roll;
             ShakePattern->FOV = PerlinShakeData.FOV;
+
+            ShakePattern->UpdatePlayRate(TimeScale);
 
             CameraShakeInstance->SetRootShakePattern(ShakePattern);
             break;
@@ -259,37 +264,130 @@ void UShowCamShake::Tick(float ScaleDeltaTime, float SystemDeltaTime, float Base
         }
 
 #if WITH_EDITOR
-        if (GEditor->bIsSimulatingInEditor)
+        UpdateSimulatingInEditor();
+#endif
+    }
+}
+#if WITH_EDITOR
+void UShowCamShake::UpdateSimulatingInEditor()
+{
+    if (GEditor->bIsSimulatingInEditor)
+    {
+        APlayerController* PlayerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+        if (PlayerController && PlayerController->PlayerCameraManager)
         {
-            APlayerController* PlayerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-            if (PlayerController && PlayerController->PlayerCameraManager)
+            FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+            if (EditorViewportClient)
             {
-                FEditorViewportClient* EditorViewportClient = static_cast<FEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
-                if (EditorViewportClient)
-                {
-                    // 현재 카메라 위치와 회전 가져오기
-                    FVector CurrentLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
-                    FRotator CurrentRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+                // 현재 카메라 위치와 회전 가져오기
+                FVector CurrentLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
+                FRotator CurrentRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
 
-                    // 변화량 계산
-                    FVector DeltaLocation = CurrentLocation - InitialLocation;
-                    FRotator DeltaRotation = CurrentRotation - InitialRotation;
+                // 변화량 계산
+                FVector DeltaLocation = CurrentLocation - InitialLocation;
+                FRotator DeltaRotation = CurrentRotation - InitialRotation;
 
-                    // 뷰포트 카메라에 변화량 적용
-                    FVector NewViewportLocation = EditorViewportClient->GetViewLocation() + DeltaLocation;
-                    FRotator NewViewportRotation = EditorViewportClient->GetViewRotation() + DeltaRotation;
+                // 뷰포트 카메라에 변화량 적용
+                FVector NewViewportLocation = EditorViewportClient->GetViewLocation() + DeltaLocation;
+                FRotator NewViewportRotation = EditorViewportClient->GetViewRotation() + DeltaRotation;
 
-                    EditorViewportClient->SetViewLocation(NewViewportLocation);
-                    EditorViewportClient->SetViewRotation(NewViewportRotation);
-                    EditorViewportClient->Invalidate(); // 뷰포트 갱신
+                EditorViewportClient->SetViewLocation(NewViewportLocation);
+                EditorViewportClient->SetViewRotation(NewViewportRotation);
+                EditorViewportClient->Invalidate(); // 뷰포트 갱신
 
-                    // 현재 값을 초기값으로 갱신
-                    InitialLocation = CurrentLocation;
-                    InitialRotation = CurrentRotation;
-                }
+                // 현재 값을 초기값으로 갱신
+                InitialLocation = CurrentLocation;
+                InitialRotation = CurrentRotation;
             }
         }
+    }
+}
 #endif
+void UShowCamShake::Pause()
+{
+    if (!CameraShakeInstance)
+    {
+        return;
+    }
+
+    UCameraShakePattern* ShakePattern = CameraShakeInstance->GetRootShakePattern();
+    if (!ShakePattern)
+    {
+        return;
+    }
+
+    switch (CamShakeKeyPtr->CameraShakePattern)
+    {
+        case ECameraShakePattern::PerlinNoise:
+        {
+            if (UShowPerlinNoiseCamShakePattern* PerlinPattern = Cast<UShowPerlinNoiseCamShakePattern>(ShakePattern))
+            {
+                PerlinPattern->Pause();
+            }
+            break;
+        }
+        case ECameraShakePattern::WaveOscillator:
+        {
+            if (UShowWaveOscCamShakePattern* WaveOscCamPattern = Cast<UShowWaveOscCamShakePattern>(ShakePattern))
+            {
+                WaveOscCamPattern->Pause();
+            }
+            break;
+        }
+        case ECameraShakePattern::Sequence:
+        {
+            if (UShowSequenceCamShakePattern* SequencePattern = Cast<UShowSequenceCamShakePattern>(ShakePattern))
+            {
+                SequencePattern->Pause();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void UShowCamShake::UnPause()
+{
+    if (!CameraShakeInstance)
+    {
+        return;
+    }
+
+    UCameraShakePattern* ShakePattern = CameraShakeInstance->GetRootShakePattern();
+    if (!ShakePattern)
+    {
+        return;
+    }
+
+    switch (CamShakeKeyPtr->CameraShakePattern)
+    {
+        case ECameraShakePattern::PerlinNoise:
+        {
+            if (UShowPerlinNoiseCamShakePattern* PerlinPattern = Cast<UShowPerlinNoiseCamShakePattern>(ShakePattern))
+            {
+                PerlinPattern->UnPause();
+            }
+            break;
+        }
+        case ECameraShakePattern::WaveOscillator:
+        {
+            if (UShowWaveOscCamShakePattern* WaveOscCamPattern = Cast<UShowWaveOscCamShakePattern>(ShakePattern))
+            {
+                WaveOscCamPattern->UnPause();
+            }
+            break;
+        }
+        case ECameraShakePattern::Sequence:
+        {
+            if (UShowSequenceCamShakePattern* SequencePattern = Cast<UShowSequenceCamShakePattern>(ShakePattern))
+            {
+                SequencePattern->UnPause();
+            }
+            break;
+        }
+        default:
+            break;
     }
 }
 
@@ -313,23 +411,15 @@ void UShowCamShake::ApplyTimeScale(float FinalTimeScale)
         {
             if (UShowPerlinNoiseCamShakePattern* PerlinPattern = Cast<UShowPerlinNoiseCamShakePattern>(ShakePattern))
             {
-                const FShowPerlinNoiseCameraShake& PerlinShakeData = CamShakeKeyPtr->PatternData.Get<FShowPerlinNoiseCameraShake>();
-
-                PerlinPattern->LocationFrequencyMultiplier = PerlinShakeData.LocationFrequencyMultiplier * TimeScale;
-                PerlinPattern->RotationFrequencyMultiplier = PerlinShakeData.RotationFrequencyMultiplier * TimeScale;
-                PerlinPattern->UpdateDuration(PerlinShakeData.Duration / TimeScale);
+                PerlinPattern->UpdatePlayRate(TimeScale);
             }
             break;
         }
         case ECameraShakePattern::WaveOscillator:
         {
-            if (UShowWaveOscCamShakePattern* PerlinPattern = Cast<UShowWaveOscCamShakePattern>(ShakePattern))
+            if (UShowWaveOscCamShakePattern* WaveOscCamPattern = Cast<UShowWaveOscCamShakePattern>(ShakePattern))
             {
-                const FShowWaveOscCamShake& ShowWaveOscShakeData = CamShakeKeyPtr->PatternData.Get<FShowWaveOscCamShake>();
-
-                PerlinPattern->LocationFrequencyMultiplier = ShowWaveOscShakeData.LocationFrequencyMultiplier * TimeScale;
-                PerlinPattern->RotationFrequencyMultiplier = ShowWaveOscShakeData.RotationFrequencyMultiplier * TimeScale;
-                PerlinPattern->UpdateDuration(ShowWaveOscShakeData.Duration / TimeScale);
+                WaveOscCamPattern->UpdatePlayRate(TimeScale);
             }
             break;
         }
@@ -337,13 +427,6 @@ void UShowCamShake::ApplyTimeScale(float FinalTimeScale)
         {
             if (UShowSequenceCamShakePattern* SequencePattern = Cast<UShowSequenceCamShakePattern>(ShakePattern))
             {
-                const FShowSequenceCameraShake& SequenceShakeData = CamShakeKeyPtr->PatternData.Get<FShowSequenceCameraShake>();
-
-                SequencePattern->PlayRate = TimeScale;
-                if (SequencePattern->bRandomSegment)
-                {
-                    SequencePattern->RandomSegmentDuration = SequenceShakeData.RandomSegmentDuration / TimeScale;
-                }
                 SequencePattern->UpdatePlayRate(TimeScale);
             }
             break;
@@ -352,3 +435,22 @@ void UShowCamShake::ApplyTimeScale(float FinalTimeScale)
             break;
     }
 }
+
+void UShowCamShake::SetPassedTime(float InTime)
+{
+    if (!CameraShakeInstance)
+    {
+        Play();
+    }
+    if (!CameraShakeInstance)
+    {
+        return;
+    }
+
+    FMinimalViewInfo POV;
+    CameraShakeInstance->ScrubAndApplyCameraShake(InTime, 1.f, POV);
+#if WITH_EDITOR
+    UpdateSimulatingInEditor();
+#endif
+}
+

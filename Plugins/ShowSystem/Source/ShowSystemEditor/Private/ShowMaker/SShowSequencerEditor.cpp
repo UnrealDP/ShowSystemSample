@@ -126,7 +126,7 @@ TSharedRef<SWidget> SShowSequencerEditor::ConstructRightWidget(const FArguments&
                         .Height(InArgs._Height)
                         .MinWidth(InArgs._MinWidth)
                         .OnClickedKey(InArgs._OnClickedKey)
-                        .OnChangedKey(InArgs._OnChangedKey)
+                        .OnChangedStartTime(InArgs._OnChangedKey)
                         .IsShowKeySelected(InArgs._IsShowKeySelected)
                 ]
         ];

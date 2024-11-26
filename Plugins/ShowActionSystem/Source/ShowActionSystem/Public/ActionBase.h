@@ -79,6 +79,7 @@ public:
 	const EObjectPoolType GetObjectPoolType() const { return ObjectPoolType; }
 	const EDataTable GetDataType() const { return DataType; }
 	const EDataTable GetShowDataType() const { return ShowDataType; }
+	const float GetPassedTime() const { return PassedTime; }
 	const bool IsPause() const { return bIsPause; }
 
 	void SetDontDestroy() { bIsDontDestroy = true; }
@@ -89,6 +90,7 @@ public:
 	virtual void OnReturnedToPool() override;
 
 	bool IsCompleted() const { return State == EActionState::Complete; }
+	void SetPassedTime(float InTime);
 
 protected:
 	UShowSequencer* NewShowSequencer(EActionState ActionStatem);
@@ -109,6 +111,8 @@ protected:
 	UShowSequencer* ExecShowPtr = nullptr;
 	UShowSequencer* FinishShowPtr = nullptr;
 
+	float TimeScale = 1.0f;
+	float PassedTime = 0.0f;
 	float StepPassedTime = 0.0f;
 	float RemainCoolDown = 0.0f;
 

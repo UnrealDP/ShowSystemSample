@@ -11,6 +11,7 @@
 #include "ShowMaker/SShowKeyBoxHandler.h"
 #include "ShowMaker/SShowSequencerScrubBoard.h"
 #include "ShowMaker/SShowSequencerEditHeader.h"
+#include "SActionShowKeyPanel.h"
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SShowActionControllPanels::Construct(const FArguments& InArgs)
@@ -32,7 +33,8 @@ void SShowActionControllPanels::Construct(const FArguments& InArgs)
                         .Widgets(
                             {
                                 ConstructLeftWidget(InArgs),
-                                SAssignNew(HorizontalBox, SHorizontalBox)
+                                //SAssignNew(HorizontalBox, SHorizontalBox)
+                                SAssignNew(ActionShowKeyPanel, SActionShowKeyPanel)
                             }
                         )
                         .InitialRatios(
@@ -41,7 +43,7 @@ void SShowActionControllPanels::Construct(const FArguments& InArgs)
                 ]
         ];
 
-    ConstructRightWidget(InArgs);
+    ConstructRightWidget(nullptr, InArgs);
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
@@ -89,8 +91,14 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructLeftWidget(const FArgume
         ];
 }
 
-void SShowActionControllPanels::ConstructRightWidget(const FArguments& InArgs)
+void SShowActionControllPanels::ConstructRightWidget(UActionBase* InCrrActionPtr, const FArguments& InArgs)
 {
+    if (ActionShowKeyPanel)
+    {
+        ActionShowKeyPanel->SetShowSequencerEditorHelperSortMap(InArgs, InCrrActionPtr, ShowSequencerEditorHelperSortMapPtr);
+        return;
+    }
+
     HorizontalBox->ClearChildren();
 
     int32 SlotCount = ShowSequencerEditorHelperSortMapPtr ? ShowSequencerEditorHelperSortMapPtr->Num() : 0;
@@ -184,7 +192,7 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(
                                     OnSelectedKey.Execute(EditorHelper, ShowBasePtr);
 								}
                             })
-                        .OnChangedKey_Lambda([this, EditorHelper](UShowBase* ShowBasePtr)
+                        .OnChangedStartTime_Lambda([this, EditorHelper](UShowBase* ShowBasePtr)
                             {
                                 if (OnSelectedKey.IsBound())
                                 {
@@ -198,10 +206,12 @@ TSharedRef<SWidget> SShowActionControllPanels::ConstructShowSequencerWidget(
         ];
 }
 
-void SShowActionControllPanels::RefreshShowActionControllPanels(TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr)
+void SShowActionControllPanels::RefreshShowActionControllPanels(UActionBase* InCrrActionPtr, TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr)
 {
     ShowSequencerEditorHelperSortMapPtr = InShowSequencerEditorHelperSortMapPtr;
-    ConstructRightWidget(Args);
+    CrrActionPtr = InCrrActionPtr;
+
+    ConstructRightWidget(CrrActionPtr, Args);
     ShowSequencerEditHeader->RefreshShowKeyHeaderBoxs(ShowSequencerEditorHelperSortMapPtr);
 }
 
@@ -210,7 +220,7 @@ void SShowActionControllPanels::Tick(const FGeometry& AllottedGeometry, const do
     // Tick 함수 내에서 매 프레임 처리할 작업 수행
     if (IsUpdateKey)
     {
-        ConstructRightWidget(Args);
+        ConstructRightWidget(CrrActionPtr, Args);
         
         if (ShowSequencerEditHeader)
         {

@@ -23,16 +23,13 @@ public:
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
         SLATE_EVENT(FOnShowBaseEvent, OnClickedKey)
-        SLATE_EVENT(FOnShowBaseEvent, OnChangedKey)
+        SLATE_EVENT(FOnShowBaseEvent, OnChangedStartTime)
         SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
     SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
     void RefreshShowKeyWidgets();
-
-    void OnKeyClicked(UShowBase* ClickedhowBasePtr);
-    float GetSecondToWidthRatio();
 
     virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
@@ -45,7 +42,7 @@ private:
     TAttribute<float> MinWidth = 20.0f;
 
     FOnShowBaseEvent OnClickedKey = nullptr;
-    FOnShowBaseEvent OnChangedKey = nullptr;
+    FOnShowBaseEvent OnChangedStartTime = nullptr;
     
     TSharedPtr<SVerticalBox> VerticalBox;
     TSharedPtr<IMenu> MenuWindow = nullptr;

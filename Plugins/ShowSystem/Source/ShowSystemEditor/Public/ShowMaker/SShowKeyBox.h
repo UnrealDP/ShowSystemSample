@@ -21,6 +21,7 @@ public:
         SLATE_ATTRIBUTE(float, SecondToWidthRatio) // 1초당 width 비율
         SLATE_ATTRIBUTE(float, Height)
         SLATE_ATTRIBUTE(float, MinWidth)
+        SLATE_ATTRIBUTE(float, PaddigLeft)
         SLATE_EVENT(FOnShowKeyClicked, OnClick)
         SLATE_EVENT(FOnShowKeyChangeStartTime, OnChangedStartTime)
         SLATE_EVENT(FIsShowKeySelected, IsShowKeySelected)
@@ -50,6 +51,7 @@ private:
     UShowBase* ShowBasePtr = nullptr;
     TAttribute<float> Height = 20.0f;
     TAttribute<float> MinWidth = 20.0f;
+    TAttribute<float> PaddigLeft = 0.0f;    
     TAttribute<float> SecondToWidthRatio = 10.0f;
     FOnShowKeyClicked OnClick = nullptr;
     FOnShowKeyChangeStartTime OnChangedStartTime = nullptr;

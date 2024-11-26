@@ -73,9 +73,6 @@ private:
 
 	void UpdateCamera(FFrameTime NewPosition, const FMinimalViewInfo& InPOV, FCameraShakePatternUpdateResult& OutResult);
 
-public:
-	void UpdatePlayRate(float NewPlayRate);
-
 private:
 
 	/** The player we use to play the camera animation sequence */
@@ -88,6 +85,20 @@ private:
 
 	/** State tracking */
 	FCameraShakeState State;
+
+public:
+	void UpdatePlayRate(float NewPlayRate);
+	void Pause()
+	{
+		bIsPause = true;
+	}
+	void UnPause()
+	{
+		bIsPause = false;
+	}
+
+private:
+	bool bIsPause = false;
 };
 
 #if UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2

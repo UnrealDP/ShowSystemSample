@@ -14,6 +14,7 @@ class FShowSequencerEditorHelper;
 class UActionBase;
 class SShowSequencerEditHeader;
 class SShowKeyBoxHandler;
+class SActionShowKeyPanel;
 
 DECLARE_DELEGATE_TwoParams(FOnShowBaseEditEvent, TSharedPtr<FShowSequencerEditorHelper>, UShowBase*);
 DECLARE_DELEGATE_OneParam(FOnShowSequencerRemoveEvent, TSharedPtr<FShowSequencerEditorHelper>);
@@ -41,13 +42,13 @@ public:
 	/** Constructs this widget with InArgs */
 	void Construct(const FArguments& InArgs);
 	TSharedRef<SWidget> ConstructLeftWidget(const FArguments& InArgs);
-	void ConstructRightWidget(const FArguments& InArgs);
+	void ConstructRightWidget(UActionBase* InCrrActionPtr, const FArguments& InArgs);
 	TSharedRef<SWidget> ConstructShowSequencerWidget(
 		const FArguments& InArgs, 
 		TSharedPtr<FShowSequencerEditorHelper>& EditorHelper, 
 		float ExHeight);
 
-	void RefreshShowActionControllPanels(TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr);
+	void RefreshShowActionControllPanels(UActionBase* InCrrActionPtr, TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* InShowSequencerEditorHelperSortMapPtr);
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
@@ -55,8 +56,10 @@ public:
 private:
 	FArguments Args;
 
+	UActionBase* CrrActionPtr;
 	TSharedPtr<SHorizontalBox> HorizontalBox = nullptr;
 	TSharedPtr<SShowSequencerEditHeader> ShowSequencerEditHeader = nullptr;
+	TSharedPtr<SActionShowKeyPanel> ActionShowKeyPanel = nullptr;
 
 	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>>* ShowSequencerEditorHelperSortMapPtr;
 

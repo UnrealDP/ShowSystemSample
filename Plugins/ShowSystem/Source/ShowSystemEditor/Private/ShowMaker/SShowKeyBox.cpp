@@ -11,6 +11,7 @@ void SShowKeyBox::Construct(const FArguments& InArgs)
     ShowBasePtr = InArgs._ShowBasePtr;
     Height = InArgs._Height;
     MinWidth = InArgs._MinWidth;
+    PaddigLeft = InArgs._PaddigLeft;
     SecondToWidthRatio = InArgs._SecondToWidthRatio;
     OnClick = InArgs._OnClick;
     OnChangedStartTime = InArgs._OnChangedStartTime;
@@ -43,7 +44,7 @@ int32 SShowKeyBox::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
     {
         const float StartTime = ShowBasePtr->GetStartTime();
         const float ShowLength = ShowBasePtr->GetLength();
-        const float StartX = StartTime * SecondToWidthRatio.Get();
+        const float StartX = (StartTime + PaddigLeft.Get()) * SecondToWidthRatio.Get();
         const float KeyWidth = FMath::Max(MinWidth.Get(), ShowLength * SecondToWidthRatio.Get());
 
         // 클릭 영역을 저장

@@ -66,6 +66,7 @@ private:
 	TSharedPtr<SShowActionControllPanels> ShowActionControllPanels = nullptr;
 	// ----------------------------------------------------------------------------------------------
 	
+	UActionBase* CrrActionPtr;
 	TSortedPairArray<FString, TSharedPtr<FShowSequencerEditorHelper>> ShowSequencerEditorHelperSortMap;
 	UShowBase* SelectedShowBasePtr = nullptr;
 

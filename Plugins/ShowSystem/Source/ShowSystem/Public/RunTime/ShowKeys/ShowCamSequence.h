@@ -58,7 +58,7 @@ enum class ECameraSequenceState : uint8
 {
     Wait,
     Playing,
-    ReturningToStart,
+    //ReturningToStart,
     End,
 };
 
@@ -217,7 +217,10 @@ protected:
     virtual void Play() override;
     virtual void Reset();
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) override;
+    virtual void Pause() override {};
+    virtual void UnPause() override {};
     virtual void ApplyTimeScale(float FinalTimeScale) override {};
+    virtual void SetPassedTime(float InTime) override;
 
 private:
     static void AddVectorPoint(FInterpCurve<FVector>& Curve, const float InVal, const FVector& OutVal, const ECameraCurveMode Mode);
@@ -262,7 +265,6 @@ private:
     // 이전 프레임의 카메라 위치와 LookAt
     FVector PreviousLocation;
     FVector PreviousLookAt;
-
 
     float PlaybackEndTime = 0.0f;
     FInterpCurve<FVector> PositionCurve;

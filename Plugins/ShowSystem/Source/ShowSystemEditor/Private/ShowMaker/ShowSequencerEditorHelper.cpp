@@ -216,8 +216,16 @@ float FShowSequencerEditorHelper::GetWidgetLengthAlignedToInterval(float Interva
 		return Interval;
 	}
 
-	int32 RoundedTotalLength = (FMath::FloorToInt((TotalLength - 0.001f) / Interval) + 1) * Interval;
-	return static_cast<float>(RoundedTotalLength);
+	// 최소 인터벌이 0 이면 실제 리소스의 길이 return
+	if (Interval > 0)
+	{
+		int32 RoundedTotalLength = (FMath::FloorToInt((TotalLength - 0.001f) / Interval) + 1) * Interval;
+		return static_cast<float>(RoundedTotalLength);
+	}
+	else
+	{
+		return TotalLength;
+	}
 }
 
 const TArray<UShowBase*>* FShowSequencerEditorHelper::RuntimeShowKeysPtr() const

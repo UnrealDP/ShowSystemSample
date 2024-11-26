@@ -14,6 +14,7 @@ void UActionBase::OnPooled()
 	ActionBaseData = nullptr;
 	ActionBaseShowData = nullptr;
 	State = EActionState::Wait;
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 }
@@ -46,27 +47,35 @@ void UActionBase::OnReturnedToPool()
 	ActionBaseData = nullptr;
 	ActionBaseShowData = nullptr;
 	State = EActionState::Wait;
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 }
 
 void UActionBase::Tick(float DeltaTime)
 {
+	float ApplyDeltaTime = (DeltaTime * TimeScale);
 	// Wait는 아무런 로직이 없는 대기 상태
 	if (State != EActionState::Wait)
 	{
 		if (!bIsPause)
 		{
-			StepPassedTime += DeltaTime;
+			StepPassedTime += ApplyDeltaTime;
 			switch (State)
 			{
 			case EActionState::Cast:
+				
+				PassedTime += ApplyDeltaTime;
+
 				if (StepPassedTime > ActionBaseData->CastDuration)
 				{
 					StepPassedTime = ActionBaseData->CastDuration;
 				}
 				break;
 			case EActionState::Exec:
+
+				PassedTime += ApplyDeltaTime;
+
 				if (StepPassedTime > ActionBaseData->ExecDuration)
 				{
 					StepPassedTime = ActionBaseData->ExecDuration;
@@ -91,7 +100,7 @@ void UActionBase::Tick(float DeltaTime)
 		{
 			if (RemainCoolDown > 0.0f)
 			{
-				RemainCoolDown -= DeltaTime;
+				RemainCoolDown -= ApplyDeltaTime;
 
 				// 쿨타임은 어느 스탭에서 시작할지 옵션이다.
 				// 쿨타임이 끝났다고 스킬이 끝난 것은 아님
@@ -188,6 +197,7 @@ void UActionBase::Casting(TArray<AActor*>* TargetsPtr)
 		RemainCoolDown = ActionBaseData->Cooldown;
 	}
 
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	State = EActionState::Cast;
 }
@@ -282,6 +292,7 @@ void UActionBase::Cooldown()
 	checkf(Owner != nullptr, TEXT("UActionBase::Cooldown Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Cooldown ActionBaseData is invalid"));
 
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	State = EActionState::Cooldown;
 }
@@ -291,6 +302,7 @@ void UActionBase::Complete()
 	checkf(Owner != nullptr, TEXT("UActionBase::Complete Owner is invalid"));
 	checkf(ActionBaseData != nullptr, TEXT("UActionBase::Complete ActionBaseData is invalid"));
 
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 	State = EActionState::Complete;
@@ -319,6 +331,7 @@ void UActionBase::Cancel()
 		}
 	}
 
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 	State = EActionState::Complete;
@@ -347,6 +360,7 @@ void UActionBase::Reset()
 		}
 	}
 
+	PassedTime = 0.0f;
 	StepPassedTime = 0.0f;
 	RemainCoolDown = 0.0f;
 	State = EActionState::Wait;
@@ -354,7 +368,6 @@ void UActionBase::Reset()
 
 void UActionBase::Pause()
 {
-	UE_LOG(LogTemp, Warning, TEXT("UActionBase::Pause"));
 	bIsPause = true;
 
 	if (CastShowPtr)
@@ -392,6 +405,8 @@ void UActionBase::UnPause()
 
 void UActionBase::ChangeTimeScale(float scale)
 {
+	TimeScale = scale;
+
 	if (CastShowPtr)
 	{
 		ShowPlayer->ChangeTimeScale(Owner, CastShowPtr, scale);
@@ -424,4 +439,43 @@ bool UActionBase::IsShowAllEnd() const
 	}
 
 	return true;
+}
+
+void UActionBase::SetPassedTime(float InTime)
+{
+	PassedTime = InTime;
+
+	float TempCastTime = ActionBaseData->CastDuration;
+	float TempExecTime = TempCastTime + ActionBaseData->ExecDuration;
+
+	if (InTime <= TempCastTime)
+	{
+		State = EActionState::Cast;
+		StepPassedTime = PassedTime;
+
+		if (CastShowPtr)
+		{
+			CastShowPtr->SetPassedTime(StepPassedTime);
+		}
+	}
+	else if (InTime <= TempExecTime)
+	{
+		State = EActionState::Exec;
+		StepPassedTime = (PassedTime - TempCastTime);
+
+		if (ExecShowPtr)
+		{
+			ExecShowPtr->SetPassedTime(StepPassedTime);
+		}
+	}
+	else
+	{
+		State = EActionState::Finish;
+		StepPassedTime = PassedTime - TempExecTime;
+
+		if (FinishShowPtr)
+		{
+			FinishShowPtr->SetPassedTime(StepPassedTime);
+		}
+	}
 }

@@ -69,6 +69,8 @@ public:
     bool IsEnd() const { return ShowSequencerState == EShowSequencerState::ShowSequencer_End; }
 
     void ChangeTimeScale(float InTimeScale);
+    void Cancel();
+    void SetPassedTime(float InTime);
 
 private:
     void GenerateShowBase();

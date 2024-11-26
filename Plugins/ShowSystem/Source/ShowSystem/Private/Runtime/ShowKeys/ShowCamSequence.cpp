@@ -130,23 +130,6 @@ void UShowCamSequence::Play()
         &LookAtCurve,
         &FOVCurve,
         GetCameraFOV());
-    /*PlaybackEndTime = 0.0f;
-    int CurveIdx = 0;
-    int CurveNum = ShowCamSequenceKeyPtr->PathPoints.Num();
-    for (; CurveIdx < CurveNum; ++CurveIdx)
-    {
-        PlaybackEndTime += ShowCamSequenceKeyPtr->PathPoints[CurveIdx].Duration;
-
-        AddVectorPoint(PositionCurve, PlaybackEndTime, ShowCamSequenceKeyPtr->PathPoints[CurveIdx].Position, ShowCamSequenceKeyPtr->PathPoints[CurveIdx].InterpMode);
-        LookAtCurve.AddPoint(PlaybackEndTime, ShowCamSequenceKeyPtr->PathPoints[CurveIdx].LookAtTarget);
-
-        float FOV = GetCameraFOV();
-        if (ShowCamSequenceKeyPtr->PathPoints[CurveIdx].FieldOfView.IsSet())
-        {
-            FOV = ShowCamSequenceKeyPtr->PathPoints[CurveIdx].FieldOfView.GetValue();
-        }
-        FOVCurve.AddPoint(PlaybackEndTime, FOV);
-    }*/
 
     // 마지막 종료 구간 Curve 등록
     PlaybackEndTime += ShowCamSequenceKeyPtr->FadeOutBlendTime;
@@ -289,11 +272,11 @@ void UShowCamSequence::Tick(float ScaleDeltaTime, float SystemDeltaTime, float B
         PathPointPlay(OwnerActor, BasePassedTime);
         break;
     }
-    case ECameraSequenceState::ReturningToStart:
+    /*case ECameraSequenceState::ReturningToStart:
     {
         PathPointReturningToStart(OwnerActor, ScaleDeltaTime);
         break;
-    }
+    }*/
     case ECameraSequenceState::End:
         if (SpringArmComponent)
         {
@@ -312,7 +295,7 @@ void UShowCamSequence::Tick(float ScaleDeltaTime, float SystemDeltaTime, float B
 
 void UShowCamSequence::PathPointPlay(AActor* OwnerActor, float BasePassedTime)
 {
-    // Actor의 현재 월드 위치 가져오기
+    // Actor의 현재 월드 위치 가져오기0
     FVector ActorWorldPosition = OwnerActor->GetActorLocation();
     FRotator ActorWorldRotation = OwnerActor->GetActorRotation();
 
@@ -376,56 +359,7 @@ void UShowCamSequence::PathPointPlay(AActor* OwnerActor, float BasePassedTime)
         FVector ArrivalPositionWorld = CalculateRelativePositionForPlayback(Position, ActorWorldPosition, ActorWorldRotation, ShowCamSequenceKeyPtr->CameraSequenceOption);
         FVector ArrivalLookAtWorld = CalculateRelativePositionForPlayback(LookAt, ActorWorldPosition, ActorWorldRotation, ShowCamSequenceKeyPtr->CameraSequenceOption);
         ApplyCameraSettings(ArrivalPositionWorld, ArrivalLookAtWorld, FOV);
-    }
-    
-
-    //// 연출 남은시간
-    //float RemainDuration = ArrivalPoint.Duration - CurrentBlendTime;
-
-    //// 목표 위치
-    //FVector ArrivalPositionWorld = CalculateRelativePositionForPlayback(ArrivalPoint.Position, ActorWorldPosition, ActorWorldRotation, ShowCamSequenceKeyPtr->CameraSequenceOption);
-
-    //// 목표 LookAt
-    //FVector ArrivalLookAtWorld = ArrivalPoint.LookAtTarget;
-    //ArrivalLookAtWorld = CalculateRelativePositionForPlayback(ArrivalLookAtWorld, ActorWorldPosition, ActorWorldRotation, ShowCamSequenceKeyPtr->CameraSequenceOption);
-
-    //// 시간 증가 및 다음 포인트로 이동 처리
-    //if (RemainDuration <= 0)
-    //{
-    //    TOptional<float> InterpolatedFOV;
-    //    if (ArrivalPoint.FieldOfView.IsSet())
-    //    {
-    //        InterpolatedFOV = ArrivalPoint.FieldOfView.GetValue();
-    //    }
-
-    //    ApplyCameraSettings(ArrivalPositionWorld, ArrivalLookAtWorld, InterpolatedFOV, DeltaTime);
-
-
-    //    CurrentBlendTime = 0.0f;
-    //    CurrentPointIndex++;
-    //    if (CurrentPointIndex >= ShowCamSequenceKeyPtr->PathPoints.Num())
-    //    {
-    //        State = ECameraSequenceState::ReturningToStart;
-    //    }
-    //}
-    //else
-    //{
-    //    // 보간 계산
-    //    float Alpha = FMath::Clamp(DeltaTime / RemainDuration, 0.0f, 1.0f);
-
-    //    FVector InterpolatedPosition = FMath::Lerp(PreviousLocation, ArrivalPositionWorld, Alpha);
-    //    FVector InterpolatedLookAt = FMath::Lerp(PreviousLookAt, ArrivalLookAtWorld, Alpha);
-
-    //    // FOV 보간 계산
-    //    TOptional<float> InterpolatedFOV;
-    //    if (ArrivalPoint.FieldOfView.IsSet())
-    //    {
-    //        InterpolatedFOV = FMath::Lerp(PlayerController->PlayerCameraManager->GetFOVAngle(), ArrivalPoint.FieldOfView.GetValue(), Alpha);
-    //    }
-
-    //    // 카메라 설정 적용
-    //    ApplyCameraSettings(InterpolatedPosition, InterpolatedLookAt, InterpolatedFOV, DeltaTime);
-    //}
+    }    
 }
 
 void UShowCamSequence::PathPointReturningToStart(AActor* OwnerActor, float DeltaTime)
@@ -753,5 +687,19 @@ float UShowCamSequence::GetCameraFOV()
         }
 
         return PlayerController->PlayerCameraManager->GetFOVAngle();
+    }
+}
+
+void UShowCamSequence::SetPassedTime(float InTime)
+{
+    if (State != ECameraSequenceState::Playing)
+	{
+        Play();
+	}
+
+    AActor* OwnerActor = GetShowOwner();
+    if (OwnerActor)
+    {
+        PathPointPlay(OwnerActor, InTime);
     }
 }

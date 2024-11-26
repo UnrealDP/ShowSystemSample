@@ -75,6 +75,14 @@ void UShowAnimStatic::Reset()
 
 void UShowAnimStatic::Play() 
 {
+    if (!Play(0.0f))
+    {
+        ShowKeyState = EShowKeyState::ShowKey_End;
+    }
+}
+
+bool UShowAnimStatic::Play(float InTime)
+{
     AActor* ShowOwner = GetShowOwner();
     checkf(ShowOwner, TEXT("UShowAnimStatic::Play ShowOwner is invalid"));
     checkf(AnimSequenceBase, TEXT("UShowAnimStatic::Play AnimSequence is invalid"));
@@ -86,8 +94,7 @@ void UShowAnimStatic::Play()
     if (!SkeletalMeshComp->AnimClass)
     {
         UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play SkeletalMeshComp->AnimClass is invalid"));
-        ShowKeyState = EShowKeyState::ShowKey_End;
-        return;
+        return false;
     }
 
     if (UShowAnimInstance* ShowAnimInstance = Cast<UShowAnimInstance>(SkeletalMeshComp->GetAnimInstance()))
@@ -96,7 +103,7 @@ void UShowAnimStatic::Play()
         checkf(!AnimInstance->OnMontageEnded.IsAlreadyBound(this, &UShowAnimStatic::OnMontageEnded), TEXT("UShowAnimStatic::Play MontageEndedHandler need reset"));
 
         AnimMontage = ShowAnimInstance->PlayAnimation(
-            AnimSequenceBase, 
+            AnimSequenceBase,
             AnimStaticKeyPtr->LoopCount,
             AnimStaticKeyPtr->BlendOutTriggerTime,
             AnimStaticKeyPtr->InTimeToStartMontageAt,
@@ -105,8 +112,8 @@ void UShowAnimStatic::Play()
         if (AnimMontage)
         {
             ShowAnimInstance->OnMontageEnded.AddDynamic(this, &UShowAnimStatic::OnMontageEnded);
-            return;
-		}
+            return true;
+        }
         else
         {
             UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play ShowAnimInstance->PlayAnimation is invalid"));
@@ -119,8 +126,8 @@ void UShowAnimStatic::Play()
         checkf(!AnimInstance->OnMontageEnded.IsAlreadyBound(this, &UShowAnimStatic::OnMontageEnded), TEXT("UShowAnimStatic::Play MontageEndedHandler need reset"));
 
         AnimMontage = AnimInstance->PlaySlotAnimationAsDynamicMontage(
-            AnimSequenceBase, 
-            TEXT("DefaultSlot"), 
+            AnimSequenceBase,
+            TEXT("DefaultSlot"),
             0.25f,
             0.25f,
             ShowKey->PlayRate * CachedTimeScale,
@@ -131,18 +138,25 @@ void UShowAnimStatic::Play()
         if (AnimMontage)
         {
             AnimInstance->OnMontageEnded.AddDynamic(this, &UShowAnimStatic::OnMontageEnded);
-            return;
+            if (InTime > 0.0f)
+            {
+                AnimInstance->Montage_SetPosition(AnimMontage, InTime);
+            }
         }
         else
         {
             UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play AnimInstance->PlaySlotAnimationAsDynamicMontage is invalid"));
         }
     }
-    
+
     if (!AnimMontage)
-    { 
+    {
         UE_LOG(LogTemp, Error, TEXT("UShowAnimStatic::Play AnimInstance is invalid"));
-        ShowKeyState = EShowKeyState::ShowKey_End;
+        return false;
+    }
+    else
+    {
+        return true;
     }
 }
 
@@ -168,6 +182,7 @@ void UShowAnimStatic::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
         }
 
         AnimMontage = nullptr;
+        AnimInstance = nullptr;
         ShowKeyState = EShowKeyState::ShowKey_End;
     }
 }
@@ -177,5 +192,48 @@ void UShowAnimStatic::ApplyTimeScale(float FinalTimeScale)
     if (AnimInstance && AnimMontage)
     {
         AnimInstance->Montage_SetPlayRate(AnimMontage, ShowKey->PlayRate * FinalTimeScale);
+    }
+}
+
+void UShowAnimStatic::Pause()
+{
+	if (AnimInstance && AnimMontage)
+	{
+		AnimInstance->Montage_Pause(AnimMontage);
+	}
+}
+
+void UShowAnimStatic::UnPause()
+{
+    if (AnimInstance && AnimMontage)
+	{
+		AnimInstance->Montage_Resume(AnimMontage);
+	}
+}
+
+void UShowAnimStatic::SetPassedTime(float InTime)
+{
+    if (!AnimSequenceBase)
+    {
+        return;
+    }
+
+    if (AnimSequenceBase->GetPlayLength() <= InTime)
+    {
+        if (AnimInstance && AnimMontage)
+        {
+            AnimInstance->Montage_Stop(0.0f, AnimMontage);
+        }
+    }
+    else
+    {
+        if (!AnimInstance || !AnimMontage)
+        {
+            Play(InTime);
+        }
+        else
+        {
+            AnimInstance->Montage_SetPosition(AnimMontage, InTime);
+        }
     }
 }

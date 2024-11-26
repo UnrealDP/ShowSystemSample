@@ -391,3 +391,37 @@ void UShowCascade::ApplyTimeScale(float FinalTimeScale)
 		ParticleComponent->CustomTimeDilation = ShowKey->PlayRate * FinalTimeScale;
 	}
 }
+
+void UShowCascade::SetPassedTime(float InTime)
+{
+    if (!ParticleSystem)
+    {
+        return;
+    }
+
+    if (GetLength() <= InTime)
+    {
+        if (ParticleComponent)
+        {
+            ParticleComponent->Deactivate();
+        }
+    }
+    else
+    {
+        if (!ParticleComponent)
+        {
+            Play();
+        }
+
+        if (ParticleComponent)
+        {
+            ParticleComponent->ResetParticles();
+
+            ParticleComponent->SetActive(true);
+            ParticleComponent->ActivateSystem(true);
+
+            ParticleComponent->TickComponent(InTime, ELevelTick::LEVELTICK_All, nullptr);
+        }
+    }
+}
+

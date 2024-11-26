@@ -89,7 +89,12 @@ void UShowSequenceCamShakePattern::UpdateShakePatternImpl(const FCameraShakePatt
 		const FFrameRate DisplayRate = Player->GetInputRate();
 		const FFrameTime CurrentPosition = Player->GetCurrentPosition();
 
-		const FFrameTime NewPosition = CurrentPosition + Params.DeltaTime * PlayRate * DisplayRate;
+		FFrameTime NewPosition = CurrentPosition;
+		if (!bIsPause)
+		{
+			NewPosition += Params.DeltaTime * PlayRate * DisplayRate;
+		}
+
 		UpdateCamera(NewPosition, Params.POV, OutResult);
 
 		OutResult.ApplyScale(BlendWeight);

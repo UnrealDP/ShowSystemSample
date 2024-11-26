@@ -112,12 +112,8 @@ public:
     }
     void ExecutePause()
     {
-		if (ShowKeyState != EShowKeyState::ShowKey_Playing)
-		{
-			return;
-		}
         ShowKeyState = EShowKeyState::ShowKey_Pause;
-        ApplyTimeScale(0.0f);
+        Pause();
 	}
     void ExecuteUnPause()
     {
@@ -126,8 +122,22 @@ public:
             return;
         }
         ShowKeyState = EShowKeyState::ShowKey_Playing;
-        ApplyTimeScale(CachedTimeScale);
+        UnPause();
     }
+    void ExecuteCancel()
+    {
+        if (ShowKeyState == EShowKeyState::ShowKey_Wait)
+        {
+            return;
+        }
+        ShowKeyState = EShowKeyState::ShowKey_Wait;
+        Cancel();
+    }
+    void ExecuteSetPassedTime(float InTime)
+    {
+        PassedTime = InTime;
+        SetPassedTime(InTime);
+    }    
 
     void SetKeyTimeScale(float InKeyTimeScale)
 	{
@@ -168,7 +178,7 @@ public:
     }
 
     const FShowKey* GetShowKey() const { return ShowKey; }
-     
+
 public:
     virtual FString GetTitle() PURE_VIRTUAL(UShowBase::GetTitle, return "ShowBase";);
 
@@ -181,7 +191,6 @@ public:
     }
 
 protected:
-
     // Key가 인스턴스 생성되면서 최초 호출되는 함수
     virtual void Initialize() PURE_VIRTUAL(UShowBase::Initialize, );
 
@@ -201,12 +210,16 @@ protected:
     */
     virtual void Tick(float ScaleDeltaTime, float SystemDeltaTime, float BasePassedTime) PURE_VIRTUAL(UShowBase::Tick, );
 
+    virtual void Pause() PURE_VIRTUAL(UShowBase::Pause, );
+    virtual void UnPause() PURE_VIRTUAL(UShowBase::UnPause, );
+
     // 왜부에서 TimeScale을 변화해서 실제 최종 Key에 적용되어야 하는 FinalTimeScale 값으로 호출함 (여기서 실제 시간 변화에 대한 코드 해야함)
     virtual void ApplyTimeScale(float FinalTimeScale) PURE_VIRTUAL(UShowBase::ApplyTimeScale, );
 
+    virtual void SetPassedTime(float InTime) PURE_VIRTUAL(UShowBase::SetPassedTime, );
+
     // Key를 멈출때 호출되는 함수 (이 곳에서 멈춤 처리를 해줘야 한다)
-    // TODO: (DIPI) 아직 미확정 (Cancel로 할지 Stop으로 할지 결정 필요)
-    virtual void Stop() PURE_VIRTUAL(UShowBase::Stop, );
+    virtual void Cancel() PURE_VIRTUAL(UShowBase::Cancel, );
 
 protected:
     UShowSequencer* ShowSequencerPtr = nullptr;
